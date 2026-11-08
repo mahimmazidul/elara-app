@@ -8,6 +8,7 @@ import 'providers/cycle_provider.dart';
 import 'providers/prediction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/root_scaffold.dart';
+import 'services/notification_service.dart';
 import 'theme/elara_theme.dart';
 
 void main() {
@@ -28,6 +29,9 @@ class ElaraApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<DatabaseHelper>.value(value: DatabaseHelper.instance),
+        // One scheduler for the process. Created here rather than per screen so
+        // the schedule is rebuilt once, not once per widget that needs it.
+        Provider<NotificationService>(create: (_) => NotificationService()),
         ChangeNotifierProvider<SettingsProvider>(
           create: (_) => SettingsProvider()..load(),
         ),
@@ -56,8 +60,54 @@ class ElaraApp extends StatelessWidget {
   }
 }
 
-class _ElaraRoot extends StatelessWidget {
+/// Owns the [MaterialApp] and keeps the reminder schedule current.
+///
+/// Reminders are rebuilt whenever the app comes to the foreground: the phase, the
+/// predicted date and the user's switches can all have changed while it was in
+/// the background. Boot-time restoration is handled on the native side by the
+/// plugin's boot receiver plus the AlarmManager periodic callback, so nothing
+/// here needs to run before the first frame.
+class _ElaraRoot extends StatefulWidget {
   const _ElaraRoot();
+
+  @override
+  State<_ElaraRoot> createState() => _ElaraRootState();
+}
+
+class _ElaraRootState extends State<_ElaraRoot> with WidgetsBindingObserver {
+  late final NotificationService _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _notifications = context.read<NotificationService>();
+    // Deferred so the first frame is not blocked by plugin channels.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshSchedule());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshSchedule();
+    }
+  }
+
+  Future<void> _refreshSchedule() async {
+    try {
+      await _notifications.requestPermission();
+      await _notifications.rescheduleAll();
+    } catch (error) {
+      // A scheduling problem must never take the app down.
+      debugPrint('Elara: reminder refresh failed: $error');
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

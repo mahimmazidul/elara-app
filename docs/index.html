@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elara — cycle tracking that stays on your phone</title>
+<meta name="description" content="Elara is an offline-first menstrual cycle tracker for Bangladesh: locally computed moon phase, nakshatra and Hijri dates, climate-aware severity, and a daily action card.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FDF6F0">
+<!--
+  One font import, two families. If the network is unavailable the page falls
+  back to the system UI font stack below; nothing else is fetched, ever.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+/* Single-file page: no build step, no JavaScript, no analytics, no cookies. */
+
+:root {
+  --bg: #FDF6F0;
+  --card: #FFF8F3;
+  --text: #3D2C2E;
+  --muted: #8B7D7B;
+  --accent: #D4956A;
+  --rule: #EFE2D8;
+
+  --phase-menstrual: #C97B7B;
+  --phase-follicular: #7DB8A5;
+  --phase-ovulatory: #E8B86D;
+  --phase-luteal: #9B8EC4;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --radius: 10px;
+  --measure: 44rem;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 3rem;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+}
+
+/* ---- Header ------------------------------------------------------------ */
+
+header {
+  padding: 3.5rem 0 0;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.tagline {
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  max-width: 30rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---- Phase strips ------------------------------------------------------ */
+
+.phases {
+  margin: 2.5rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.strip {
+  height: 0.5rem;
+  border-radius: 999px;
+}
+
+.strip--menstrual { background: var(--phase-menstrual); }
+.strip--follicular { background: var(--phase-follicular); }
+.strip--ovulatory { background: var(--phase-ovulatory); }
+.strip--luteal { background: var(--phase-luteal); }
+
+.phase-legend {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.phase-legend li:nth-child(1) { color: #9F6263; }
+.phase-legend li:nth-child(2) { color: #577A6F; }
+.phase-legend li:nth-child(3) { color: #896D45; }
+.phase-legend li:nth-child(4) { color: #776C93; }
+
+/* ---- Feature tiles ----------------------------------------------------- */
+
+.features {
+  margin: 2.75rem 0 0;
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: 1fr;
+}
+
+.tile {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.25rem 1.375rem;
+}
+
+.tile h2 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.tile p {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* ---- Download ---------------------------------------------------------- */
+
+.download {
+  margin: 2.75rem 0 0;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.button {
+  display: block;
+  margin: 1.1rem auto 0;
+  max-width: 20rem;
+  padding: 0.85rem 1.5rem;
+  background: var(--accent);
+  color: #241C1E;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.button:active { opacity: 0.88; }
+.button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.download small {
+  display: block;
+  margin-top: 0.85rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ---- Footer ------------------------------------------------------------ */
+
+footer {
+  margin: 3rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer p { margin: 0.35rem 0 0; }
+
+/* ---- Wider screens ----------------------------------------------------- */
+
+@media (min-width: 40em) {
+  body { padding: 0 2rem 4rem; }
+  header { padding-top: 5rem; }
+  h1 { font-size: 3.25rem; }
+  .features { grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .button { display: inline-block; margin: 1.1rem 0 0; }
+  .tile { padding: 1.4rem 1.4rem 1.5rem; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button { transition: opacity 120ms ease; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Elara</h1>
+    <p class="tagline">
+      An offline-first cycle tracker that reads your body and the weather, then
+      tells you what today actually needs.
+    </p>
+
+    <div class="phases" aria-hidden="true">
+      <div class="strip strip--menstrual"></div>
+      <div class="strip strip--follicular"></div>
+      <div class="strip strip--ovulatory"></div>
+      <div class="strip strip--luteal"></div>
+    </div>
+    <ul class="phase-legend">
+      <li>Menstrual</li>
+      <li>Follicular</li>
+      <li>Ovulatory</li>
+      <li>Luteal</li>
+    </ul>
+  </header>
+
+  <main>
+    <section class="features" aria-label="What Elara does">
+
+      <article class="tile">
+        <h2>Offline first</h2>
+        <p>
+          Your logs stay in a local database on your phone. No account, no sign
+          in, no sync, no server — moon phase, nakshatra and Hijri dates are all
+          computed on the device.
+        </p>
+      </article>
+
+      <article class="tile">
+        <h2>Climate aware, built for Bangladesh</h2>
+        <p>
+          Heat index, humidity and the season feed into a severity modifier, so
+          advice matches a Khulna summer or a monsoon week instead of a mild
+          European spring.
+        </p>
+      </article>
+
+      <article class="tile">
+        <h2>A daily action card</h2>
+        <p>
+          One screen, one recommendation: movement, food, rest. Short enough to
+          read on the way to work and grounded in the phase you are actually in.
+        </p>
+      </article>
+
+      <article class="tile">
+        <h2>Ensemble prediction engine</h2>
+        <p>
+          Several methods predict your next period and are reconciled into a
+          single date with an honest confidence band, widening when your cycles
+          are irregular.
+        </p>
+      </article>
+
+    </section>
+
+    <section class="download" aria-label="Download">
+      <span class="badge">Version {{LATEST_VERSION}}</span>
+      <a class="button" href="{{DOWNLOAD_URL}}">Download the APK</a>
+      <small>
+        Android 7.0 and newer. Installed directly, so Play Protect may ask you
+        to confirm first. Not on the Play Store.
+      </small>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/mahimmazidul/elara-app">Source on GitHub</a>
+    <p>Free software, licensed under the GNU AGPL-3.0.</p>
+    <p>No analytics, no trackers, no cookies.</p>
+  </footer>
+
+</div>
+</body>
+</html>

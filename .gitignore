@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Release signing material. The raw keystore must never enter version control,
+# and key.properties holds the passwords for it. CI writes both from repository
+# secrets into these exact paths, then throws them away with the runner.
+/android/key.properties
+*.jks
+*.keystore
