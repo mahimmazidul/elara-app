@@ -16,11 +16,15 @@ import 'package:elara_app/data/database_helper.dart';
 import 'package:elara_app/data/models/climate_snapshot.dart';
 import 'package:elara_app/data/models/cycle_entry.dart';
 import 'package:elara_app/providers/climate_provider.dart';
+import 'package:elara_app/data/models/consent_record.dart';
+import 'package:elara_app/providers/consent_provider.dart';
 import 'package:elara_app/providers/cycle_provider.dart';
 import 'package:elara_app/providers/prediction_provider.dart';
 import 'package:elara_app/providers/settings_provider.dart';
 import 'package:elara_app/screens/root_scaffold.dart';
+import 'package:elara_app/services/backup_service.dart';
 import 'package:elara_app/services/climate_service.dart';
+import 'package:elara_app/services/notification_service.dart';
 import 'package:elara_app/services/prediction_service.dart';
 import 'package:elara_app/theme/elara_theme.dart';
 import 'package:flutter/material.dart';
@@ -209,6 +213,7 @@ void main() {
         httpClient: _network(),
         timeout: const Duration(seconds: 1),
       );
+      final consent = ConsentProvider(database: db);
       final settings = SettingsProvider(database: db);
       final cycles = CycleProvider(database: db);
       final climate = ClimateProvider(climateService: climateService);
@@ -219,12 +224,21 @@ void main() {
         ),
       );
 
+      await consent.load();
+      // A real user reaches these screens through the consent gate, so the
+      // capture must show a recorded decision. Without this the Settings card
+      // reads "Not recorded" while the app displays cycle data, which would be
+      // both misleading in the README and a contradiction of the gate.
+      if (consent.state != ConsentState.granted) {
+        await consent.grant(method: ConsentMethod.setup);
+      }
       await settings.load();
       await cycles.load();
       await prediction.refresh();
       await climate.load();
 
       graph = _Graph(
+        consent: consent,
         settings: settings,
         cycles: cycles,
         climate: climate,
@@ -243,6 +257,11 @@ void main() {
       MultiProvider(
         providers: [
           Provider<DatabaseHelper>.value(value: db),
+          // Settings now renders the privacy card, which reads consent state
+          // and offers export and deletion.
+          ChangeNotifierProvider<ConsentProvider>.value(value: graph.consent),
+          Provider<BackupService>(create: (_) => BackupService(database: db)),
+          Provider<NotificationRescheduler>(create: (_) => _NoopRescheduler()),
           ChangeNotifierProvider<SettingsProvider>.value(value: graph.settings),
           ChangeNotifierProvider<CycleProvider>.value(value: graph.cycles),
           ChangeNotifierProvider<ClimateProvider>.value(value: graph.climate),
@@ -375,6 +394,22 @@ void main() {
     await capture(tester, 'today-action-dark', cropTop: 470, cropHeight: 600);
   });
 
+  testWidgets('screenshots settings privacy', (tester) async {
+    setViewport(tester, _tallSize);
+
+    await tester.runAsync(seed);
+    final graph = await buildGraph(tester);
+    await pumpApp(tester, graph);
+
+    await tester.tap(find.text('Settings'));
+    await settle(tester);
+    // Scrolled down to the privacy section, which is the part this release
+    // added and the part a reviewer of a health app will look for first.
+    await tester.drag(find.text('Settings').first, const Offset(0, -900));
+    await settle(tester);
+    await capture(tester, 'settings-privacy');
+  });
+
   testWidgets('screenshots tablet', (tester) async {
     addTearDown(tester.view.reset);
     tester.view.physicalSize = _tabletSize;
@@ -395,12 +430,14 @@ void main() {
 /// The provider graph the frame reads from.
 class _Graph {
   _Graph({
+    required this.consent,
     required this.settings,
     required this.cycles,
     required this.climate,
     required this.prediction,
   });
 
+  final ConsentProvider consent;
   final SettingsProvider settings;
   final CycleProvider cycles;
   final ClimateProvider climate;
@@ -424,4 +461,11 @@ Future<ui.Image> _crop(ui.Image source, {
   final cropped = await picture.toImage(source.width, height);
   picture.dispose();
   return cropped;
+}
+
+/// Stands in for the reminder layer so the screenshot run never touches a
+/// platform channel.
+class _NoopRescheduler implements NotificationRescheduler {
+  @override
+  Future<void> reschedule() async {}
 }
