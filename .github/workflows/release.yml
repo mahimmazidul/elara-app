@@ -144,47 +144,14 @@ jobs:
   pages:
     name: Deploy the landing page
     needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
     permissions:
       contents: read
       pages: write
       id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-
-    steps:
-      - name: Check out
-        uses: actions/checkout@v4
-
-      - name: Fill in the version and download link
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
-          APK_URL: ${{ needs.build.outputs.apk_url }}
-        run: |
-          test -f docs/index.html || { echo "::error::docs/index.html is missing."; exit 1; }
-          # A pipe is the delimiter: neither a version tag nor a URL contains one.
-          sed -i "s|{{LATEST_VERSION}}|${VERSION}|g" docs/index.html
-          sed -i "s|{{DOWNLOAD_URL}}|${APK_URL}|g" docs/index.html
-          # Fail loudly rather than publishing a page with an empty placeholder.
-          if grep -q '{{' docs/index.html; then
-            echo "::error::Unsubstituted placeholder left in docs/index.html:"
-            grep -o '{{[A-Z_]*}}' docs/index.html | sort -u
-            exit 1
-          fi
-          echo "Placeholders replaced: $VERSION -> $APK_URL"
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload the docs folder
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v4
+    # The page lives in one place (pages.yml), so the tag-triggered path and the
+    # docs-triggered path cannot drift apart. The version and APK link come
+    # straight from the build job rather than being re-derived.
+    uses: ./.github/workflows/pages.yml
+    with:
+      version: ${{ needs.build.outputs.version }}
+      download_url: ${{ needs.build.outputs.apk_url }}

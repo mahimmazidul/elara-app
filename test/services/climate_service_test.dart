@@ -351,4 +351,38 @@ void main() {
       expect(conditions.sunshineHours, inInclusiveRange(0, 24));
     });
   });
+
+  group('failure fallback', () {
+    test('returns the seasonal fallback when the HTTP call fails', () async {
+      // Both endpoints down: this is the offline case, which is normal for this
+      // app rather than an error. getTodayClimate must still answer.
+      final service = serviceWith(
+        mockNetwork(meteoStatus: 503, aqStatus: 503),
+      );
+
+      final snapshot = await service.getTodayClimate();
+
+      expect(snapshot, isNotNull);
+      expect(snapshot.isFallback, isTrue);
+      expect(snapshot.seasonNote, 'Monsoon');
+      // June: the monsoon baseline, not a live reading.
+      expect(snapshot.temperature, 29);
+      expect(snapshot.humidity, 90);
+      expect(snapshot.sunshineHours, 3.5);
+      expect(snapshot.pm25, 35);
+      expect(snapshot.heatIndex, greaterThan(snapshot.temperature));
+      // Nothing was cached, so a later successful call can replace the estimate.
+      expect(await db.getClimateFor(fixedNow), isNull);
+    });
+
+    test('a seasonal fallback still produces a usable severity input', () async {
+      final service = serviceWith(mockNetwork(meteoStatus: 500, aqStatus: 500));
+      final snapshot = await service.getTodayClimate();
+      final conditions = snapshot.toEnvironmentConditions();
+
+      expect(conditions.aqiCategory, inInclusiveRange(1, 5));
+      expect(conditions.hydrationLevel, inInclusiveRange(1, 3));
+      expect(conditions.heatIndex, isNotNull);
+    });
+  });
 }

@@ -379,4 +379,95 @@ void main() {
     });
 
   });
+
+  // One test per table, each walking create -> read -> update -> delete in
+  // order. The narrower tests above pin individual queries; these pin the whole
+  // round trip, which is what the providers actually do.
+  group('CRUD round-trips', () {
+    test('cycles round-trips through create, read, update and delete', () async {
+      final created = await db.insertCycle(
+        CycleEntry(startDate: DateTime(2026, 3, 4), duration: 5),
+      );
+      expect(created.id, isNotNull);
+      final id = created.id!;
+
+      final read = await db.getCycleById(id);
+      expect(read, isNotNull);
+      expect(dateKey(read!.startDate), '2026-03-04');
+      expect(read.duration, 5);
+
+      final updated = await db.updateCycle(read.copyWith(duration: 7));
+      expect(updated, 1);
+
+      final reread = await db.getCycleById(id);
+      expect(reread!.duration, 7);
+      // createdAt survives the update, so ordering by it stays stable.
+      expect(reread.createdAt, read.createdAt);
+
+      expect(await db.deleteCycle(id), 1);
+      expect(await db.getCycleById(id), isNull);
+      expect(await db.countCycles(), 0);
+    });
+
+    test('climate_cache round-trips through create, read, update and delete',
+        () async {
+      ClimateSnapshot snapshot(double temperature) => ClimateSnapshot(
+            date: DateTime(2026, 6, 15),
+            temperature: temperature,
+            humidity: 80,
+            heatIndex: temperature + 6,
+            sunshineHours: 5.5,
+            pm25: 42,
+            aqiCategory: 'Moderate',
+            fetchedAt: DateTime(2026, 6, 15, 9),
+            seasonNote: 'Monsoon',
+          );
+
+      final created = await db.upsertClimate(snapshot(30));
+      expect(created.id, isNotNull);
+
+      final read = await db.getClimateFor(DateTime(2026, 6, 15));
+      expect(read, isNotNull);
+      expect(read!.temperature, 30);
+      expect(dateKey(read.date), '2026-06-15');
+      // isFallback and seasonNote are derived at fetch time and are deliberately
+      // not columns: a row in this table is a live reading by definition, since
+      // the service never caches an estimate.
+      expect(read.isFallback, isFalse);
+      expect(read.seasonNote, isNull);
+
+      // The same date is an update, not a second row: the table is keyed by day.
+      await db.upsertClimate(snapshot(34));
+      final reread = await db.getClimateFor(DateTime(2026, 6, 15));
+      expect(reread!.temperature, 34);
+      expect(reread.heatIndex, 40);
+      expect(await db.getAllClimateSnapshots(), hasLength(1));
+
+      expect(await db.deleteClimateFor(DateTime(2026, 6, 15)), 1);
+      expect(await db.getClimateFor(DateTime(2026, 6, 15)), isNull);
+    });
+
+    test('settings round-trips through create, read, update and delete',
+        () async {
+      // A custom key, so the seeded defaults cannot mask a broken write.
+      expect(await db.getSetting('round_trip_key'), isNull);
+
+      await db.setSetting('round_trip_key', 'first');
+      expect(await db.getSetting('round_trip_key'), 'first');
+
+      await db.setSetting('round_trip_key', 'second');
+      expect(await db.getSetting('round_trip_key'), 'second');
+
+      // Overwriting must not duplicate the key.
+      final all = await (await db.database).query('settings');
+      expect(
+        all.where((row) => row['key'] == 'round_trip_key').length,
+        1,
+      );
+
+      expect(await db.deleteSetting('round_trip_key'), 1);
+      expect(await db.getSetting('round_trip_key'), isNull);
+      expect(await db.deleteSetting('round_trip_key'), 0);
+    });
+  });
 }

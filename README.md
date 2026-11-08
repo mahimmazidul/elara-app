@@ -1,120 +1,153 @@
 # Elara
 
-An offline-first cycle companion with local predictions and gentle daily guidance.
+Elara is a cycle companion for Android. It reads your cycle, the weather outside
+and the shape of the last few months, then tells you what today looks like: which
+phase you are in, how many days remain until the next period, and one concrete
+thing to do about it. Everything it knows stays on the phone, in a local SQLite
+database, and computes there. Open the app on a beach in Kuakata with the network
+off and every screen still works, because the forecasting, the astronomy and the
+calendar conversion are all local code.
 
-Elara is an Android Flutter app. Everything is computed and stored on-device: no
-account, no analytics, no cloud. Prediction is provided by
-[elara-core](https://github.com/mahimmazidul/elara-core), an ensemble cycle
-forecasting engine consumed here as a git dependency.
+The prediction engine is [elara-core](https://github.com/mahimmazidul/elara-core),
+an ensemble forecasting library consumed here as a git dependency. The app is the
+part that turns its numbers into something a person can act on.
 
-## Status
+## What today looks like
 
-| Area | State |
-| --- | --- |
-| Project init + dependencies | done |
-| Data layer (sqflite) | done |
-| Climate + prediction services | done |
-| State management (provider) | done |
-| Design system (`lib/theme`) | done |
-| Four screens + onboarding | done |
-| Notifications | not started (UI and settings keys only) |
-| CI | not started |
+The Today tab answers one question per visit. It opens with the current phase as a
+coloured chip next to the cycle day, then a countdown to the next estimated period
+with the confidence window spelled out, so a slightly irregular month reads as
+honestly uncertain rather than falsely precise.
 
-## Architecture
+Below that sits the day's action card: movement, food and rest guidance drawn from
+the phase and the environmental severity, phrased for the day you are having. A
+heat index above forty overrides the gentle suggestions and tells you to sit still
+and drink water, which is the correct advice in Khulna in May.
+
+The lunar strip carries the moon phase, the nakshatra and the Hijri date. All
+three are computed from the current date by the app itself.
+
+## The calendar
+
+The month grid is coloured by predicted phase, projected forward from your last
+recorded start using the current forecasted cycle length, so future months show
+real phases instead of one cycle of colour followed by blanks. Tapping any day
+opens a sheet with the phase, the cycle day and the severity for that date.
+Recording a period start is one button in the header.
+
+## Insights
+
+Three charts and a plain-language summary. Cycle lengths are plotted in order so
+a lengthening trend is visible at a glance. The second chart shows the mean and
+the sample standard deviation, which is the number that decides whether the
+prediction is allowed to be tight or has to widen. The third plots the last thirty
+days of heat index with phase bands behind it, which is the clearest way to see
+how a hot week lands in your luteal phase.
+
+With fewer than two completed cycles the charts say so directly rather than
+drawing an empty axis.
+
+## How the forecast is made
+
+elara-core runs several estimators over your recorded starts and reconciles them
+into one date with a confidence window. The window is derived from your own
+variability: when consecutive cycles differ by less than a day and a half it stays
+at one day either side, and beyond that it opens to two. Until three cycles exist
+the engine keeps the window wide on purpose.
+
+The forecast feeds the phase classifier, which works out where today falls inside
+the current cycle, and the action engine, which converts that phase plus the
+environmental severity into a suggestion. All of it is deterministic, so the same
+history and the same day produce the same answer.
+
+## Weather and air
+
+Elara reads temperature, humidity, sunshine and PM2.5 for your coordinates from
+Open-Meteo and Open-AQ, computes the Steadman heat index locally, and caches the
+result for three hours. When a lookup fails it falls back to a seasonal baseline
+built for Bangladesh, and labels the figure as an estimate in the interface so a
+monsoon average is never mistaken for a measurement.
+
+The severity modifier combines heat, air quality, hydration and sunshine into one
+number that nudges the day's guidance up or down.
+
+## Reminders
+
+Five kinds of notification, each switched on and off separately in settings:
+
+The morning briefing arrives at eight with the phase, the conversation score and
+one food suggestion. A PMS warning begins the morning the late luteal phase
+starts, once per cycle. The ovulation window opens on the first day of the
+ovulatory phase, also once per cycle. A period reminder lands on the predicted
+first day. The climate alert fires at two in the afternoon when the heat index
+passes forty.
+
+Each reminder is scheduled individually and rebuilt whenever the app comes to the
+foreground, so the text describes the cycle as it stands rather than as it stood
+the day the schedule was created. The whole schedule is restored after a reboot.
+
+## The app itself
+
+Four tabs, a warm palette and one shadow. Every colour, text style and radius in
+the app lives in `lib/theme/elara_theme.dart`, reachable from any widget through
+`context.elara`, and the light and dark palettes are tuned so phase text clears
+WCAG AA against its own background in both. Inter and Source Sans 3 are bundled
+with the app, so the first launch is fully styled with the network off.
+
+## How it is put together
 
 ```
 lib/
-  theme/
-    elara_theme.dart          every colour, text style and shadow in the app
-  data/
-    database_helper.dart      sqflite singleton, schema, migrations, CRUD
-    date_keys.dart            calendar-date / instant string encodings
-    models/                   CycleEntry, ClimateSnapshot + heat index
-  services/
-    climate_service.dart      Open-Meteo + Open-AQ, 3h cache, seasonal fallback
-    prediction_service.dart   history -> elara-core -> app-level ElaraResult
-  models/
-    elara_result.dart         the single aggregate the UI consumes
+  theme/elara_theme.dart      every colour, text style, radius and shadow
+  data/                       sqflite schema, migrations, models
+  services/                   climate, prediction, notifications
+  models/elara_result.dart    the single aggregate the UI reads
   providers/                  cycle, prediction, climate, settings
-  utils/
-    moon_phase.dart           local moon phase (Meeus series)
-    nakshatra.dart            local nakshatra (27-fold ecliptic division)
-    hijri_date.dart           Islamic calendar wrapper
-    phase_timeline.dart       projects phases across any date range
-  widgets/                    card, chip, score bar, food chips, primitives
-  screens/
-    root_scaffold.dart        four-tab shell
-    today/                    Today screen + onboarding
-    calendar/                 month grid + day detail sheet
-    insights/                 three charts + prediction summary
-    settings/                 location, theme, notifications, about
+  utils/                      moon phase, nakshatra, Hijri, phase timeline
+  screens/                    today, calendar, insights, settings
+  widgets/                    shared primitives
 ```
 
-## Design system
+State is held in four providers over one shared database connection. The
+prediction provider watches the cycle and settings revisions and recomputes when
+either changes, so logging a period updates the calendar, the insights and the
+reminder schedule without any screen knowing about the others.
 
-`lib/theme/elara_theme.dart` is the only file allowed to contain a colour
-literal. Screens read tokens through `context.elara`, and a source audit
-(`grep -rn "Colors\.\|Color(0x" lib --include=*.dart`) confirms no colour leaks
-outside it.
+Database access goes through a single helper with a versioned migration list and a
+refusal to open a database written by a newer version of the app, which turns a
+downgrade into a clear error instead of silent corruption.
 
-- **Flat by design.** No gradients, no glassmorphism, no neumorphism. One shadow
-  exists, `ElaraShadows.card` (0 1px 3px rgba(0,0,0,0.08)); Material elevation is
-  never used, so nothing can acquire a heavier one.
-- **Typography.** Inter for headings and numerals, Source Sans 3 for body, both
-  through `google_fonts`. Numerals use tabular lining figures so values do not
-  jitter as they change.
-- **Fonts are bundled.** `assets/fonts/` holds the six TTFs. google_fonts checks
-  the asset manifest before the network, so a first launch with no connectivity
-  still renders in the intended faces. Filenames must end `<Family>-<Variant>`
-  because that is how google_fonts matches them.
-- **Contrast is measured, not assumed.** Every text/background pair used by the
-  app clears WCAG AA 4.5:1 in both modes. Phase colours are decorative; each has
-  a `*Text` sibling adjusted in lightness for legibility, and ink on a filled
-  phase chip uses `onPhase`, which clears 5.2-9.1:1 light and 5.7-10.0:1 dark.
-  The spec's `textSecondary` (#8B7D7B) measures 3.69:1, so it is reserved for
-  16px+/medium text and `textSecondaryStrong` (#7D6E6D, 4.54:1) is used for small
-  captions.
+## Running it
 
-## Local astronomy
-
-No API is called for the lunar row.
-
-- **Moon phase** — position of the Moon and Sun from truncated Meeus series; the
-  phase is the Moon's elongation as a fraction of a turn, and the illuminated
-  fraction follows as `(1 − cos θ)/2`. Known new and full moons reproduce to
-  within 0.2% illumination, and the result agrees with an independent synodic
-  count to within the real ±0.9-day variation in lunation length.
-- **Nakshatra** — the Moon's sidereal longitude (Lahiri ayanamsa) divided into
-  27 segments of 13°20′. Accuracy is documented in the source: a Moon within
-  ~0.4° of a boundary may fall in the neighbouring segment.
-- **Hijri** — the `hijri` package, which uses the calculated Umm al-Qura
-  calendar. That can be a day off local crescent sighting, so the UI presents it
-  as an approximation.
-
-## Honesty notes
-
-Elara is not a medical device and not a contraceptive. Predictions are calendar
-estimates; the fertile window cannot confirm ovulation, and confidence scores are
-heuristic, not clinically calibrated. The UI says so on the Today screen, in the
-Insights summary, and below 0.6 confidence it shows an explicit warning. Where the
-environmental data is a seasonal baseline rather than a reading, it is labelled
-"estimated".
-
-## Android
-
-`com.mahimmazidul.elara`, minSdk 24, targetSdk 34. Android only — no iOS, web,
-desktop targets are configured.
-
-minSdk is 24, not the 21 originally specified: Flutter 3.47 defaults to 24 and
-`flutter_local_notifications` 23 declares `minSdk 24`, so a 21 floor fails the
-manifest merge. Keeping 21 would mean dropping the notification dependency or
-pinning older versions of both.
-
-## Build
-
-```sh
+```
 flutter pub get
-flutter analyze
-flutter test
-flutter build apk --debug
+flutter run
 ```
+
+## Tests and analysis
+
+```
+flutter test
+dart analyze --fatal-infos
+```
+
+The suite runs one hundred and twelve tests. They cover the schema and every CRUD
+path against a real SQLite engine, the climate service against mocked weather for
+live, cached, malformed and offline cases, the prediction service across
+irregular and out-of-order history, the moon phase against published new, full and
+quarter moons, the nakshatra division, the four screens in their empty and
+populated states, and the provider graph. Both commands pass clean, and CI runs
+them on every push and pull request.
+
+## Releases
+
+Pushing a tag like `v1.0.0` starts the release workflow. It runs analysis and the
+test suite, decodes the signing key from repository secrets, builds a signed app
+bundle and APK, publishes them on a GitHub release with notes generated from the
+commits since the previous tag, and updates the landing page at
+[mahimmazidul.github.io/elara-app](https://mahimmazidul.github.io/elara-app/) with
+the new version and download link.
+
+## License
+
+GNU Affero General Public License v3.0. The full text is in [LICENSE](LICENSE).
