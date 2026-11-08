@@ -214,24 +214,11 @@ jobs:
 
           ls -lh dist
 
+      # Every APK is checked, not just the one: a split build failing to sign
+      # would otherwise only surface when someone tried to install it.
       - name: Confirm every APK is signed with the release key
-        run: |
-          apksigner=$(find "$ANDROID_HOME" -name apksigner -type f | sort | tail -1)
-          if [ -z "$apksigner" ]; then
-            echo "::warning::apksigner not found; skipping signature verification."
-            exit 0
-          fi
-          for apk in dist/*.apk; do
-            echo "--- $apk"
-            "$apksigner" verify --print-certs "$apk" | grep -E "Signer #1 certificate DN|Verified using" || {
-              echo "::error::$apk is not correctly signed."
-              exit 1
-            }
-          done
+        run: python3 tool/verify_apk_signature.py dist/*.apk
 
-      # The tag is created here, at the commit that was just built, so a release
-      # can never point at code that was not the code that passed the gates. When
-      # the tag already exists (it was pushed by hand) it is simply reused.
       - name: Publish the tag and the GitHub Release
         id: publish
         env:

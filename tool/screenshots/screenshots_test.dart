@@ -42,6 +42,25 @@ const double _pixelRatio = 3;
 
 final GlobalKey _frameKey = GlobalKey();
 
+/// Locates the SDK's icon font, which a headless render must be given because
+/// there is no system font to fall back on.
+String? _findMaterialIcons() {
+  final fromEnvironment = Platform.environment['FLUTTER_ROOT'];
+  // Derived from the running Dart VM: <sdk>/bin/cache/dart-sdk/bin/dart.
+  final fromExecutable = Platform.resolvedExecutable.split('/bin/').first;
+  final roots = <String>[
+    ?fromEnvironment,
+    fromExecutable,
+  ];
+
+  for (final root in roots) {
+    final candidate =
+        '$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf';
+    if (File(candidate).existsSync()) return candidate;
+  }
+  return null;
+}
+
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
   for (final path in paths) {
@@ -129,9 +148,16 @@ void main() {
       'assets/fonts/SourceSans3-SemiBold.ttf',
     ]);
     // Icons come from the SDK, since a headless test has no system icon font.
-    await _loadFont('MaterialIcons', [
-      '/var/tmp/sdk/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
-    ]);
+    // The path is resolved rather than hardcoded, so this runs on a developer
+    // machine and on a CI runner without edits.
+    final icons = _findMaterialIcons();
+    if (icons == null) {
+      throw StateError(
+        'MaterialIcons-Regular.otf not found. Set FLUTTER_ROOT to the Flutter '
+        'SDK, or run `flutter precache --universal`.',
+      );
+    }
+    await _loadFont('MaterialIcons', [icons]);
   });
 
   setUp(() async {
