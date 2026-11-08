@@ -42,11 +42,17 @@ class PhaseChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: compact
-                ? context.type.subtitle(tokens.onPhase, size: 14)
-                : context.type.headline(tokens.onPhase, size: 22),
+          // Flexible so a long phase name ("Luteal (late)") plus a day number
+          // cannot push the chip past its parent's width.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: compact
+                  ? context.type.subtitle(tokens.onPhase, size: 14)
+                  : context.type.headline(tokens.onPhase, size: 22),
+            ),
           ),
           if (cycleDay != null) ...[
             SizedBox(width: compact ? ElaraSpacing.sm : ElaraSpacing.md),

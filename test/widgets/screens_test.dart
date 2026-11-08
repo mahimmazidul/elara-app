@@ -13,7 +13,6 @@ import 'package:elara_app/theme/elara_theme.dart';
 import 'package:elara_app/widgets/phase_chip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
@@ -38,8 +37,6 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    // The fonts are bundled; never reach for the network in a test.
-    GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   setUp(() async {

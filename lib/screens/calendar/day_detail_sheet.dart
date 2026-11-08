@@ -5,7 +5,7 @@ import '../../theme/elara_theme.dart';
 import '../../utils/phase_timeline.dart';
 import '../../widgets/phase_chip.dart';
 import '../../widgets/primitives.dart';
-import '../../widgets/score_bar.dart';
+import '../../widgets/food_chip_row.dart';
 
 /// Bottom sheet for a tapped calendar day: phase, action scores and food.
 ///
@@ -93,18 +93,20 @@ class DayDetailSheet extends StatelessWidget {
                 style: type.body(tokens.textSecondaryStrong),
               )
             else ...[
-              ScoreBar(
-                label: 'Conversation',
-                score: result.conversationScore,
-                phaseKey: phaseKey,
-              ),
-              const SizedBox(height: ElaraSpacing.md),
-              ScoreBar(
-                label: 'Romance',
-                score: result.romanceScore,
-                phaseKey: phaseKey,
-              ),
-              const SizedBox(height: ElaraSpacing.lg),
+              if (result.cards.isNotEmpty) ...[
+                const ElaraOverline('A place to start'),
+                const SizedBox(height: ElaraSpacing.sm),
+                Text(
+                  result.cards.first.title,
+                  style: type.subtitle(tokens.textPrimary, size: 15),
+                ),
+                const SizedBox(height: ElaraSpacing.xs),
+                Text(
+                  result.cards.first.body,
+                  style: type.body(tokens.textSecondaryStrong),
+                ),
+                const SizedBox(height: ElaraSpacing.lg),
+              ],
               const ElaraOverline('Food'),
               const SizedBox(height: ElaraSpacing.sm),
               FoodChipRow(
@@ -113,8 +115,7 @@ class DayDetailSheet extends StatelessWidget {
               ),
               const SizedBox(height: ElaraSpacing.md),
               Text(
-                'Scores use today\u2019s climate; they are conversation prompts, '
-                'not predictions about anyone\u2019s mood.',
+                'An invitation to ask, not a prediction about anyone\u2019s mood.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
             ],

@@ -1,7 +1,7 @@
 name: elara_app
 description: An offline-first cycle companion with local predictions and gentle daily guidance.
 publish_to: "none"
-version: 1.0.3+4
+version: 1.1.0+5
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
@@ -39,8 +39,7 @@ dependencies:
   # Charts
   fl_chart: ^1.3.0
 
-  # Typography and formatting
-  google_fonts: ^9.0.0
+  # Formatting and locale-aware dates.
   intl: ^0.20.3
 
   # Hijri calendar support
@@ -58,9 +57,16 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Fonts are bundled rather than fetched at runtime. google_fonts checks the
-  # asset manifest before it touches the network, so the app renders in Inter and
-  # Source Sans 3 on a first launch with no connectivity. The filenames must end
-  # in `<Family>-<Variant>` because that is how google_fonts matches them.
-  assets:
-    - assets/fonts/
+  fonts:
+    # DM Sans, bundled as three static weights so a first launch with no
+    # connection is fully typeset. The files are rebuilt by
+    # tool/fonts/build_fonts.py, which also adds the tabular-digit feature the
+    # upstream variable font does not ship.
+    - family: DM Sans
+      fonts:
+        - asset: assets/fonts/DMSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/DMSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/DMSans-Bold.ttf
+          weight: 700

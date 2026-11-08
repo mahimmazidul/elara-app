@@ -365,9 +365,15 @@ class NotificationService {
 
       final body = StringBuffer();
       if (action != null) {
-        body.write('Conversation score ${action.conversationScore}/10.');
+        // No scores in a notification: this text can land on a lock screen, and
+        // a number out of ten reads as a verdict on a person.
+        body.write(
+          action.cards.isNotEmpty
+              ? action.cards.first.title
+              : 'A quiet check-in might be welcome today.',
+        );
         if (action.foodSuggestions.isNotEmpty) {
-          body.write(' Try ${action.foodSuggestions.first.toLowerCase()}.');
+          body.write(' ${action.foodSuggestions.first} could be a kind idea.');
         }
       } else {
         body.write('No guidance for today \u2014 the phase could not be '

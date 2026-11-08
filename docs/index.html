@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Elara — cycle tracking that stays on your phone</title>
-<meta name="description" content="Elara is an offline-first menstrual cycle tracker for Bangladesh: locally computed moon phase, nakshatra and Hijri dates, climate-aware severity, and a daily action card.">
+<title>Elara — cycle awareness for the person who cares</title>
+<meta name="description" content="Elara is an offline-first Android app that helps you remember, notice, prepare and care, around your partner's cycle.">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#FDF6F0">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
+<meta property="og:title" content="Elara">
+<meta property="og:description" content="Cycle awareness for the person who cares. Offline-first, on your phone.">
 <meta property="og:image" content="icon.png">
 <!--
-  One font import, two families. If the network is unavailable the page falls
-  back to the system UI font stack below; nothing else is fetched, ever.
+  One font import, one family, matching the app. Falls back to the system UI
+  font when offline; nothing else is fetched. No JS, no analytics, no cookies.
 -->
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
-/* Single-file page: no build step, no JavaScript, no analytics, no cookies. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
 
 :root {
   --bg: #FDF6F0;
@@ -25,16 +25,16 @@
   --text: #3D2C2E;
   --muted: #8B7D7B;
   --accent: #D4956A;
+  --accent-ink: #241C1E;
   --rule: #EFE2D8;
 
-  --phase-menstrual: #C97B7B;
-  --phase-follicular: #7DB8A5;
-  --phase-ovulatory: #E8B86D;
-  --phase-luteal: #9B8EC4;
+  --menstrual: #C97B7B;
+  --follicular: #7DB8A5;
+  --ovulatory: #E8B86D;
+  --luteal: #9B8EC4;
 
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --radius: 10px;
-  --measure: 44rem;
+  --radius: 12px;
 }
 
 * { box-sizing: border-box; }
@@ -43,202 +43,200 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  padding: 0 1.25rem 3rem;
+  /* Horizontal padding never exceeds a comfortable thumb gutter, and the whole
+     page is fluid below 420px: nothing here has a fixed width, so a 375px
+     viewport cannot produce a horizontal scrollbar. */
+  padding: 0 clamp(1rem, 5vw, 2rem) 3rem;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
-.wrap {
-  max-width: var(--measure);
-  margin: 0 auto;
-}
+.wrap { max-width: 34rem; margin: 0 auto; }
 
-/* ---- Header ------------------------------------------------------------ */
+/* ---- Hero ------------------------------------------------------------- */
 
-header {
-  padding: 3.5rem 0 0;
-  text-align: center;
-}
+header { padding: clamp(2.5rem, 9vw, 4.5rem) 0 0; text-align: center; }
 
 .mark {
   display: block;
-  margin: 0 auto 1.25rem;
   width: 72px;
   height: 72px;
-  border-radius: 20px;
+  margin: 0 auto 1.25rem;
+  border-radius: 18px;
   box-shadow: var(--shadow);
 }
 
 h1 {
   margin: 0;
-  font-size: 2.75rem;
-  font-weight: 600;
+  font-size: clamp(2rem, 11vw, 2.75rem);
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
 
 .tagline {
-  margin: 0.9rem 0 0;
+  margin: 0.75rem auto 0;
+  max-width: 26rem;
   color: var(--muted);
-  font-size: 1.0625rem;
-  line-height: 1.5;
-  max-width: 30rem;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 1rem;
 }
 
-/* ---- Phase strips ------------------------------------------------------ */
+/* ---- Phase strips ----------------------------------------------------- */
 
-.phases {
-  margin: 2.5rem 0 0;
-  display: grid;
-  gap: 0.5rem;
-}
+.phases { margin: 2rem auto 0; max-width: 26rem; }
 
-.strip {
-  height: 0.5rem;
-  border-radius: 999px;
-}
+.phases svg { display: block; width: 100%; height: auto; }
 
-.strip--menstrual { background: var(--phase-menstrual); }
-.strip--follicular { background: var(--phase-follicular); }
-.strip--ovulatory { background: var(--phase-ovulatory); }
-.strip--luteal { background: var(--phase-luteal); }
-
-.phase-legend {
+.phase-labels {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-  margin: 0.75rem 0 0;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
   padding: 0;
   list-style: none;
   font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-align: center;
 }
 
-.phase-legend li:nth-child(1) { color: #9F6263; }
-.phase-legend li:nth-child(2) { color: #577A6F; }
-.phase-legend li:nth-child(3) { color: #896D45; }
-.phase-legend li:nth-child(4) { color: #776C93; }
+.phase-labels li:nth-child(1) { color: #9F6263; }
+.phase-labels li:nth-child(2) { color: #577A6F; }
+.phase-labels li:nth-child(3) { color: #896D45; }
+.phase-labels li:nth-child(4) { color: #776C93; }
 
-/* ---- Feature tiles ----------------------------------------------------- */
+/* ---- Sections --------------------------------------------------------- */
 
-.features {
-  margin: 2.75rem 0 0;
-  display: grid;
-  gap: 0.875rem;
-  grid-template-columns: 1fr;
+section { margin-top: clamp(2.5rem, 8vw, 3.5rem); }
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
-.tile {
-  background: var(--card);
+p { margin: 0 0 0.9rem; }
+
+.points { margin: 0; padding: 0; list-style: none; }
+
+.points li {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.points li:last-child { border-bottom: 1px solid var(--rule); }
+
+.tick { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; margin-top: 0.2rem; }
+
+.points strong { font-weight: 500; }
+
+/* ---- Screenshot ------------------------------------------------------- */
+
+figure { margin: 0; text-align: center; }
+
+figure img {
+  display: block;
+  width: 100%;
+  max-width: 19rem;
+  height: auto;
+  margin: 0 auto;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.25rem 1.25rem 1.375rem;
 }
 
-.tile h2 {
-  margin: 0 0 0.4rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-.tile p {
-  margin: 0;
-  font-size: 0.9375rem;
+figcaption {
+  margin-top: 0.6rem;
   color: var(--muted);
-  line-height: 1.55;
+  font-size: 0.8125rem;
 }
 
-/* ---- Download ---------------------------------------------------------- */
+/* ---- Download --------------------------------------------------------- */
 
 .download {
-  margin: 2.75rem 0 0;
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.75rem 1.25rem;
+  padding: clamp(1.25rem, 5vw, 1.75rem);
   text-align: center;
 }
 
 .badge {
   display: inline-block;
-  padding: 0.2rem 0.65rem;
+  padding: 0.2rem 0.7rem;
   border: 1px solid var(--rule);
   border-radius: 999px;
   font-size: 0.75rem;
-  letter-spacing: 0.06em;
+  font-weight: 500;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
 .button {
   display: block;
-  margin: 1.1rem auto 0;
-  max-width: 20rem;
-  padding: 0.85rem 1.5rem;
+  width: 100%;
+  max-width: 22rem;
+  margin: 1rem auto 0;
+  padding: 0.85rem 1rem;
   background: var(--accent);
-  color: #241C1E;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  color: var(--accent-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
   text-decoration: none;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
 
-.button:active { opacity: 0.88; }
-.button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
-
-.download small {
-  display: block;
-  margin-top: 0.85rem;
+.note {
+  margin: 0.9rem 0 0;
   color: var(--muted);
   font-size: 0.8125rem;
-  line-height: 1.5;
 }
 
-/* ---- Footer ------------------------------------------------------------ */
+.note a { color: var(--accent-ink); }
+
+/* ---- Footer ----------------------------------------------------------- */
 
 footer {
-  margin: 3rem 0 0;
-  padding-top: 1.5rem;
+  margin-top: 3rem;
+  padding-top: 1.25rem;
   border-top: 1px solid var(--rule);
   color: var(--muted);
   font-size: 0.8125rem;
-  line-height: 1.6;
   text-align: center;
 }
 
-footer a,
-.download small a { color: var(--accent); text-decoration: none; }
-
-.download small a:hover { text-decoration: underline; }
-footer a:hover { text-decoration: underline; }
 footer p { margin: 0.35rem 0 0; }
 
-/* ---- Wider screens ----------------------------------------------------- */
+a { color: #95694D; text-decoration: none; }
 
-@media (min-width: 40em) {
-  body { padding: 0 2rem 4rem; }
-  header { padding-top: 5rem; }
-  h1 { font-size: 3.25rem; }
-  .features { grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .button { display: inline-block; margin: 1.1rem 0 0; }
-  .tile { padding: 1.4rem 1.4rem 1.5rem; }
+a:hover { text-decoration: underline; }
+
+/* Keyboard focus has to be visible on every interactive element, including the
+   dark-on-accent button where a default outline is easy to lose. */
+a:focus-visible,
+.button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+  border-radius: var(--radius);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .button { transition: opacity 120ms ease; }
+  a, .button { transition: opacity 120ms ease; }
+  .button:active { opacity: 0.88; }
 }
 </style>
 </head>
@@ -247,84 +245,106 @@ footer p { margin: 0.35rem 0 0; }
 
   <header>
     <img class="mark" src="icon.png" width="72" height="72"
-         alt="Elara icon: a cream crescent moon with a single gold dot on a deep brown field">
+         alt="Elara: a cream crescent moon with one gold dot on a deep brown field">
     <h1>Elara</h1>
     <p class="tagline">
-      An offline-first cycle tracker that reads your body and the weather, then
-      tells you what today actually needs.
+      Cycle awareness for the person who cares. Remember, notice, prepare, and
+      ask &mdash; without guessing.
     </p>
 
-    <div class="phases" aria-hidden="true">
-      <div class="strip strip--menstrual"></div>
-      <div class="strip strip--follicular"></div>
-      <div class="strip strip--ovulatory"></div>
-      <div class="strip strip--luteal"></div>
+    <div class="phases">
+      <!-- Decorative colour reference, labelled for screen readers by the list
+           underneath, so the graphic itself is hidden from the accessibility
+           tree rather than read out as an unlabelled image. -->
+      <svg viewBox="0 0 400 8" role="img" aria-labelledby="phases-title">
+        <title id="phases-title">The four cycle phases: menstrual, follicular, ovulatory, luteal</title>
+        <rect x="0"   y="0" width="97"  height="8" rx="4" fill="#C97B7B"/>
+        <rect x="101" y="0" width="97"  height="8" rx="4" fill="#7DB8A5"/>
+        <rect x="202" y="0" width="97"  height="8" rx="4" fill="#E8B86D"/>
+        <rect x="303" y="0" width="97"  height="8" rx="4" fill="#9B8EC4"/>
+      </svg>
+      <ul class="phase-labels" aria-hidden="true">
+        <li>Menstrual</li>
+        <li>Follicular</li>
+        <li>Ovulatory</li>
+        <li>Luteal</li>
+      </ul>
     </div>
-    <ul class="phase-legend">
-      <li>Menstrual</li>
-      <li>Follicular</li>
-      <li>Ovulatory</li>
-      <li>Luteal</li>
-    </ul>
   </header>
 
   <main>
-    <section class="features" aria-label="What Elara does">
-
-      <article class="tile">
-        <h2>Offline first</h2>
-        <p>
-          Your logs stay in a local database on your phone. No account, no sign
-          in, no sync, no server — moon phase, nakshatra and Hijri dates are all
-          computed on the device.
-        </p>
-      </article>
-
-      <article class="tile">
-        <h2>Climate aware, built for Bangladesh</h2>
-        <p>
-          Heat index, humidity and the season feed into a severity modifier, so
-          advice matches a Khulna summer or a monsoon week instead of a mild
-          European spring.
-        </p>
-      </article>
-
-      <article class="tile">
-        <h2>A daily action card</h2>
-        <p>
-          One screen, one recommendation: movement, food, rest. Short enough to
-          read on the way to work and grounded in the phase you are actually in.
-        </p>
-      </article>
-
-      <article class="tile">
-        <h2>Ensemble prediction engine</h2>
-        <p>
-          Several methods predict your next period and are reconciled into a
-          single date with an honest confidence band, widening when your cycles
-          are irregular.
-        </p>
-      </article>
-
+    <section aria-labelledby="what">
+      <h2 id="what">What it does</h2>
+      <ul class="points">
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t1">
+            <title id="t1">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Remembers the dates.</strong> An estimate of the next period,
+          with the uncertainty stated in days rather than hidden.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t2">
+            <title id="t2">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Suggests something kind.</strong> One idea for the day, in
+          words, with the reminder that her answer matters more than the calendar.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t3">
+            <title id="t3">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Reads the weather, not her mood.</strong> Heat and air quality
+          shape the advice. Hormones are never used to explain a person.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t4">
+            <title id="t4">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Stays on the phone.</strong> No account, no sync, no analytics.
+          What is logged here does not leave it.</span>
+        </li>
+      </ul>
     </section>
 
-    <section class="download" aria-label="Download">
+    <section aria-labelledby="look">
+      <h2 id="look">A look</h2>
+      <figure>
+        <img src="screenshots/today.png"
+             alt="The Today screen: an ovulatory phase chip, a countdown to the next estimated period with a two-day window, today's heat index, and one guidance card.">
+        <figcaption>Today, with a forecast from three recorded cycles.</figcaption>
+      </figure>
+    </section>
+
+    <section class="download" aria-labelledby="get">
+      <h2 id="get" style="margin-bottom:0.75rem">Download</h2>
       <span class="badge">Version {{LATEST_VERSION}}</span>
       <a class="button" href="{{DOWNLOAD_URL}}">Download the APK</a>
-      <small>
-        Android 7.0 and newer, 64-bit phones: this is the arm64 build, the small
-        one. On an older or 32-bit device, take the
-        <a href="{{DOWNLOAD_URL_UNIVERSAL}}">universal APK</a> instead. Installed
-        directly, so Play Protect may ask you to confirm first. Not on the Play
+      <p class="note">
+        Android 7.0 and newer, 64-bit phones &mdash; the arm64 build, which is the
+        small one. On a 32-bit device or an emulator, take the
+        <a href="{{DOWNLOAD_URL_UNIVERSAL}}">universal APK</a>.
+        Installed directly, so Play Protect asks you to confirm. Not on the Play
         Store.
-      </small>
+      </p>
     </section>
   </main>
 
   <footer>
-    <a href="https://github.com/mahimmazidul/elara-app">Source on GitHub</a>
-    <p>Free software, licensed under the GNU AGPL-3.0.</p>
-    <p>No analytics, no trackers, no cookies.</p>
+    <p><a href="https://github.com/mahimmazidul/elara-app">Source on GitHub</a></p>
+    <p>Free software under the GNU AGPL-3.0. No trackers, no cookies, no accounts.</p>
   </footer>
 
 </div>

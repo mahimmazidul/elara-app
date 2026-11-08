@@ -66,12 +66,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         await _loadHistory();
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          ElaraSpacing.lg,
-          ElaraSpacing.lg,
-          ElaraSpacing.lg,
-          ElaraSpacing.xxl,
-        ),
+        padding: ElaraSpacing.pageInsets(context),
         children: [
           Text('Insights',
               style: type.headline(tokens.textPrimary, size: 28)),

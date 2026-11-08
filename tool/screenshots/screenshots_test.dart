@@ -27,7 +27,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
@@ -38,6 +37,9 @@ const Size _logicalSize = Size(390, 844);
 
 /// Tall enough that the guidance cards are on screen without scrolling.
 const Size _tallSize = Size(390, 1500);
+
+/// A small tablet in landscape, wide enough to show the navigation rail.
+const Size _tabletSize = Size(1024, 768);
 const double _pixelRatio = 3;
 
 final GlobalKey _frameKey = GlobalKey();
@@ -131,21 +133,12 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
 
-    GoogleFonts.config.allowRuntimeFetching = false;
-    await _loadFont('Inter', [
-      'assets/fonts/Inter-Regular.ttf',
-      'assets/fonts/Inter-Medium.ttf',
-      'assets/fonts/Inter-SemiBold.ttf',
-    ]);
-    await _loadFont('Source Sans 3', [
-      'assets/fonts/SourceSans3-Regular.ttf',
-      'assets/fonts/SourceSans3-Medium.ttf',
-      'assets/fonts/SourceSans3-SemiBold.ttf',
-    ]);
-    await _loadFont('SourceSans3', [
-      'assets/fonts/SourceSans3-Regular.ttf',
-      'assets/fonts/SourceSans3-Medium.ttf',
-      'assets/fonts/SourceSans3-SemiBold.ttf',
+    // The three bundled weights. A headless render has no system fonts, so
+    // every family the app draws with has to be loaded by hand here.
+    await _loadFont('DM Sans', [
+      'assets/fonts/DMSans-Regular.ttf',
+      'assets/fonts/DMSans-Medium.ttf',
+      'assets/fonts/DMSans-Bold.ttf',
     ]);
     // Icons come from the SDK, since a headless test has no system icon font.
     // The path is resolved rather than hardcoded, so this runs on a developer
@@ -380,6 +373,22 @@ void main() {
     final graph = await buildGraph(tester);
     await pumpApp(tester, graph, dark: true);
     await capture(tester, 'today-action-dark', cropTop: 470, cropHeight: 600);
+  });
+
+  testWidgets('screenshots tablet', (tester) async {
+    addTearDown(tester.view.reset);
+    tester.view.physicalSize = _tabletSize;
+    tester.view.devicePixelRatio = 1;
+
+    await tester.runAsync(seed);
+    final graph = await buildGraph(tester);
+    await pumpApp(tester, graph);
+
+    // The rail is the point of this shot: a wide window shows the navigation
+    // rail beside the content instead of a stretched phone layout.
+    await tester.tap(find.text('Insights'));
+    await settle(tester);
+    await capture(tester, 'tablet');
   });
 }
 

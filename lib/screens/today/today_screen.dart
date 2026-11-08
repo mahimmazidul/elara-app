@@ -90,12 +90,7 @@ class _NeedsMoreHistory extends StatelessWidget {
     final latest = context.watch<CycleProvider>().latest;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        ElaraSpacing.lg,
-        ElaraSpacing.lg,
-        ElaraSpacing.lg,
-        ElaraSpacing.xxl,
-      ),
+      padding: ElaraSpacing.pageInsets(context),
       children: [
         Text('Today', style: type.headline(tokens.textPrimary, size: 28)),
         const SizedBox(height: ElaraSpacing.xs),
@@ -156,12 +151,7 @@ class _TodayContent extends StatelessWidget {
     final isLate = daysUntil < 0;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        ElaraSpacing.lg,
-        ElaraSpacing.lg,
-        ElaraSpacing.lg,
-        ElaraSpacing.xxl,
-      ),
+      padding: ElaraSpacing.pageInsets(context),
       children: [
         // ---- header
         Row(
@@ -186,12 +176,16 @@ class _TodayContent extends StatelessWidget {
         const SizedBox(height: ElaraSpacing.lg),
 
         // ---- phase chip
+        // Flexed: "Luteal (late) - day 22" is long, and DM Sans runs wider than
+        // the faces this screen was first laid out with.
         Row(
           children: [
-            PhaseChip(
-              label: phaseLabel,
-              phaseKey: phaseKey,
-              cycleDay: result.phase?.cycleDay,
+            Flexible(
+              child: PhaseChip(
+                label: phaseLabel,
+                phaseKey: phaseKey,
+                cycleDay: result.phase?.cycleDay,
+              ),
             ),
           ],
         ),
@@ -210,13 +204,21 @@ class _TodayContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  NumberText(
-                    isLate ? '${daysUntil.abs()}' : '$daysUntil',
-                    style: type.displayNumber(
-                      isLate
-                          ? tokens.warningText
-                          : tokens.phaseText(phaseKey),
-                      size: 60,
+                  // Shrinks rather than overflows: at 320px with a large text
+                  // size, a 60pt numeral plus its unit is wider than the card.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: NumberText(
+                        isLate ? '${daysUntil.abs()}' : '$daysUntil',
+                        style: type.displayNumber(
+                          isLate
+                              ? tokens.warningText
+                              : tokens.phaseText(phaseKey),
+                          size: 60,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: ElaraSpacing.sm),
@@ -243,11 +245,13 @@ class _TodayContent extends StatelessWidget {
                 const SizedBox(height: ElaraSpacing.md),
                 Row(
                   children: [
-                    Text(
-                      'Days since last period started',
-                      style: type.label(tokens.textSecondaryStrong),
+                    Expanded(
+                      child: Text(
+                        'Days since last period started',
+                        style: type.label(tokens.textSecondaryStrong),
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: ElaraSpacing.sm),
                     NumberText('$daysSinceStart', size: 16),
                   ],
                 ),

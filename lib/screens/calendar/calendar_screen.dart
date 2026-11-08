@@ -91,12 +91,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            ElaraSpacing.lg,
-            ElaraSpacing.lg,
-            ElaraSpacing.lg,
-            ElaraSpacing.sm,
-          ),
+          padding: ElaraSpacing.pageInsets(context).copyWith(bottom: ElaraSpacing.sm),
           child: Row(
             children: [
               Expanded(
@@ -115,11 +110,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ],
                 ),
               ),
-              // Period start action, top right.
-              FilledButton.icon(
-                onPressed: _logPeriodStart,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Period start'),
+              // Period start action, top right. Flexible so the label shrinks
+              // before it pushes the title off a narrow screen.
+              Flexible(
+                child: FilledButton.icon(
+                  onPressed: _logPeriodStart,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text(
+                    'Period start',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ],
           ),
@@ -127,7 +129,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         // Month navigation.
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: ElaraSpacing.lg),
+          padding: ElaraSpacing.pageInsets(context)
+              .copyWith(top: 0, bottom: 0),
           child: Row(
             children: [
               IconButton(
@@ -156,12 +159,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              ElaraSpacing.lg,
-              0,
-              ElaraSpacing.lg,
-              ElaraSpacing.xxl,
-            ),
+            padding: ElaraSpacing.pageInsets(context).copyWith(top: 0),
             children: [
               const _WeekdayHeader(),
               const SizedBox(height: ElaraSpacing.sm),
@@ -257,7 +255,7 @@ class _MonthGrid extends StatelessWidget {
             for (final cell in week)
               Expanded(
                 child: cell == null
-                    ? const SizedBox(height: 46)
+                    ? SizedBox(height: _cellHeight(context))
                     : _DayCell(
                         day: cell,
                         hasTimeline: hasTimeline,
@@ -298,13 +296,13 @@ class _DayCell extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(ElaraRadii.chip),
         child: SizedBox(
-          height: 46,
+          height: _cellHeight(context),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 30,
-                height: 30,
+                width: _dotSize(context),
+                height: _dotSize(context),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   // Predicted phases are a light wash; unclassified days stay
@@ -405,3 +403,18 @@ String _formatMonthYear(DateTime month) =>
 
 String _formatShortDate(DateTime date) =>
     '${date.day} ${_monthNames[date.month - 1].substring(0, 3)} ${date.year}';
+
+/// Height of one calendar cell.
+///
+/// Scales with the user's text size so large-text settings do not clip the day
+/// number, and never drops below the 48dp minimum touch target.
+double _cellHeight(BuildContext context) {
+  final scaled = MediaQuery.textScalerOf(context).scale(46);
+  return scaled < 48 ? 48 : scaled;
+}
+
+/// Size of the day-number pill inside a cell, scaled the same way.
+double _dotSize(BuildContext context) {
+  final scaled = MediaQuery.textScalerOf(context).scale(30);
+  return scaled < 30 ? 30 : scaled;
+}

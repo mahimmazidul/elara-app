@@ -159,3 +159,34 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
+
+/// Centres page content and caps its width.
+///
+/// A phone-width layout stretched to a tablet or a landscape window reads badly:
+/// lines get too long and cards float in space. Screens wrap their list in this,
+/// so the content stays a comfortable column and the extra width becomes margin.
+class ElaraContentWidth extends StatelessWidget {
+  const ElaraContentWidth({
+    super.key,
+    required this.child,
+    this.maxWidth = 560,
+    this.alignment = Alignment.topCenter,
+  });
+
+  final Widget child;
+  final double maxWidth;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignment,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: maxWidth.isFinite ? maxWidth : double.infinity,
+        ),
+        child: child,
+      ),
+    );
+  }
+}

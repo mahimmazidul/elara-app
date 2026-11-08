@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Elara's design system.
 ///
@@ -11,8 +10,10 @@ import 'package:google_fonts/google_fonts.dart';
 /// Rules encoded here:
 ///   * flat surfaces, no gradients, no glassmorphism, no neumorphism;
 ///   * a single shadow, [ElaraShadows.card] (0 1px 3px rgba(0,0,0,0.08));
-///   * Inter for headings, Source Sans 3 for body, tabular lining figures for
-///     every numeral so values do not jitter as they change.
+///   * DM Sans throughout, bundled with the app: weight 400 for secondary copy
+///     and captions, 500 for body, 700 for headings. The bundled files carry a
+///     real `tnum` feature (see tool/fonts/build_fonts.py), and every numeral
+///     asks for it, so values do not jitter as they change.
 ///
 /// Contrast: the tokens marked `*Text` are darkened (light mode) or lightened
 /// (dark mode) variants of their decorative counterpart, chosen so that text
@@ -171,6 +172,53 @@ class ElaraPalette {
     unknownPhase: Color(0xFF6B5F5C),
     unknownPhaseText: Color(0xFFB9A9A5),
   );
+
+  /// Returns a copy with the named values replaced.
+  ///
+  /// Used by [ElaraTheme.paletteFor] to move the accent to the active phase and
+  /// tint the two surfaces, without every other colour having to be restated.
+  ElaraPalette copyWith({
+    Color? bgPrimary,
+    Color? bgCard,
+    Color? accent,
+    Color? accentText,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textSecondaryStrong,
+    Color? dangerText,
+    Color? warningText,
+    Color? successText,
+  }) {
+    return ElaraPalette(
+      bgPrimary: bgPrimary ?? this.bgPrimary,
+      bgCard: bgCard ?? this.bgCard,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textSecondaryStrong: textSecondaryStrong ?? this.textSecondaryStrong,
+      phaseMenstrual: phaseMenstrual,
+      phaseFollicular: phaseFollicular,
+      phaseOvulatory: phaseOvulatory,
+      phaseLuteal: phaseLuteal,
+      phaseMenstrualText: phaseMenstrualText,
+      phaseFollicularText: phaseFollicularText,
+      phaseOvulatoryText: phaseOvulatoryText,
+      phaseLutealText: phaseLutealText,
+      accent: accent ?? this.accent,
+      accentText: accentText ?? this.accentText,
+      success: success,
+      successText: successText ?? this.successText,
+      warning: warning,
+      warningText: warningText ?? this.warningText,
+      danger: danger,
+      dangerText: dangerText ?? this.dangerText,
+      moonGlow: moonGlow,
+      onPhase: onPhase,
+      divider: divider,
+      track: track,
+      unknownPhase: unknownPhase,
+      unknownPhaseText: unknownPhaseText,
+    );
+  }
 }
 
 /// Spacing scale, so padding is consistent and reviewable.
@@ -191,6 +239,29 @@ class ElaraSpacing {
 
   /// Standard card interior.
   static const EdgeInsets card = EdgeInsets.all(lg);
+
+  /// Widest comfortable measure for body copy, in logical pixels.
+  ///
+  /// Beyond roughly 70 characters a line gets hard to track, so a list on a
+  /// tablet or a landscape window keeps this width and turns the rest into
+  /// margin instead of stretching.
+  static const double readableWidth = 560;
+
+  /// Page padding that centres a [readableWidth] column on wide screens.
+  ///
+  /// Screens use this instead of a fixed horizontal inset, so one layout works
+  /// from a 320px phone to a tablet without a second breakpoint.
+  static EdgeInsets pageInsets(
+    BuildContext context, {
+    double top = lg,
+    double bottom = xxl,
+  }) {
+    final available = MediaQuery.sizeOf(context).width;
+    final gutter = available > readableWidth
+        ? (available - readableWidth) / 2
+        : lg.toDouble();
+    return EdgeInsets.fromLTRB(gutter, top, gutter, bottom);
+  }
 }
 
 /// Corner radii. Kept modest: this is not a soft/rounded style.
@@ -219,91 +290,100 @@ class ElaraShadows {
   static const List<BoxShadow> none = [];
 }
 
-/// Text styles. Headings use Inter, body uses Source Sans 3 (both via
-/// google_fonts), and [number] variants add tabular lining figures.
-///
-/// google_fonts fetches and caches fonts on first run, so an offline first
-/// launch falls back to the platform font. That is a degradation, not a crash;
-/// a later launch with connectivity picks the real faces up. If the app must be
-/// fully offline on first run, the TTFs need bundling as assets instead.
+/// Text styles, all in the bundled DM Sans: 400 for secondary copy and captions,
+/// 500 for body and controls, 700 for headings. The numeral styles ask for the
+/// font's `tnum` feature so digits are tabular.
 class ElaraTypography {
   const ElaraTypography();
 
-  TextStyle _inter(
+  /// The one family in the app. Bundled as assets, so it renders on a first
+  /// launch with no connectivity, and there is no runtime font fetching.
+  static const String family = 'DM Sans';
+
+  /// Builds a style in [family] at [weight].
+  ///
+  /// Weights are restricted to the three the font bundles: 400, 500 and 700.
+  /// Asking for anything else would make Flutter synthesise a fake weight, which
+  /// looks bolder and blockier than the real thing.
+  static TextStyle _style(
     TextStyle base, {
     required FontWeight weight,
     required double size,
     double? height,
     double? letterSpacing,
   }) {
-    return GoogleFonts.inter(
-      fontWeight: weight,
+    // DM Sans ships 400/500/700, so anything else has to round to one of them.
+    // Semibold rounds up rather than down: a caller asking for 600 wants weight,
+    // and rounding it to 500 makes headings and numerals look lighter than
+    // intended. Weights below 400 round up to 400 for the same reason.
+    final resolved = switch (weight) {
+      FontWeight.w600 || FontWeight.w700 || FontWeight.w800 || FontWeight.w900 =>
+        FontWeight.w700,
+      FontWeight.w500 => FontWeight.w500,
+      _ => FontWeight.w400,
+    };
+    return TextStyle(
+      fontFamily: family,
+      fontWeight: resolved,
       fontSize: size,
       height: height,
       letterSpacing: letterSpacing,
       color: base.color,
+      fontFeatures: base.fontFeatures,
     );
   }
 
-  TextStyle _sourceSans(
-    TextStyle base, {
-    required FontWeight weight,
-    required double size,
-    double? height,
-  }) {
-    return GoogleFonts.sourceSans3(
-      fontWeight: weight,
-      fontSize: size,
-      height: height,
-      color: base.color,
-    );
-  }
+  /// Every numeral in the app goes through this: tabular figures, so a value
+  /// that changes in place keeps its width and the layout does not shift.
+  static const List<FontFeature> tabularFigures = [FontFeature.tabularFigures()];
 
-  /// Big numerals: "12" days, "78%", heat index. Inter with tabular lining
-  /// figures so digits share a width and do not shift as values update.
-  TextStyle displayNumber(Color color, {double size = 56}) => _inter(
-        TextStyle(color: color),
-        weight: FontWeight.w600,
+  /// Big numerals: "20" days, heat index.
+  TextStyle displayNumber(Color color, {double size = 56}) => _style(
+        TextStyle(color: color, fontFeatures: tabularFigures),
+        weight: FontWeight.w700,
         size: size,
         height: 1.05,
-      ).copyWith(
-        fontFeatures: const [FontFeature.tabularFigures()],
       );
 
-  /// Medium numerals: scores, percentages, chart labels.
+  /// Medium numerals: percentages, chart labels, cycle day.
   TextStyle number(Color color, {double size = 18, FontWeight? weight}) =>
-      _inter(TextStyle(color: color), weight: weight ?? FontWeight.w600, size: size)
-          .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+      _style(
+        TextStyle(color: color, fontFeatures: tabularFigures),
+        weight: weight ?? FontWeight.w700,
+        size: size,
+      );
 
   TextStyle headline(Color color, {double size = 24}) =>
-      _inter(TextStyle(color: color), weight: FontWeight.w600, size: size, height: 1.2);
+      _style(TextStyle(color: color), weight: FontWeight.w700, size: size, height: 1.2);
 
   TextStyle title(Color color, {double size = 18}) =>
-      _inter(TextStyle(color: color), weight: FontWeight.w600, size: size, height: 1.25);
+      _style(TextStyle(color: color), weight: FontWeight.w700, size: size, height: 1.25);
 
   TextStyle subtitle(Color color, {double size = 15}) =>
-      _inter(TextStyle(color: color), weight: FontWeight.w500, size: size);
+      _style(TextStyle(color: color), weight: FontWeight.w500, size: size);
 
   TextStyle body(Color color, {double size = 15}) =>
-      _sourceSans(TextStyle(color: color), weight: FontWeight.w400, size: size, height: 1.45);
+      _style(TextStyle(color: color), weight: FontWeight.w500, size: size, height: 1.45);
 
   TextStyle bodyStrong(Color color, {double size = 15}) =>
-      _sourceSans(TextStyle(color: color), weight: FontWeight.w600, size: size, height: 1.45);
+      _style(TextStyle(color: color), weight: FontWeight.w700, size: size, height: 1.4);
 
+  /// Secondary copy: weight 400, per the type scale.
   TextStyle label(Color color, {double size = 13}) =>
-      _sourceSans(TextStyle(color: color), weight: FontWeight.w500, size: size, height: 1.3);
+      _style(TextStyle(color: color), weight: FontWeight.w400, size: size, height: 1.3);
 
   /// Small caption. Uses the AA-safe secondary token by default.
   TextStyle caption(Color color, {double size = 12}) =>
-      _sourceSans(TextStyle(color: color), weight: FontWeight.w400, size: size, height: 1.35);
+      _style(TextStyle(color: color), weight: FontWeight.w400, size: size, height: 1.35);
 
   /// Letter-spaced all-caps eyebrow above a value.
-  TextStyle overline(Color color) => _sourceSans(
+  TextStyle overline(Color color) => _style(
         TextStyle(color: color),
-        weight: FontWeight.w600,
+        weight: FontWeight.w500,
         size: 11,
         height: 1.2,
-      ).copyWith(letterSpacing: 0.8);
+        letterSpacing: 0.8,
+      );
 }
 
 /// Colours, type and shadows resolved for the active brightness.
@@ -442,10 +522,142 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
 class ElaraTheme {
   const ElaraTheme._();
 
-  static ThemeData light() => _build(ElaraPalette.light, Brightness.light);
-  static ThemeData dark() => _build(ElaraPalette.dark, Brightness.dark);
+  static ThemeData light({String? phaseKey}) =>
+      _build(ElaraPalette.light, Brightness.light, phaseKey);
 
-  static ThemeData _build(ElaraPalette palette, Brightness brightness) {
+  static ThemeData dark({String? phaseKey}) =>
+      _build(ElaraPalette.dark, Brightness.dark, phaseKey);
+
+  /// The neutral accent, used whenever no phase can be classified.
+  static const String neutralPhaseKey = 'unknown';
+
+  /// How much of the phase colour is mixed into the tinted surfaces.
+  ///
+  /// 8% is enough to read as "the app is in the ovulatory phase today" without
+  /// turning the page into a colour wash, and small enough that the documented
+  /// contrast ratios for the text tokens still hold. A test asserts that.
+  static const double surfaceTintOpacity = 0.08;
+
+  /// Whether [phaseKey] names one of the four cycle phases.
+  static bool isCyclePhase(String? phaseKey) => const {
+        'menstrual',
+        'follicular',
+        'ovulatory',
+        'luteal',
+      }.contains(phaseKey);
+
+  /// The palette for a phase: the accent follows the phase, the two surface
+  /// colours carry an 8% tint of it, and everything else is unchanged.
+  ///
+  /// Semantic colours (danger, warning, success) are deliberately not touched:
+  /// a warning must stay a warning whatever phase it is.
+  static ElaraPalette paletteFor(
+    ElaraPalette base,
+    String? phaseKey,
+  ) {
+    if (!isCyclePhase(phaseKey)) return base;
+
+    final accent = _phaseFill(base, phaseKey!);
+    final surfaceTint = accent.withValues(alpha: surfaceTintOpacity);
+    final bgPrimary = Color.alphaBlend(surfaceTint, base.bgPrimary);
+    final bgCard = Color.alphaBlend(surfaceTint, base.bgCard);
+    final isDark = base.bgPrimary.computeLuminance() < 0.5;
+
+    // Tinting the surfaces moves every ratio a little, and a few of them drop
+    // under 4.5:1 (measured: the dark theme's danger ink on an ovulatory card
+    // fell to 3.80:1). Rather than ship that, each ink is nudged away from the
+    // surface until it clears AA again. The nudge is at most a couple of
+    // percent, so nothing changes character.
+    Color ink(Color colour, {double minRatio = 4.5, Color? on}) => _ensureContrast(
+          colour,
+          on ?? bgCard,
+          minRatio: minRatio,
+          towards: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+        );
+
+    return base.copyWith(
+      accent: accent,
+      // The phase's text-safe variant is the starting point for a phase-coloured
+      // label on a card, which is what accentText is for.
+      accentText: ink(_phaseText(base, phaseKey)),
+      bgPrimary: bgPrimary,
+      bgCard: bgCard,
+      textPrimary: ink(base.textPrimary, on: bgPrimary),
+      textSecondary: ink(base.textSecondary),
+      textSecondaryStrong: ink(base.textSecondaryStrong),
+      dangerText: ink(base.dangerText),
+      warningText: ink(base.warningText),
+      successText: ink(base.successText),
+    );
+  }
+
+  /// Walks [colour] towards [towards] in small steps until it reaches
+  /// [minRatio] against [background].
+  ///
+  /// Deterministic and bounded: at most 60 steps, and it returns the closest it
+  /// got rather than looping forever on an impossible pair.
+  static Color _ensureContrast(
+    Color colour,
+    Color background, {
+    required double minRatio,
+    required Color towards,
+  }) {
+    var current = colour;
+    for (var step = 0; step < 60; step++) {
+      if (contrastRatio(current, background) >= minRatio) return current;
+      current = Color.alphaBlend(towards.withValues(alpha: 0.03), current);
+    }
+    return current;
+  }
+
+  /// WCAG 2.1 contrast ratio between two opaque colours.
+  ///
+  /// Exposed so the theme tests can assert the documented ratios instead of
+  /// taking the comments on trust.
+  static double contrastRatio(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    final hi = la > lb ? la : lb;
+    final lo = la > lb ? lb : la;
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  static Color _phaseFill(ElaraPalette p, String phaseKey) {
+    switch (phaseKey) {
+      case 'menstrual':
+        return p.phaseMenstrual;
+      case 'follicular':
+        return p.phaseFollicular;
+      case 'ovulatory':
+        return p.phaseOvulatory;
+      case 'luteal':
+        return p.phaseLuteal;
+      default:
+        return p.unknownPhase;
+    }
+  }
+
+  static Color _phaseText(ElaraPalette p, String phaseKey) {
+    switch (phaseKey) {
+      case 'menstrual':
+        return p.phaseMenstrualText;
+      case 'follicular':
+        return p.phaseFollicularText;
+      case 'ovulatory':
+        return p.phaseOvulatoryText;
+      case 'luteal':
+        return p.phaseLutealText;
+      default:
+        return p.unknownPhaseText;
+    }
+  }
+
+  static ThemeData _build(
+    ElaraPalette basePalette,
+    Brightness brightness,
+    String? phaseKey,
+  ) {
+    final palette = paletteFor(basePalette, phaseKey);
     final tokens = ElaraTokens(
       palette: palette,
       typography: const ElaraTypography(),
@@ -472,6 +684,10 @@ class ElaraTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
+      // Every text style Flutter builds for its own widgets (navigation labels,
+      // dialogs, tooltips, snackbars) inherits this. Without it those pieces fell
+      // back to the platform font and the app mixed two typefaces.
+      fontFamily: ElaraTypography.family,
       scaffoldBackgroundColor: palette.bgPrimary,
       // Flat by design: elevation never draws a Material shadow.
       shadowColor: Colors.transparent,

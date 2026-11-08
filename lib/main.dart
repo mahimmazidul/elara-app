@@ -9,6 +9,7 @@ import 'providers/prediction_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/root_scaffold.dart';
 import 'services/notification_service.dart';
+import 'utils/phase_timeline.dart';
 import 'theme/elara_theme.dart';
 
 void main() {
@@ -116,12 +117,21 @@ class _ElaraRootState extends State<_ElaraRoot> with WidgetsBindingObserver {
       (settings) => settings.themeMode,
     );
 
+    // The accent follows the current phase. This is read from the prediction,
+    // which is recomputed whenever cycle data or settings change, so logging a
+    // period moves the theme in the same frame the rest of the UI updates —
+    // no restart, nothing to refresh by hand. With no phase available the
+    // neutral accent is used.
+    final phaseKey = context.select<PredictionProvider, String?>(
+      (prediction) => phaseKeyOfResult(prediction.result),
+    );
+
     return MaterialApp(
       title: AppInfo.name,
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      theme: ElaraTheme.light(),
-      darkTheme: ElaraTheme.dark(),
+      theme: ElaraTheme.light(phaseKey: phaseKey),
+      darkTheme: ElaraTheme.dark(phaseKey: phaseKey),
       home: const RootScaffold(),
     );
   }

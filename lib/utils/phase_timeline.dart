@@ -1,6 +1,18 @@
 import 'package:elara_core/elara_core.dart' as core;
 
 import '../data/date_keys.dart';
+import '../models/elara_result.dart';
+
+/// The phase key for a prediction result, or null when there is no phase.
+///
+/// One function so the theme, the calendar and the guidance cards cannot drift
+/// on what "the current phase" means. The result carries the classified phase;
+/// an unclassifiable cycle leaves it null, which the theme reads as "use the
+/// neutral accent".
+String? phaseKeyOfResult(ElaraResult? result) {
+  final phase = result?.phase;
+  return phase == null ? null : phaseKeyOf(phase.phase);
+}
 
 /// Maps elara-core's six phases onto the four colours the design system has.
 ///

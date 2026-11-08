@@ -102,12 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settings = context.watch<SettingsProvider>();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        ElaraSpacing.lg,
-        ElaraSpacing.lg,
-        ElaraSpacing.lg,
-        ElaraSpacing.xxl,
-      ),
+      padding: ElaraSpacing.pageInsets(context),
       children: [
         Text('Settings', style: type.headline(tokens.textPrimary, size: 28)),
         const SizedBox(height: ElaraSpacing.xl),
