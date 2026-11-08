@@ -88,10 +88,12 @@ void main() {
       expect(rows['value']!['notnull'], 1);
     });
 
-    test('reports schema version 1', () async {
+    test('reports the current schema version', () async {
       final database = await db.database;
-      expect(await database.getVersion(), 1);
-      expect(DatabaseHelper.schemaVersion, 1);
+      // Asserted against the constant, not a literal, so adding a migration
+      // does not require editing a test that is only about the number.
+      expect(await database.getVersion(), DatabaseHelper.schemaVersion);
+      expect(DatabaseHelper.schemaVersion, greaterThanOrEqualTo(2));
     });
   });
 
@@ -368,7 +370,7 @@ void main() {
       await db.close();
 
       final database = await db.database;
-      expect(await database.getVersion(), 1);
+      expect(await database.getVersion(), DatabaseHelper.schemaVersion);
 
       // Simulate a database written by a newer version of the app.
       await database.setVersion(5);

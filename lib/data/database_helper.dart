@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'date_keys.dart';
 import 'models/climate_snapshot.dart';
+import 'models/consent_record.dart';
 import 'models/cycle_entry.dart';
 
 /// Single owner of the sqflite connection and of all SQL in the app.
@@ -23,13 +24,14 @@ class DatabaseHelper {
 
   /// Current schema version. Bump this and add an `if (oldVersion < n)` branch
   /// in [_onUpgrade] whenever the schema changes.
-  static const int schemaVersion = 1;
+  static const int schemaVersion = 2;
 
   static const String databaseFileName = 'elara.db';
 
   static const String cyclesTable = 'cycles';
   static const String climateCacheTable = 'climate_cache';
   static const String settingsTable = 'settings';
+  static const String consentTable = 'consent_records';
 
   /// Settings written once, on first create.
   static const Map<String, String> defaultSettings = {
@@ -111,12 +113,25 @@ class DatabaseHelper {
   /// several versions behind replays them in sequence and a fresh install
   /// (which runs [_onCreate] instead) never touches this code.
   ///
-  /// Version 1 is the initial schema, so there is nothing to migrate yet. The
-  /// empty list is deliberate: the dispatch below is proven to work the moment
-  /// version 2 adds its first entry.
+  /// Version 1 is the initial schema. Version 2 adds the consent log.
+  ///
+  /// The v2 migration deliberately does **not** write a consent row for users
+  /// upgrading with existing cycles. Inferring "she must have agreed because
+  /// dates were entered" is exactly the assumption this table exists to avoid.
+  /// The user is asked on the next launch instead; see [ConsentProvider].
   static const List<Future<void> Function(Database db)?> _migrations = [
     null, // v1: initial schema, created by _onCreate
+    _migrateToV2,
   ];
+
+  /// Adds the append-only consent log. Safe to run twice: a user who installed
+  /// v2 directly never reaches here, because [_onCreate] builds the table.
+  static Future<void> _migrateToV2(Database db) async {
+    await db.execute(_consentTableStatement);
+    await db.execute(
+      'CREATE INDEX idx_consent_recorded_at ON $consentTable (recorded_at)',
+    );
+  }
 
   Future<void> _onDowngrade(Database db, int oldVersion, int newVersion) async {
     throw StateError(
@@ -167,10 +182,21 @@ class DatabaseHelper {
       value TEXT NOT NULL
     )
     ''',
+    _consentTableStatement,
     // Sorted reads of full history are the hot path for prediction.
     'CREATE INDEX idx_cycles_start_date ON $cyclesTable (start_date)',
     'CREATE INDEX idx_climate_date ON $climateCacheTable (date)',
+    'CREATE INDEX idx_consent_recorded_at ON $consentTable (recorded_at)',
   ];
+
+  static const String _consentTableStatement = '''
+    CREATE TABLE $consentTable (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT NOT NULL,
+      method TEXT NOT NULL,
+      recorded_at TEXT NOT NULL
+    )
+    ''';
 
   /// Closes the connection. Mostly for tests and for the app's teardown path.
   Future<void> close() async {
@@ -188,6 +214,7 @@ class DatabaseHelper {
       await txn.delete(cyclesTable);
       await txn.delete(climateCacheTable);
       await txn.delete(settingsTable);
+      await txn.delete(consentTable);
       for (final entry in defaultSettings.entries) {
         await txn.insert(settingsTable, {
           'key': entry.key,
@@ -300,6 +327,27 @@ class DatabaseHelper {
     return db.delete(cyclesTable);
   }
 
+  /// Replaces the whole history with [cycles] in a single transaction.
+  ///
+  /// Used by the restore path. Transactional because a half-applied restore
+  /// would leave the prediction reading a history that never existed: either
+  /// every row is the backup's or none of it is.
+  Future<void> replaceAllCycles(List<CycleEntry> cycles) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(cyclesTable);
+      final batch = txn.batch();
+      for (final cycle in cycles) {
+        batch.insert(
+          cyclesTable,
+          cycle.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   Future<int> countCycles() async {
     final db = await database;
     final result = await db.rawQuery(
@@ -384,6 +432,40 @@ class DatabaseHelper {
   Future<int> deleteAllClimate() async {
     final db = await database;
     return db.delete(climateCacheTable);
+  }
+
+  // -------------------------------------------------------------- consent --
+
+  /// The full consent log, oldest first. Small by construction: at most a
+  /// handful of rows for the life of an install.
+  Future<List<ConsentRecord>> getConsentRecords() async {
+    final db = await database;
+    final rows = await db.query(consentTable, orderBy: 'recorded_at ASC, id ASC');
+    return rows.map(ConsentRecord.fromMap).toList();
+  }
+
+  /// The most recent consent event, or null when nothing has ever been decided.
+  Future<ConsentRecord?> getLatestConsentRecord() async {
+    final db = await database;
+    final rows = await db.query(
+      consentTable,
+      orderBy: 'recorded_at DESC, id DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : ConsentRecord.fromMap(rows.first);
+  }
+
+  /// Appends a consent event. The log is append-only, so this never updates or
+  /// replaces an earlier row.
+  Future<ConsentRecord> addConsentRecord(ConsentRecord record) async {
+    final db = await database;
+    final id = await db.insert(consentTable, record.toMap());
+    return ConsentRecord(
+      id: id,
+      action: record.action,
+      method: record.method,
+      recordedAt: record.recordedAt,
+    );
   }
 
   // ------------------------------------------------------------- settings --
