@@ -420,6 +420,35 @@ version shown in the badge.
 
 ---
 
+## Implemented since this audit (v1.2.0)
+
+The P0 items and two of the P1 items are now in the app. What changed, against
+the issue numbers above:
+
+- **B-01 consent.** A gate before first use, an append-only `consent_records`
+  table (schema v2), and a withdrawal that deletes the cycles, the settings and
+  the record. The upgrade path deliberately does *not* infer consent from
+  existing rows: an install with history but no consent row is asked, and the
+  acknowledgement is logged as `acknowledgedLegacy`, never as a grant.
+- **B-02 notification privacy.** Every reminder is posted with
+  `NotificationVisibility.private`, and text is redacted through a single choke
+  point unless the user opts in. Off by default. Reminder switches now rebuild
+  the schedule immediately rather than at the next resume.
+- **B-04 prediction window.** Not yet fixed. Still the largest accuracy gap.
+- **B-05 long gaps.** Rejected on restore, still accepted from manual entry.
+- **B-06 corrections.** A recorded start can now be moved or removed from the
+  day sheet, with collision and future-date guards.
+- **B-07 export and delete.** Encrypted backup, validated restore, and a
+  withdrawal control that states exactly what it removes.
+- **B-11 version drift.** `AppInfo.version` had claimed 1.0.0 through two
+  releases; it is corrected and a test now fails the build if it disagrees with
+  `pubspec.yaml`.
+- **Accessibility.** Calendar day cells carry a full semantics label: date,
+  phase, recorded or projected, and an explicit "not a confirmed phase".
+
+Still open, unchanged from the register: database encryption (B-03), the
+per-day severity reuse (B-08, B-09), and the whole of P2 and P3.
+
 ## Approval requested
 
 P0 items 1, 2 and 4 are small and self-contained and would take one session.
@@ -429,4 +458,6 @@ filled in by her, on the same phone, behind a separate step that the partner
 does not have to see?** That choice shapes the screens, the schema and the
 consent copy, and it is a product decision rather than an engineering one.
 
-Nothing in P0 or P1 has been implemented. Awaiting approval.
+P0 and the parts of P1 listed above are implemented and tested. The remaining
+P1 work — a preferences profile filled in by her, and window calibration — still
+needs the product decision described above.
