@@ -105,6 +105,11 @@ class CycleLengthChart extends StatelessWidget {
                       showTitles: true,
                       reservedSize: 22,
                       getTitlesWidget: (value, meta) {
+                        // fl_chart also asks for titles at fractional
+                        // positions, which printed duplicate day numbers.
+                        if (value != value.roundToDouble()) {
+                          return const SizedBox.shrink();
+                        }
                         final index = value.round();
                         if (index < 0 || index >= shown.length) {
                           return const SizedBox.shrink();

@@ -7,6 +7,9 @@
 <meta name="description" content="Elara is an offline-first menstrual cycle tracker for Bangladesh: locally computed moon phase, nakshatra and Hijri dates, climate-aware severity, and a daily action card.">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#FDF6F0">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta property="og:image" content="icon.png">
 <!--
   One font import, two families. If the network is unavailable the page falls
   back to the system UI font stack below; nothing else is fetched, ever.
@@ -60,6 +63,15 @@ body {
 header {
   padding: 3.5rem 0 0;
   text-align: center;
+}
+
+.mark {
+  display: block;
+  margin: 0 auto 1.25rem;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
 }
 
 h1 {
@@ -231,6 +243,8 @@ footer p { margin: 0.35rem 0 0; }
 <div class="wrap">
 
   <header>
+    <img class="mark" src="icon.png" width="72" height="72"
+         alt="Elara icon: a cream crescent moon with a single gold dot on a deep brown field">
     <h1>Elara</h1>
     <p class="tagline">
       An offline-first cycle tracker that reads your body and the weather, then

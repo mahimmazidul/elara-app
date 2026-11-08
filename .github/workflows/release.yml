@@ -1,10 +1,22 @@
 name: Release
 
-# Only version tags. CI (ci.yml) covers ordinary pushes and pull requests.
+# Two ways in, one outcome.
+#
+#   * Bump `version:` in pubspec.yaml and push to main. That version is the
+#     release; the workflow tags it, builds it and publishes it.
+#   * Push a vX.Y.Z tag by hand, which releases that tag.
+#
+# A release also runs on demand from the Actions tab, for re-cutting the current
+# version. Code pushes that leave pubspec.yaml alone never trigger a release.
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'pubspec.yaml'
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,40 +26,92 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  version:
+    name: Decide what to release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      version: ${{ steps.decide.outputs.version }}
+      should_release: ${{ steps.decide.outputs.should_release }}
+      tag_exists: ${{ steps.decide.outputs.tag_exists }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the version
+        id: decide
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # A tag was pushed explicitly: release exactly that.
+            version="${GITHUB_REF_NAME}"
+            if ! printf '%s' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::Tag '$version' is not a plain version tag (expected vX.Y.Z)."
+              exit 1
+            fi
+            echo "Version from the pushed tag: $version"
+          else
+            # A normal push: pubspec.yaml is the version of record.
+            raw="$(sed -n 's/^version: *\([0-9][0-9.]*\).*/\1/p' pubspec.yaml | head -1)"
+            if [ -z "$raw" ]; then
+              echo "::error::Could not read version: from pubspec.yaml."
+              exit 1
+            fi
+            version="v${raw}"
+            echo "Version from pubspec.yaml: $version"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+          # Does this version already exist as a tag?
+          if git ls-remote --tags origin "refs/tags/${version}" | grep -q .; then
+            tag_exists=true
+          else
+            tag_exists=false
+          fi
+          echo "tag_exists=${tag_exists}" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # Releasing a tag that is already pushed: always a release.
+            should=true
+          elif [ "$tag_exists" = "true" ]; then
+            # Version unchanged since the last release: nothing to do. This is
+            # what makes ordinary pushes to main silent.
+            echo "Tag ${version} already exists; no release needed."
+            should=false
+          else
+            should=true
+          fi
+          echo "should_release=${should}" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build and publish signed artifacts
+    needs: version
+    if: needs.version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
     permissions:
-      # Needed to create the GitHub Release and upload its assets.
+      # Creating the tag and the release.
       contents: write
 
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
       apk_url: ${{ steps.publish.outputs.apk_url }}
 
     steps:
       - name: Check out
         uses: actions/checkout@v4
         with:
-          # Full history so release notes can be generated from the commits
+          # Full history, so the release notes can be generated from the commits
           # since the previous tag.
           fetch-depth: 0
-
-      # The tag glob 'v*.*.*' also matches things like v1.0.0-rc.1, so the shape
-      # is checked explicitly here. Everything downstream then knows the tag is
-      # a plain vX.Y.Z.
-      - name: Validate the tag is vMAJOR.MINOR.PATCH
-        id: version
-        run: |
-          tag="${GITHUB_REF_NAME}"
-          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Tag '$tag' is not a plain version tag (expected vX.Y.Z)."
-            exit 1
-          fi
-          echo "version=$tag" >> "$GITHUB_OUTPUT"
-          echo "Tag is $tag"
 
       - name: Set up Flutter (stable)
         uses: subosito/flutter-action@v2
@@ -124,34 +188,50 @@ jobs:
           fi
           "$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -5
 
-      - name: Publish the GitHub Release
+      # The tag is created here, at the commit that was just built, so a release
+      # can never point at code that was not the code that passed the gates. When
+      # the tag already exists (it was pushed by hand) it is simply reused.
+      - name: Publish the tag and the GitHub Release
         id: publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG_EXISTS: ${{ needs.version.outputs.tag_exists }}
         run: |
           # --generate-notes builds the body from commits since the previous tag.
-          gh release create "$VERSION" \
-            --title "Elara $VERSION" \
-            --generate-notes \
-            build/app/outputs/bundle/release/app-release.aab \
-            build/app/outputs/flutter-apk/app-release.apk
+          # --target pins a newly created tag to the commit that was just built;
+          # it is omitted when the tag already exists, since then the tag is
+          # already authoritative.
+          if [ "$TAG_EXISTS" = "true" ]; then
+            gh release create "$VERSION" \
+              --title "Elara $VERSION" \
+              --generate-notes \
+              build/app/outputs/bundle/release/app-release.aab \
+              build/app/outputs/flutter-apk/app-release.apk
+          else
+            gh release create "$VERSION" \
+              --target "$GITHUB_SHA" \
+              --title "Elara $VERSION" \
+              --generate-notes \
+              build/app/outputs/bundle/release/app-release.aab \
+              build/app/outputs/flutter-apk/app-release.apk
+          fi
 
           apk_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/app-release.apk"
           echo "apk_url=${apk_url}" >> "$GITHUB_OUTPUT"
-          echo "Published ${apk_url}"
+          echo "Released ${VERSION} -> ${apk_url}"
 
   pages:
     name: Deploy the landing page
-    needs: build
+    needs: [version, build]
+    if: needs.build.result == 'success'
     permissions:
       contents: read
       pages: write
       id-token: write
-    # The page lives in one place (pages.yml), so the tag-triggered path and the
-    # docs-triggered path cannot drift apart. The version and APK link come
-    # straight from the build job rather than being re-derived.
+    # The page lives in one place (pages.yml), so the release-triggered path and
+    # the docs-triggered path cannot drift apart.
     uses: ./.github/workflows/pages.yml
     with:
-      version: ${{ needs.build.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
       download_url: ${{ needs.build.outputs.apk_url }}

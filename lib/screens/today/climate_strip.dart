@@ -174,11 +174,13 @@ class _Metric extends StatelessWidget {
               ],
             ),
             style: unit == null
-                ? context.type.subtitle(valueColor, size: 15)
+                // Word values ("Post-monsoon") get a line to themselves; a
+                // single line at 15pt ellipsised the longest season name.
+                ? context.type.subtitle(valueColor, size: 14)
                 : context.type
                     .number(valueColor, size: 20)
                     .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-            maxLines: 1,
+            maxLines: unit == null ? 2 : 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
