@@ -43,6 +43,12 @@ part that turns its numbers into something a person can act on.
 | <img src="docs/screenshots/settings.png" width="200" alt="Settings with location, theme and per-notification switches"> | <img src="docs/screenshots/today-dark.png" width="200" alt="The Today screen in the dark palette"> | <img src="docs/screenshots/today-action-dark.png" width="200" alt="The action cards in the dark palette"> |
 
 <p align="center">
+  <img src="docs/screenshots/tablet.png" width="620" alt="The Insights tab on a tablet, with a navigation rail on the left and the content in a centred column">
+  <br>
+  <sub>Above 720dp the tab bar becomes a navigation rail and the content keeps a readable measure.</sub>
+</p>
+
+<p align="center">
   <sub>Every screenshot is a render of the real widget tree, regenerated and committed by the Screenshots workflow on any push that changes the app.</sub>
 </p>
 
@@ -124,8 +130,20 @@ the day the schedule was created. The whole schedule is restored after a reboot.
 Four tabs, a warm palette and one shadow. Every colour, text style and radius in
 the app lives in `lib/theme/elara_theme.dart`, reachable from any widget through
 `context.elara`, and the light and dark palettes are tuned so phase text clears
-WCAG AA against its own background in both. Inter and Source Sans 3 are bundled
-with the app, so the first launch is fully styled with the network off.
+WCAG AA against its own background in both.
+
+DM Sans ships with the app in three weights — 400 for secondary copy, 500 for
+body, 700 for headings — so a first launch with no connection is fully typeset.
+The bundled files are built by `tool/fonts/build_fonts.py`, which also adds a
+`tnum` feature: upstream DM Sans has proportional digits and no tabular feature
+at all, so the tabular figures the numeral styles ask for would otherwise do
+nothing.
+
+The accent follows the cycle phase. When a phase can be classified, the accent
+becomes that phase's colour and the page and card surfaces take an eight per cent
+tint of it, so the app quietly reflects where the cycle is without turning into a
+colour wash. With no phase available it falls back to the neutral accent. Warning
+and danger colours, and the four phase colours on the calendar, never change.
 
 ## How it is put together
 
@@ -164,7 +182,7 @@ flutter test
 dart analyze --fatal-infos
 ```
 
-The suite runs one hundred and twelve tests. They cover the schema and every CRUD
+The suite runs one hundred and forty tests. They cover the schema and every CRUD
 path against a real SQLite engine, the climate service against mocked weather for
 live, cached, malformed and offline cases, the prediction service across irregular
 and out-of-order history, the moon phase against published new, full and quarter
