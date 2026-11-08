@@ -126,6 +126,63 @@ class CycleProvider extends ChangeNotifier {
     }
   }
 
+  /// Moves a recorded start to a different day.
+  ///
+  /// This is the correction path the app was missing: a date entered a day out
+  /// could previously only be deleted and re-entered, which loses the row and
+  /// makes the calendar look like nothing ever happened. The same guards as
+  /// [addCycle] apply, plus a collision check, because `start_date` is unique
+  /// and a silent merge of two starts would be worse than a refusal.
+  Future<bool> moveStartDate(int id, DateTime newStartDate) async {
+    final day = dateOnly(newStartDate);
+    if (day.isAfter(dateOnly(DateTime.now()))) {
+      _lastError = 'A period cannot start in the future.';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final existing = await _database.getCycleById(id);
+      if (existing == null) {
+        _lastError = 'That period no longer exists.';
+        notifyListeners();
+        return false;
+      }
+      if (day == existing.startDate) {
+        // Nothing to do, and not an error.
+        _lastError = null;
+        return true;
+      }
+
+      final collision = await _database.getCycleByStartDate(day);
+      if (collision != null && collision.id != id) {
+        _lastError = 'There is already a period recorded on that date.';
+        notifyListeners();
+        return false;
+      }
+
+      await _database.updateCycle(existing.copyWith(startDate: day));
+      await load();
+      _revision++;
+      _lastError = null;
+      return true;
+    } catch (error) {
+      _lastError = 'Could not move that date: $error';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// The recorded start on [date], if any. Used by the day sheet to decide
+  /// whether it is offering a correction or just a projection.
+  CycleEntry? entryOn(DateTime date) {
+    final day = dateOnly(date);
+    for (final cycle in _cycles) {
+      if (cycle.startDate == day) return cycle;
+    }
+    return null;
+  }
+
   Future<bool> deleteCycle(int id) async {
     try {
       await _database.deleteCycle(id);

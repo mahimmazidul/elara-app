@@ -1,13 +1,22 @@
 import 'package:elara_core/elara_core.dart' as core;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../data/date_keys.dart';
+import '../../providers/cycle_provider.dart';
 import '../../theme/elara_theme.dart';
 import '../../utils/phase_timeline.dart';
 import '../../widgets/phase_chip.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/food_chip_row.dart';
 
-/// Bottom sheet for a tapped calendar day: phase, action scores and food.
+/// Bottom sheet for a tapped calendar day: phase, guidance, food, and—when the
+/// day is a recorded start—the correction controls.
+///
+/// Correcting a date used to be impossible: the only write path was "log
+/// today", so a start entered a day out could only be deleted, and the deletion
+/// made the calendar look like the period had never been recorded. The sheet
+/// now offers move and remove for the exact row the day represents.
 ///
 /// The scores are recomputed for that specific day by running elara-core's
 /// [core.ActionEngine] against the day's phase and today's environmental
@@ -86,6 +95,10 @@ class DayDetailSheet extends StatelessWidget {
             ),
             const SizedBox(height: ElaraSpacing.lg),
 
+            // Only a recorded start can be corrected; a projected day has no
+            // row behind it and pretending otherwise would be a lie.
+            if (day.isRecorded) _CorrectionRow(date: day.date),
+
             if (result == null)
               Text(
                 'This day falls before the first recorded period, so Elara '
@@ -154,4 +167,159 @@ class DayDetailSheet extends StatelessWidget {
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
+}
+
+/// Move or remove the recorded start this day represents.
+class _CorrectionRow extends StatefulWidget {
+  const _CorrectionRow({required this.date});
+
+  final DateTime date;
+
+  @override
+  State<_CorrectionRow> createState() => _CorrectionRowState();
+}
+
+class _CorrectionRowState extends State<_CorrectionRow> {
+  bool _busy = false;
+
+  Future<void> _move() async {
+    final cycles = context.read<CycleProvider>();
+    final entry = cycles.entryOn(widget.date);
+    if (entry == null) return;
+
+    final today = dateOnly(DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: widget.date,
+      // A period cannot start in the future, and three years back matches the
+      // range onboarding offers.
+      firstDate: DateTime(today.year - 3),
+      lastDate: today,
+      helpText: 'Move this period start',
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _busy = true);
+    final ok = await cycles.moveStartDate(entry.id!, dateOnly(picked));
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Moved to ${_formatDate(dateOnly(picked))}.'
+              : (cycles.lastError ?? 'Could not move that date.'),
+        ),
+      ),
+    );
+    if (ok && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
+  Future<void> _remove() async {
+    final cycles = context.read<CycleProvider>();
+    final entry = cycles.entryOn(widget.date);
+    if (entry == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: context.elara.bgCard,
+        surfaceTintColor: context.elara.transparent,
+        title: Text(
+          'Remove this start?',
+          style: context.type.title(context.elara.textPrimary, size: 18),
+        ),
+        content: Text(
+          'The period recorded on ${_formatDate(widget.date)} will be removed '
+          'and the prediction recalculated from what remains.',
+          style: context.type.body(context.elara.textSecondaryStrong),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep it'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Remove',
+              style: context.type.subtitle(
+                context.elara.dangerText,
+                size: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    final ok = await cycles.deleteCycle(entry.id!);
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? 'Removed.' : (cycles.lastError ?? 'Could not remove it.'),
+        ),
+      ),
+    );
+    if (ok && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final type = context.type;
+    final entry = context.watch<CycleProvider>().entryOn(widget.date);
+    if (entry == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: ElaraSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ElaraOverline('This recorded start'),
+          const SizedBox(height: ElaraSpacing.xs),
+          Text(
+            entry.duration == null
+                ? 'No length recorded.'
+                : 'Bleeding recorded for ${entry.duration} days.',
+            style: type.caption(tokens.textSecondaryStrong),
+          ),
+          const SizedBox(height: ElaraSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _move,
+                  icon: const Icon(Icons.edit_calendar_outlined, size: 16),
+                  label: const Text('Move date'),
+                ),
+              ),
+              const SizedBox(width: ElaraSpacing.sm),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _remove,
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                  label: const Text('Remove'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatDate(DateTime date) {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  return '${date.day} ${months[date.month - 1]} ${date.year}';
 }

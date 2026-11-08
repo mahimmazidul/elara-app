@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'app_info.dart';
 import 'data/database_helper.dart';
 import 'providers/climate_provider.dart';
+import 'providers/consent_provider.dart';
 import 'providers/cycle_provider.dart';
 import 'providers/prediction_provider.dart';
 import 'providers/settings_provider.dart';
-import 'screens/root_scaffold.dart';
+import 'screens/consent/consent_gate.dart';
+import 'services/backup_service.dart';
 import 'services/notification_service.dart';
 import 'utils/phase_timeline.dart';
 import 'theme/elara_theme.dart';
@@ -33,6 +35,17 @@ class ElaraApp extends StatelessWidget {
         // One scheduler for the process. Created here rather than per screen so
         // the schedule is rebuilt once, not once per widget that needs it.
         Provider<NotificationService>(create: (_) => NotificationService()),
+        // The same instance behind the one-method interface the UI uses, so a
+        // widget test can rebuild the schedule without an Android plugin.
+        Provider<NotificationRescheduler>(
+          create: (context) => context.read<NotificationService>(),
+        ),
+        Provider<BackupService>(create: (_) => BackupService()),
+        // Consent loads first: the gate below decides whether the rest of the
+        // app is allowed to render at all.
+        ChangeNotifierProvider<ConsentProvider>(
+          create: (_) => ConsentProvider()..load(),
+        ),
         ChangeNotifierProvider<SettingsProvider>(
           create: (_) => SettingsProvider()..load(),
         ),
@@ -132,7 +145,7 @@ class _ElaraRootState extends State<_ElaraRoot> with WidgetsBindingObserver {
       themeMode: themeMode,
       theme: ElaraTheme.light(phaseKey: phaseKey),
       darkTheme: ElaraTheme.dark(phaseKey: phaseKey),
-      home: const RootScaffold(),
+      home: const ConsentGate(),
     );
   }
 }

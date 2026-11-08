@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import '../../app_info.dart';
 import '../../providers/settings_keys.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/notification_service.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/primitives.dart';
+import 'privacy_data_section.dart';
 
 /// Settings tab: location, theme, notifications and about.
 class SettingsScreen extends StatefulWidget {
@@ -93,6 +95,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } else {
       setState(() => _locationError = settings.lastError);
     }
+  }
+
+  /// Persists a reminder switch, then rebuilds the schedule.
+  ///
+  /// Without the second step a reminder switched off here keeps its queued
+  /// alarms until the app is next resumed, which for a privacy switch is the
+  /// difference between "off" and "off tomorrow".
+  Future<bool> _applyNotificationChange(
+    Future<bool> Function(bool) setter,
+    bool value,
+  ) async {
+    final ok = await setter(value);
+    if (!mounted) return ok;
+    if (ok) {
+      try {
+        await context.read<NotificationRescheduler>().reschedule();
+      } catch (_) {
+        // A scheduling problem must not surface as a failed toggle.
+      }
+    }
+    return ok;
   }
 
   @override
@@ -223,42 +246,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: 'Enable notifications',
                 subtitle: 'Master switch for all reminders.',
                 value: settings.notificationsEnabled,
-                onChanged: settings.setNotificationsEnabled,
+                onChanged: (value) => _applyNotificationChange(
+                  settings.setNotificationsEnabled,
+                  value,
+                ),
               ),
               const _Hairline(),
               _ToggleRow(
                 label: 'Daily briefing',
                 subtitle: 'A short morning summary of the current phase.',
                 value: settings.notifyDailyBriefing,
-                onChanged: settings.setNotifyDailyBriefing,
+                onChanged: (value) => _applyNotificationChange(
+                  settings.setNotifyDailyBriefing,
+                  value,
+                ),
                 enabled: settings.notificationsEnabled,
               ),
               _ToggleRow(
                 label: 'PMS warning',
                 subtitle: 'Heads-up before the late luteal phase.',
                 value: settings.notifyPmsWarning,
-                onChanged: settings.setNotifyPmsWarning,
+                onChanged: (value) => _applyNotificationChange(
+                  settings.setNotifyPmsWarning,
+                  value,
+                ),
                 enabled: settings.notificationsEnabled,
               ),
               _ToggleRow(
                 label: 'Ovulation window',
                 subtitle: 'When the estimated fertile window opens.',
                 value: settings.notifyOvulationWindow,
-                onChanged: settings.setNotifyOvulationWindow,
+                onChanged: (value) => _applyNotificationChange(
+                  settings.setNotifyOvulationWindow,
+                  value,
+                ),
                 enabled: settings.notificationsEnabled,
               ),
               _ToggleRow(
                 label: 'Period start',
                 subtitle: 'On the day a period is expected.',
                 value: settings.notifyPeriodStart,
-                onChanged: settings.setNotifyPeriodStart,
+                onChanged: (value) => _applyNotificationChange(
+                  settings.setNotifyPeriodStart,
+                  value,
+                ),
                 enabled: settings.notificationsEnabled,
               ),
               _ToggleRow(
                 label: 'Climate spike',
                 subtitle: 'When heat index or PM2.5 rises sharply.',
                 value: settings.notifyClimateSpike,
-                onChanged: settings.setNotifyClimateSpike,
+                onChanged: (value) => _applyNotificationChange(
+                  settings.setNotifyClimateSpike,
+                  value,
+                ),
                 enabled: settings.notificationsEnabled,
               ),
               const SizedBox(height: ElaraSpacing.sm),
@@ -270,6 +311,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
+        const SizedBox(height: ElaraSpacing.xl),
+
+        // ---- privacy and data
+        const SectionTitle('Privacy and data'),
+        const PrivacyDataSection(),
         const SizedBox(height: ElaraSpacing.xl),
 
         // ---- about

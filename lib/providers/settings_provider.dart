@@ -124,6 +124,17 @@ class SettingsProvider extends ChangeNotifier {
         SettingsKeys.defaultNotifyClimateSpike,
       );
 
+  /// True only when the user has asked for reminder text to be specific.
+  bool get notifyPreviewDetails => _readBool(
+        SettingsKeys.notifyPreviewDetails,
+        SettingsKeys.defaultNotifyPreviewDetails,
+      );
+
+  Future<bool> setNotifyPreviewDetails(bool value) => setValue(
+        SettingsKeys.notifyPreviewDetails,
+        value ? 'true' : 'false',
+      );
+
   Future<bool> setNotifyDailyBriefing(bool value) => setValue(
         SettingsKeys.notifyDailyBriefing,
         value ? 'true' : 'false',

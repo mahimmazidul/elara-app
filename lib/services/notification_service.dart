@@ -13,6 +13,7 @@ import '../data/date_keys.dart';
 import '../models/elara_result.dart';
 import '../providers/settings_keys.dart';
 import '../utils/phase_timeline.dart';
+import 'notification_privacy.dart';
 import 'prediction_service.dart';
 
 /// The five reminder kinds Elara can show.
@@ -61,6 +62,16 @@ enum ElaraNotificationType {
   Iterable<int> get ids => Iterable<int>.generate(64, (i) => idBase + i);
 }
 
+/// The one thing the UI needs from the reminder layer.
+///
+/// An interface rather than the concrete service, so Settings can rebuild the
+/// schedule after a privacy or data change without a widget test having to stand
+/// up an Android plugin.
+abstract class NotificationRescheduler {
+  /// Cancels what is queued and rebuilds it from current data. Never throws.
+  Future<void> reschedule();
+}
+
 /// Schedules Elara's reminders on the device. Offline; no network, no Firebase.
 ///
 /// Three decisions shape the implementation:
@@ -77,7 +88,12 @@ enum ElaraNotificationType {
 ///    never granted instead of throwing.
 ///  * **Failures degrade.** Anything that goes wrong leaves fewer reminders, never
 ///    a crash: the companion app has to keep working regardless.
-class NotificationService {
+///  * **The lock screen is assumed to be public.** Every notification is posted
+///    with `NotificationVisibility.private` and, unless the user has explicitly
+///    opted in, carries no phase, cycle or symptom wording at all. Redaction is
+///    applied in [_schedule], the single choke point, so a new reminder type
+///    cannot forget it.
+class NotificationService implements NotificationRescheduler {
   NotificationService({
     DatabaseHelper? database,
     PredictionService? predictionService,
@@ -114,6 +130,10 @@ class NotificationService {
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
   bool _initialised = false;
+
+  /// Whether reminder text may name the phase or the cycle. Read once per
+  /// `rescheduleAll`; false unless the user opted in.
+  bool _previewDetails = SettingsKeys.defaultNotifyPreviewDetails;
 
   /// Prepares the plugin and the timezone database. Safe to call repeatedly.
   Future<void> init() async {
@@ -220,6 +240,10 @@ class NotificationService {
     }
   }
 
+  /// [NotificationRescheduler]: rebuilds the schedule from current data.
+  @override
+  Future<void> reschedule() => rescheduleAll();
+
   /// Rebuilds every reminder from current data and settings.
   ///
   /// Cancels first: the cycle position, the predicted date and the user's
@@ -231,6 +255,11 @@ class NotificationService {
     try {
       await init();
       await cancelAll();
+
+      _previewDetails = await _settingBool(
+        SettingsKeys.notifyPreviewDetails,
+        SettingsKeys.defaultNotifyPreviewDetails,
+      );
 
       if (!await _notificationsAllowed()) {
         await cancelBackgroundReschedule();
@@ -519,21 +548,21 @@ class NotificationService {
     required AndroidScheduleMode mode,
     String? payload,
   }) async {
+    // The one place every reminder passes through, which is why redaction lives
+    // here rather than at each of the five call sites.
+    final shown = NotificationPrivacy(previewDetails: _previewDetails)
+        .apply(title: title, body: body);
+
     try {
       await _plugin.zonedSchedule(
         id: id,
-        title: title,
-        body: body,
+        title: shown.title,
+        body: shown.body,
         scheduledDate: when,
         notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            type.channelId,
-            type.channelName,
-            channelDescription:
-                'Elara reminders: ${type.channelName.toLowerCase()}',
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
-            icon: '@mipmap/ic_launcher',
+          android: androidDetailsFor(
+            channelId: type.channelId,
+            channelName: type.channelName,
           ),
         ),
         androidScheduleMode: mode,

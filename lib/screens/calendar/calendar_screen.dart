@@ -289,9 +289,22 @@ class _DayCell extends StatelessWidget {
     final phaseKey = day.key;
     final hasPhase = hasTimeline && phaseKey != 'unknown';
 
+    // A screen reader should hear more than a number. The label spells out the
+    // date, whether the day is a recorded or a projected phase, and whether it
+    // is today, because colour is doing all of that work visually and is not
+    // available to everyone.
+    final semanticsLabel = [
+      _formatShortDate(day.date),
+      hasPhase ? day.label : 'no phase',
+      day.isRecorded ? 'recorded' : 'projected',
+      if (isToday) 'today',
+      if (!day.isRecorded) 'not a confirmed phase',
+    ].join(', ');
+
     return Semantics(
-      label: '${_formatShortDate(day.date)}, ${day.label}',
+      label: semanticsLabel,
       button: true,
+      excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(ElaraRadii.chip),

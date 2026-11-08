@@ -1,11 +1,14 @@
 import 'package:elara_app/data/database_helper.dart';
 import 'package:elara_app/data/models/cycle_entry.dart';
 import 'package:elara_app/providers/climate_provider.dart';
+import 'package:elara_app/providers/consent_provider.dart';
 import 'package:elara_app/providers/cycle_provider.dart';
 import 'package:elara_app/providers/prediction_provider.dart';
 import 'package:elara_app/providers/settings_provider.dart';
 import 'package:elara_app/screens/root_scaffold.dart';
 import 'package:elara_app/services/climate_service.dart';
+import 'package:elara_app/services/backup_service.dart';
+import 'package:elara_app/services/notification_service.dart';
 import 'package:elara_app/services/prediction_service.dart';
 import 'package:elara_app/theme/elara_theme.dart';
 import 'package:elara_app/utils/phase_timeline.dart';
@@ -61,6 +64,7 @@ void main() {
     late CycleProvider cycles;
     late ClimateProvider climateProvider;
     late PredictionProvider prediction;
+    late ConsentProvider consent;
 
     await tester.runAsync(() async {
       for (final start in starts) {
@@ -75,6 +79,8 @@ void main() {
           climateService: climate,
         ),
       );
+      consent = ConsentProvider(database: db);
+      await consent.load();
       await settings.load();
       await cycles.load();
       await prediction.refresh();
@@ -94,6 +100,11 @@ void main() {
         child: MultiProvider(
           providers: [
             Provider<DatabaseHelper>.value(value: db),
+            // The app provides these in main.dart; the harness supplies the
+            // same three so Settings can render its privacy card.
+            ChangeNotifierProvider<ConsentProvider>.value(value: consent),
+            Provider<BackupService>(create: (_) => BackupService(database: db)),
+            Provider<NotificationRescheduler>(create: (_) => _NoopRescheduler()),
             ChangeNotifierProvider<SettingsProvider>.value(value: settings),
             ChangeNotifierProvider<CycleProvider>.value(value: cycles),
             ChangeNotifierProvider<ClimateProvider>.value(value: climateProvider),
@@ -274,4 +285,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+}
+
+/// Stands in for the reminder layer so widget tests never touch a plugin.
+class _NoopRescheduler implements NotificationRescheduler {
+  @override
+  Future<void> reschedule() async {}
 }

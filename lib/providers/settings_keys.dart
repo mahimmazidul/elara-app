@@ -22,12 +22,19 @@ class SettingsKeys {
   static const String notifyPeriodStart = 'notify_period_start';
   static const String notifyClimateSpike = 'notify_climate_spike';
 
+  /// Whether reminder text may name the phase, the cycle or the body.
+  ///
+  /// Off by default. A notification is read on a lock screen, across a room,
+  /// over a shoulder; the default has to assume an audience.
+  static const String notifyPreviewDetails = 'notify_preview_details';
+
   /// Defaults for the per-type switches.
   static const bool defaultNotifyDailyBriefing = true;
   static const bool defaultNotifyPmsWarning = true;
   static const bool defaultNotifyOvulationWindow = true;
   static const bool defaultNotifyPeriodStart = true;
   static const bool defaultNotifyClimateSpike = false;
+  static const bool defaultNotifyPreviewDetails = false;
 
   /// Defaults applied on a cache miss, mirroring [DatabaseHelper.defaultSettings].
   static const double defaultLatitude = 23.8103;

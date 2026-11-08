@@ -1,7 +1,7 @@
 name: elara_app
 description: An offline-first cycle companion with local predictions and gentle daily guidance.
 publish_to: "none"
-version: 1.1.0+5
+version: 1.2.0+6
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
@@ -44,6 +44,18 @@ dependencies:
 
   # Hijri calendar support
   hijri: ^3.0.1
+
+  # Backup encryption. The export contains cycle dates, which is health data, so
+  # it is encrypted with AES-GCM under a key stretched from the user's own
+  # passphrase by PBKDF2. Pure Dart: identical behaviour in tests, no platform
+  # channel, no Android SDK surface.
+  cryptography: ^2.9.0
+
+  # Hands the encrypted backup to the user's own share sheet, so it goes
+  # wherever they choose: their files, their own cloud, or a message to
+  # themselves. Without it the app could only write into its private directory,
+  # which is not a backup.
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:
