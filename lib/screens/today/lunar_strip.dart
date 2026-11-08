@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/elara_theme.dart';
 import '../../utils/hijri_date.dart';
 import '../../utils/moon_phase.dart';
+import '../../widgets/moon_glyph.dart';
 import '../../utils/nakshatra.dart';
 
 /// Bottom strip: Islamic date, moon phase and nakshatra.
@@ -54,7 +55,7 @@ class LunarStrip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(moon.emoji, style: const TextStyle(fontSize: 18)),
+                MoonGlyph(phaseFraction: moon.phaseFraction, size: 18),
                 const SizedBox(width: ElaraSpacing.xs),
                 Text(
                   '${moon.illuminationPercent}%',

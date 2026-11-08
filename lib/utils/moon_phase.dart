@@ -54,22 +54,6 @@ class MoonPhase {
     return 'Waning crescent';
   }
 
-  /// The conventional eight phase emoji for this position.
-  ///
-  /// Emoji are used deliberately: they need no image assets, scale with the
-  /// text size, and render in the system font.
-  String get emoji {
-    final f = phaseFraction;
-    if (f < 0.033 || f >= 0.967) return '\u{1F311}'; // 🌑
-    if (f < 0.216) return '\u{1F312}'; // 🌒
-    if (f < 0.284) return '\u{1F313}'; // 🌓
-    if (f < 0.467) return '\u{1F314}'; // 🌔
-    if (f < 0.533) return '\u{1F315}'; // 🌕
-    if (f < 0.716) return '\u{1F316}'; // 🌖
-    if (f < 0.784) return '\u{1F317}'; // 🌗
-    return '\u{1F318}'; // 🌘
-  }
-
   /// Illumination as a whole percentage, for display.
   int get illuminationPercent => (illumination * 100).round();
 

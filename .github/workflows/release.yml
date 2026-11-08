@@ -104,6 +104,7 @@ jobs:
     outputs:
       version: ${{ needs.version.outputs.version }}
       apk_url: ${{ steps.publish.outputs.apk_url }}
+      universal_url: ${{ steps.publish.outputs.universal_url }}
 
     steps:
       - name: Check out
@@ -176,17 +177,57 @@ jobs:
       - name: Build app bundle (release)
         run: flutter build appbundle --release
 
-      - name: Build APK (release)
-        run: flutter build apk --release
+      # One universal APK, which installs on any device, and one APK per CPU
+      # architecture, which is what most people should download: a split build
+      # carries only its own native libraries, so it is a fraction of the size.
+      - name: Build APKs (release)
+        run: |
+          set -euo pipefail
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk build/universal.apk
+          flutter build apk --release --split-per-abi
 
-      - name: Confirm the APK is signed with the release key
+      # Assets are named elara-<version>-<abi>.apk so a download is identifiable
+      # once it is sitting in someone's Downloads folder, rather than arriving as
+      # app-release.apk with no way to tell which build it is.
+      - name: Name the artifacts
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          flutter_dir=build/app/outputs/flutter-apk
+
+          cp build/universal.apk "dist/elara-${VERSION}-universal.apk"
+
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            src="${flutter_dir}/app-${abi}-release.apk"
+            if [ ! -f "$src" ]; then
+              echo "::error::Expected split APK is missing: $src"
+              ls -l "$flutter_dir"
+              exit 1
+            fi
+            cp "$src" "dist/elara-${VERSION}-${abi}.apk"
+          done
+
+          cp build/app/outputs/bundle/release/app-release.aab "dist/elara-${VERSION}.aab"
+
+          ls -lh dist
+
+      - name: Confirm every APK is signed with the release key
         run: |
           apksigner=$(find "$ANDROID_HOME" -name apksigner -type f | sort | tail -1)
           if [ -z "$apksigner" ]; then
             echo "::warning::apksigner not found; skipping signature verification."
             exit 0
           fi
-          "$apksigner" verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -5
+          for apk in dist/*.apk; do
+            echo "--- $apk"
+            "$apksigner" verify --print-certs "$apk" | grep -E "Signer #1 certificate DN|Verified using" || {
+              echo "::error::$apk is not correctly signed."
+              exit 1
+            }
+          done
 
       # The tag is created here, at the commit that was just built, so a release
       # can never point at code that was not the code that passed the gates. When
@@ -198,6 +239,8 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
           TAG_EXISTS: ${{ needs.version.outputs.tag_exists }}
         run: |
+          set -euo pipefail
+
           # --generate-notes builds the body from commits since the previous tag.
           # --target pins a newly created tag to the commit that was just built;
           # it is omitted when the tag already exists, since then the tag is
@@ -206,20 +249,19 @@ jobs:
             gh release create "$VERSION" \
               --title "Elara $VERSION" \
               --generate-notes \
-              build/app/outputs/bundle/release/app-release.aab \
-              build/app/outputs/flutter-apk/app-release.apk
+              dist/*
           else
             gh release create "$VERSION" \
               --target "$GITHUB_SHA" \
               --title "Elara $VERSION" \
               --generate-notes \
-              build/app/outputs/bundle/release/app-release.aab \
-              build/app/outputs/flutter-apk/app-release.apk
+              dist/*
           fi
 
-          apk_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/app-release.apk"
-          echo "apk_url=${apk_url}" >> "$GITHUB_OUTPUT"
-          echo "Released ${VERSION} -> ${apk_url}"
+          base="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}"
+          echo "apk_url=${base}/elara-${VERSION}-arm64-v8a.apk" >> "$GITHUB_OUTPUT"
+          echo "universal_url=${base}/elara-${VERSION}-universal.apk" >> "$GITHUB_OUTPUT"
+          echo "Released ${VERSION} with per-CPU APKs"
 
   pages:
     name: Deploy the landing page
@@ -235,3 +277,4 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
       download_url: ${{ needs.build.outputs.apk_url }}
+      universal_url: ${{ needs.build.outputs.universal_url }}

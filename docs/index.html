@@ -219,7 +219,10 @@ footer {
   text-align: center;
 }
 
-footer a { color: var(--accent); text-decoration: none; }
+footer a,
+.download small a { color: var(--accent); text-decoration: none; }
+
+.download small a:hover { text-decoration: underline; }
 footer a:hover { text-decoration: underline; }
 footer p { margin: 0.35rem 0 0; }
 
@@ -309,8 +312,11 @@ footer p { margin: 0.35rem 0 0; }
       <span class="badge">Version {{LATEST_VERSION}}</span>
       <a class="button" href="{{DOWNLOAD_URL}}">Download the APK</a>
       <small>
-        Android 7.0 and newer. Installed directly, so Play Protect may ask you
-        to confirm first. Not on the Play Store.
+        Android 7.0 and newer, 64-bit phones: this is the arm64 build, the small
+        one. On an older or 32-bit device, take the
+        <a href="{{DOWNLOAD_URL_UNIVERSAL}}">universal APK</a> instead. Installed
+        directly, so Play Protect may ask you to confirm first. Not on the Play
+        Store.
       </small>
     </section>
   </main>
