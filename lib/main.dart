@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'app_info.dart';
 import 'data/database_helper.dart';
 import 'providers/climate_provider.dart';
 import 'providers/cycle_provider.dart';
 import 'providers/prediction_provider.dart';
 import 'providers/settings_provider.dart';
+import 'screens/root_scaffold.dart';
+import 'theme/elara_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,10 +17,9 @@ void main() {
 
 /// Root of the app: owns the provider graph and the [MaterialApp].
 ///
-/// Data-layer dependency order matters here. [DatabaseHelper] is exposed first
-/// so every provider below can be constructed against the same connection, and
-/// [PredictionProvider] is last because it refreshes when the cycle list or the
-/// settings change.
+/// Dependency order matters. [DatabaseHelper] is exposed first so every provider
+/// below shares one connection, and [PredictionProvider] is last because it
+/// refreshes when the cycle list or the settings change.
 class ElaraApp extends StatelessWidget {
   const ElaraApp({super.key});
 
@@ -35,8 +37,8 @@ class ElaraApp extends StatelessWidget {
         ChangeNotifierProvider<ClimateProvider>(
           create: (_) => ClimateProvider()..load(),
         ),
-        // Depends on both, so proxy it: when either is written, the prediction
-        // is recomputed (deferred to after the frame; see syncDependencies).
+        // Depends on both, so proxy it: when either is written the prediction is
+        // recomputed (deferred to after the frame; see syncDependencies).
         ChangeNotifierProxyProvider2<CycleProvider, SettingsProvider,
             PredictionProvider>(
           create: (_) => PredictionProvider(),
@@ -54,34 +56,23 @@ class ElaraApp extends StatelessWidget {
   }
 }
 
-/// Temporary shell until the UI parts are built.
-///
-/// It reads from the providers only so that the graph is exercised on launch;
-/// it deliberately contains no product UI.
 class _ElaraRoot extends StatelessWidget {
   const _ElaraRoot();
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
+    // Rebuilds only when the theme setting actually changes.
+    final themeMode = context.select<SettingsProvider, ThemeMode>(
+      (settings) => settings.themeMode,
+    );
+
     return MaterialApp(
-      title: 'Elara',
+      title: AppInfo.name,
       debugShowCheckedModeBanner: false,
-      themeMode: settings.themeMode,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7A4E7E)),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7A4E7E),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(child: Text('Elara')),
-      ),
+      themeMode: themeMode,
+      theme: ElaraTheme.light(),
+      darkTheme: ElaraTheme.dark(),
+      home: const RootScaffold(),
     );
   }
 }

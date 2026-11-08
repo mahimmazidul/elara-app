@@ -57,3 +57,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Fonts are bundled rather than fetched at runtime. google_fonts checks the
+  # asset manifest before it touches the network, so the app renders in Inter and
+  # Source Sans 3 on a first launch with no connectivity. The filenames must end
+  # in `<Family>-<Variant>` because that is how google_fonts matches them.
+  assets:
+    - assets/fonts/

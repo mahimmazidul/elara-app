@@ -96,6 +96,59 @@ class SettingsProvider extends ChangeNotifier {
     return parsed;
   }
 
+  /// Per-type notification switches. Each falls back to its own default when
+  /// the key has never been written, so an existing install gains the new
+  /// switches without a migration.
+  bool get notifyDailyBriefing => _readBool(
+        SettingsKeys.notifyDailyBriefing,
+        SettingsKeys.defaultNotifyDailyBriefing,
+      );
+
+  bool get notifyPmsWarning => _readBool(
+        SettingsKeys.notifyPmsWarning,
+        SettingsKeys.defaultNotifyPmsWarning,
+      );
+
+  bool get notifyOvulationWindow => _readBool(
+        SettingsKeys.notifyOvulationWindow,
+        SettingsKeys.defaultNotifyOvulationWindow,
+      );
+
+  bool get notifyPeriodStart => _readBool(
+        SettingsKeys.notifyPeriodStart,
+        SettingsKeys.defaultNotifyPeriodStart,
+      );
+
+  bool get notifyClimateSpike => _readBool(
+        SettingsKeys.notifyClimateSpike,
+        SettingsKeys.defaultNotifyClimateSpike,
+      );
+
+  Future<bool> setNotifyDailyBriefing(bool value) => setValue(
+        SettingsKeys.notifyDailyBriefing,
+        value ? 'true' : 'false',
+      );
+
+  Future<bool> setNotifyPmsWarning(bool value) => setValue(
+        SettingsKeys.notifyPmsWarning,
+        value ? 'true' : 'false',
+      );
+
+  Future<bool> setNotifyOvulationWindow(bool value) => setValue(
+        SettingsKeys.notifyOvulationWindow,
+        value ? 'true' : 'false',
+      );
+
+  Future<bool> setNotifyPeriodStart(bool value) => setValue(
+        SettingsKeys.notifyPeriodStart,
+        value ? 'true' : 'false',
+      );
+
+  Future<bool> setNotifyClimateSpike(bool value) => setValue(
+        SettingsKeys.notifyClimateSpike,
+        value ? 'true' : 'false',
+      );
+
   bool _readBool(String key, bool fallback) {
     final raw = _values[key];
     if (raw == null) return fallback;

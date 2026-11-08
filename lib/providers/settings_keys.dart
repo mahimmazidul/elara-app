@@ -11,6 +11,24 @@ class SettingsKeys {
   static const String themeMode = 'theme_mode';
   static const String notificationEnabled = 'notification_enabled';
 
+  // Per-notification-type switches. These are deliberately NOT added to
+  // DatabaseHelper.defaultSettings: the data-layer tests assert that exactly
+  // four defaults are seeded, and a missing key is already handled by the typed
+  // getters below. The scheduling itself is not part of this part of the build;
+  // these keys exist so the Settings screen can persist a user's choices now.
+  static const String notifyDailyBriefing = 'notify_daily_briefing';
+  static const String notifyPmsWarning = 'notify_pms_warning';
+  static const String notifyOvulationWindow = 'notify_ovulation_window';
+  static const String notifyPeriodStart = 'notify_period_start';
+  static const String notifyClimateSpike = 'notify_climate_spike';
+
+  /// Defaults for the per-type switches.
+  static const bool defaultNotifyDailyBriefing = true;
+  static const bool defaultNotifyPmsWarning = true;
+  static const bool defaultNotifyOvulationWindow = true;
+  static const bool defaultNotifyPeriodStart = true;
+  static const bool defaultNotifyClimateSpike = false;
+
   /// Defaults applied on a cache miss, mirroring [DatabaseHelper.defaultSettings].
   static const double defaultLatitude = 23.8103;
   static const double defaultLongitude = 90.4125;
