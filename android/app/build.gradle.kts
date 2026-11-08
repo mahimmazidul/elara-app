@@ -26,7 +26,12 @@ if (hasKeystore) {
 
 android {
     namespace = "com.mahimmazidul.elara"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned rather than taken from Flutter's default (36): the notification
+    // plugin and the androidx.core it pulls in both compile against SDK 37, and
+    // the AAR metadata check fails the release build against anything lower.
+    // Compiling against a newer SDK is backward compatible; minSdk still decides
+    // which devices can install the app.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
