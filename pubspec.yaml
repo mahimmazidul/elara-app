@@ -1,0 +1,59 @@
+name: elara_app
+description: An offline-first cycle companion with local predictions and gentle daily guidance.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Prediction engine: ensemble cycle forecasting, phase classification,
+  # environmental severity and action suggestions. Pure Dart, fully offline.
+  elara_core:
+    git:
+      url: https://github.com/mahimmazidul/elara-core.git
+      ref: main
+
+  # State management
+  provider: ^6.1.5+1
+
+  # Local persistence
+  sqflite: ^2.4.5
+  path: ^1.9.1
+
+  # On-device notifications and background scheduling
+  flutter_local_notifications: ^23.0.0
+  android_alarm_manager_plus: ^5.1.2
+
+  # Timezone-aware scheduling. Imported directly by the notification layer,
+  # so it is declared directly rather than relied on transitively.
+  timezone: ^0.11.2
+
+  # Environmental data (heat index, air quality)
+  http: ^1.6.0
+
+  # Charts
+  fl_chart: ^1.3.0
+
+  # Typography and formatting
+  google_fonts: ^9.0.0
+  intl: ^0.20.3
+
+  # Hijri calendar support
+  hijri: ^3.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # Test-only: runs the real sqflite schema against a native sqlite3 in unit
+  # tests, so the migrations and queries are verified rather than assumed.
+  # Not a runtime dependency and not part of the shipped app.
+  sqflite_common_ffi: ^2.3.0
+
+flutter:
+  uses-material-design: true

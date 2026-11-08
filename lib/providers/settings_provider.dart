@@ -1,0 +1,177 @@
+import 'package:flutter/material.dart';
+
+import '../data/database_helper.dart';
+import 'settings_keys.dart';
+
+/// Owns the key/value `settings` table and exposes typed accessors.
+///
+/// Every setter writes through to sqflite before notifying, so a widget that
+/// rebuilds after a toggle is showing state that is already persisted. If the
+/// write fails the in-memory value is left untouched and [lastError] is set, so
+/// the UI cannot end up displaying a preference that was never saved.
+class SettingsProvider extends ChangeNotifier {
+  SettingsProvider({DatabaseHelper? database})
+      : _database = database ?? DatabaseHelper.instance;
+
+  final DatabaseHelper _database;
+
+  Map<String, String> _values = const {};
+  bool _isLoading = false;
+  bool _isLoaded = false;
+  String? _lastError;
+
+  /// Increments on every successful change; lets dependent providers detect
+  /// that settings were written without diffing the whole map.
+  int _revision = 0;
+
+  Map<String, String> get values => Map.unmodifiable(_values);
+  bool get isLoading => _isLoading;
+  bool get isLoaded => _isLoaded;
+  String? get lastError => _lastError;
+  int get revision => _revision;
+
+  /// Reads all settings. Safe to call more than once.
+  Future<void> load() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _values = await _database.getAllSettings();
+      _isLoaded = true;
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'Could not read settings: $error';
+      // Fall back to defaults so the app is still usable.
+      _values = {
+        ...DatabaseHelper.defaultSettings,
+        ..._values,
+      };
+      _isLoaded = true;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ------------------------------------------------------------ typed reads --
+
+  /// Latitude used for weather lookups, in decimal degrees.
+  double get latitude => _readDouble(
+        SettingsKeys.latitude,
+        SettingsKeys.defaultLatitude,
+      );
+
+  /// Longitude used for weather lookups, in decimal degrees.
+  double get longitude => _readDouble(
+        SettingsKeys.longitude,
+        SettingsKeys.defaultLongitude,
+      );
+
+  ThemeMode get themeMode {
+    switch (_values[SettingsKeys.themeMode]) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  /// Stored form of [themeMode], e.g. `system`.
+  String get themeModeKey =>
+      _values[SettingsKeys.themeMode] ?? SettingsKeys.defaultThemeMode;
+
+  bool get notificationsEnabled => _readBool(
+        SettingsKeys.notificationEnabled,
+        SettingsKeys.defaultNotificationEnabled,
+      );
+
+  double _readDouble(String key, double fallback) {
+    final raw = _values[key];
+    if (raw == null) return fallback;
+    final parsed = double.tryParse(raw);
+    if (parsed == null || !parsed.isFinite) return fallback;
+    return parsed;
+  }
+
+  bool _readBool(String key, bool fallback) {
+    final raw = _values[key];
+    if (raw == null) return fallback;
+    if (raw == 'true') return true;
+    if (raw == 'false') return false;
+    return fallback;
+  }
+
+  // ---------------------------------------------------------------- writes --
+
+  Future<bool> setThemeMode(ThemeMode mode) {
+    final stored = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    return setValue(SettingsKeys.themeMode, stored);
+  }
+
+  Future<bool> setNotificationsEnabled(bool enabled) =>
+      setValue(SettingsKeys.notificationEnabled, enabled ? 'true' : 'false');
+
+  /// Stores the coordinates used for weather and air-quality lookups.
+  Future<bool> setLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    if (!latitude.isFinite || !longitude.isFinite) {
+      _lastError = 'Coordinates must be finite numbers.';
+      notifyListeners();
+      return false;
+    }
+    if (latitude.abs() > 90 || longitude.abs() > 180) {
+      _lastError = 'Coordinates are out of range.';
+      notifyListeners();
+      return false;
+    }
+    try {
+      await _database.setSettings({
+        SettingsKeys.latitude: latitude.toString(),
+        SettingsKeys.longitude: longitude.toString(),
+      });
+      _values = {
+        ..._values,
+        SettingsKeys.latitude: latitude.toString(),
+        SettingsKeys.longitude: longitude.toString(),
+      };
+      _revision++;
+      _lastError = null;
+      notifyListeners();
+      return true;
+    } catch (error) {
+      _lastError = 'Could not save location: $error';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Writes any setting, then notifies. Returns false if persistence failed.
+  Future<bool> setValue(String key, String value) async {
+    if (key.trim().isEmpty) {
+      _lastError = 'A settings key cannot be empty.';
+      notifyListeners();
+      return false;
+    }
+    try {
+      await _database.setSetting(key, value);
+      _values = {..._values, key: value};
+      _revision++;
+      _lastError = null;
+      notifyListeners();
+      return true;
+    } catch (error) {
+      _lastError = 'Could not save "$key": $error';
+      notifyListeners();
+      return false;
+    }
+  }
+}
