@@ -185,12 +185,16 @@ class _TodayContent extends StatelessWidget {
     // Recomputed on every build from the stored preferences and recent
     // symptoms, so a change made on another screen is reflected here without a
     // cache to invalidate. It is a handful of comparisons, not a computation.
-    final suggestions = const CareRecommender().recommend(
+    final recommender = const CareRecommender();
+    final suggestions = recommender.recommend(
       preferences: preferences.all,
       recentSymptoms: symptoms.recent,
       climate: result.environment,
       today: now,
     );
+    // The general layer, sourced from published guidance: shown underneath
+    // hers, and on its own when there is nothing personal yet.
+    final general = recommender.generalFor(phaseKey);
 
     return ListView(
       padding: ElaraSpacing.pageInsets(context),
@@ -265,7 +269,11 @@ class _TodayContent extends StatelessWidget {
         ElaraSection(
           title: 'Ways to help today',
           children: [
-            CareSuggestions(suggestions: suggestions, phaseKey: phaseKey),
+            CareSuggestions(
+              suggestions: suggestions,
+              phaseKey: phaseKey,
+              general: general,
+            ),
             const SizedBox(height: ElaraSpacing.lg),
             ActionCards(
               action: result.action,

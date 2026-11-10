@@ -1,3 +1,4 @@
+import '../data/generic_guidance.dart';
 import '../data/models/climate_snapshot.dart';
 import '../data/models/preference.dart';
 import '../data/models/symptom.dart';
@@ -63,6 +64,7 @@ class CareSuggestion {
     required this.basis,
     required this.kind,
     this.detail,
+    this.source,
   });
 
   /// A short imperative: "Offer to make something she likes".
@@ -76,6 +78,10 @@ class CareSuggestion {
 
   /// Optional extra line, e.g. the food she actually mentioned.
   final String? detail;
+
+  /// Where a general suggestion came from. Null for anything derived from her
+  /// own data, because the source of that is her.
+  final String? source;
 
   @override
   String toString() => 'CareSuggestion(${basis.name}: $title)';
@@ -171,6 +177,35 @@ class CareRecommender {
     }
 
     return unique.take(limit).toList();
+  }
+
+  /// General, source-backed advice for a phase, as suggestions.
+  ///
+  /// This is a separate call from [recommend] on purpose. What she has said and
+  /// what she has reported are *about her* and belong first; general guidance is
+  /// about the phase and belongs underneath, still shown when the personalised
+  /// list is empty, and never mixed into the ranking where it could outrank
+  /// something she actually told you.
+  List<CareSuggestion> generalFor(
+    String? phaseKey, {
+    int limit = 2,
+  }) {
+    return GenericGuidanceTable.forPhase(phaseKey)
+        .take(limit)
+        .map(
+          (item) => CareSuggestion(
+            title: item.title,
+            body: item.body,
+            basis: CareBasis.general,
+            kind: CareKind.prepare,
+            // Most citations already name their publisher ("NICE CKS —
+            // Ovulation pain"); repeating it as a prefix read as a stutter.
+            source: item.citation.startsWith(item.source)
+                ? item.citation
+                : '${item.source} \u00b7 ${item.citation}',
+          ),
+        )
+        .toList(growable: false);
   }
 
   /// Symptoms from the last two days.

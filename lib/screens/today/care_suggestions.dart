@@ -22,20 +22,47 @@ class CareSuggestions extends StatelessWidget {
     super.key,
     required this.suggestions,
     required this.phaseKey,
+    this.general = const [],
   });
 
+  /// What the app knows about her: her answers, what she reported, what you
+  /// noticed, the weather. In that order.
   final List<CareSuggestion> suggestions;
+
   final String phaseKey;
+
+  /// General, source-backed advice for this phase. Shown underneath the
+  /// personalised list, or instead of it when there is nothing personal.
+  final List<CareSuggestion> general;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
 
+    // Where the personalised list is empty, the general one leads — and says
+    // so. An app that has nothing personal to go on should still be useful in
+    // the first five seconds, and its first suggestion should not be an
+    // apology.
     if (suggestions.isEmpty) {
-      return Text(
-        'Nothing to suggest yet. Add something she has told you, and this '
-        'becomes useful.',
-        style: context.type.body(tokens.textSecondaryStrong),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _GeneralHeader(
+            empty: true,
+            phaseKey: phaseKey,
+          ),
+          const SizedBox(height: ElaraSpacing.sm),
+          for (var i = 0; i < general.length; i++) ...[
+            if (i > 0) const SizedBox(height: ElaraSpacing.md),
+            _Secondary(suggestion: general[i], showSource: true),
+          ],
+          const SizedBox(height: ElaraSpacing.lg),
+          Text(
+            'None of this is about her yet. Add something she has told you in '
+            'Preferences, or log a symptom, and these become specific.',
+            style: context.type.caption(tokens.textSecondaryStrong),
+          ),
+        ],
       );
     }
 
@@ -53,8 +80,69 @@ class CareSuggestions extends StatelessWidget {
             _Secondary(suggestion: rest[i]),
           ],
         ],
+        if (general.isNotEmpty) ...[
+          const SizedBox(height: ElaraSpacing.lg),
+          _GeneralHeader(empty: false, phaseKey: phaseKey),
+          const SizedBox(height: ElaraSpacing.sm),
+          for (var i = 0; i < general.length; i++) ...[
+            if (i > 0) const SizedBox(height: ElaraSpacing.md),
+            _Secondary(suggestion: general[i], showSource: true),
+          ],
+        ],
       ],
     );
+  }
+}
+
+/// The heading above the general layer.
+///
+/// It has to be clear about what follows, because this is the part that is not
+/// about her. "In general, this phase" says that the advice is about the phase
+/// rather than about her, which is exactly true, and the sources under each item
+/// say where it came from.
+class _GeneralHeader extends StatelessWidget {
+  const _GeneralHeader({required this.empty, required this.phaseKey});
+
+  final bool empty;
+  final String phaseKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    return Row(
+      children: [
+        Icon(
+          ElaraIcons.medical,
+          size: 16,
+          color: tokens.textSecondaryStrong,
+        ),
+        const SizedBox(width: ElaraSpacing.xs),
+        Expanded(
+          child: Text(
+            empty
+                ? 'In general, for this phase'
+                : 'In general: ${_phaseName(phaseKey)} phase',
+            style: context.type.caption(tokens.textSecondaryStrong, size: 12)
+                .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.2),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static String _phaseName(String key) {
+    switch (key) {
+      case 'menstrual':
+        return 'menstrual';
+      case 'follicular':
+        return 'follicular';
+      case 'ovulatory':
+        return 'ovulatory';
+      case 'luteal':
+        return 'luteal';
+      default:
+        return 'any';
+    }
   }
 }
 
@@ -89,9 +177,13 @@ class _Primary extends StatelessWidget {
 }
 
 class _Secondary extends StatelessWidget {
-  const _Secondary({required this.suggestion});
+  const _Secondary({required this.suggestion, this.showSource = false});
 
   final CareSuggestion suggestion;
+
+  /// General advice names its source, because "a general idea" is not a
+  /// citation. Personal advice does not need one: the source is her.
+  final bool showSource;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +196,10 @@ class _Secondary extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Icon(
-            iconFor(suggestion.kind),
+            // General advice is reference material rather than a suggestion
+            // about her, and it draws the reference glyph so the eye can tell
+            // the two layers apart without reading the heading.
+            showSource ? ElaraIcons.info : iconFor(suggestion.kind),
             size: ElaraIcons.size,
             color: tokens.textSecondaryStrong,
           ),
@@ -124,7 +219,13 @@ class _Secondary extends StatelessWidget {
                 style: type.caption(tokens.textSecondaryStrong, size: 13),
               ),
               const SizedBox(height: ElaraSpacing.xs),
-              BasisLine(basis: suggestion.basis),
+              if (showSource && suggestion.source != null)
+                Text(
+                  suggestion.source!,
+                  style: context.type.caption(tokens.textSecondaryStrong, size: 12),
+                )
+              else
+                BasisLine(basis: suggestion.basis),
             ],
           ),
         ),
