@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 9 and later: draw into the display cutout.
+         Without this the window is letterboxed clear of a notch in portrait,
+         which is the black band above the app on a water-drop phone — and
+         because the letterbox belongs to the window rather than the page, the
+         app's content then looks like a card sitting inside a box, with the
+         box's top edge staying put when the content scrolls. Flutter reads the
+         cutout as view padding, so SafeArea and the dial already keep their
+         distance from it.
+         `shortEdges` allows the cutout on the long edges only, which is the
+         portrait water-drop case; `always` would also stretch the window in
+         landscape, where a cutout overlapping a control is a real risk. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/elara_page_background</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

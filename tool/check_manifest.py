@@ -155,16 +155,52 @@ def check_privacy_controls(problems: list[str]) -> None:
             )
 
 
+def check_cutout(problems: list[str]) -> None:
+    """The window must be allowed to draw into a display cutout.
+
+    On a water-drop phone the default is to letterbox the window clear of the
+    notch in portrait. That band belongs to the window rather than to the page,
+    so the app looks like a card sitting inside a box whose top edge stays put
+    while the content scrolls under it. It is a one-line style attribute, and
+    it is invisible on every emulator that has no cutout — which is how it
+    shipped.
+    """
+    for variant in ("values-v28", "values-night-v28"):
+        path = (ROOT / "android" / "app" / "src" / "main" / "res" / variant /
+                "styles.xml")
+        if not path.exists():
+            problems.append(
+                f"res/{variant}/styles.xml is missing — the window will be "
+                f"letterboxed clear of a display cutout"
+            )
+            continue
+        text = path.read_text()
+        for style in ("NormalTheme", "LaunchTheme"):
+            # Find the style block and check the attribute inside it.
+            match = re.search(
+                rf'<style name="{style}".*?</style>', text, re.S
+            )
+            if match is None:
+                problems.append(f"res/{variant}/styles.xml: no {style}")
+            elif "windowLayoutInDisplayCutoutMode" not in match.group(0):
+                problems.append(
+                    f"res/{variant}/styles.xml: {style} does not set "
+                    f"windowLayoutInDisplayCutoutMode, so the app is boxed "
+                    f"below the notch on a water-drop screen"
+                )
+
+
 def main() -> None:
     problems: list[str] = []
     check_conflict_markers(problems)
     check_xml(problems)
     check_privacy_controls(problems)
+    check_cutout(problems)
 
     if problems:
         fail(problems)
 
-    print("Manifest, XML and privacy controls: clean.")
+    print("Manifest, XML, privacy controls and cutout mode: clean.")
 
 
 if __name__ == "__main__":
