@@ -140,10 +140,22 @@ void main() {
       (tester) async {
     await pump(tester);
 
-    expect(find.textContaining('not a medical device'), findsOneWidget);
-    expect(find.textContaining('no accounts, no analytics'), findsOneWidget);
+    // The heading is a sentence, not a fragment: the fragment began with a
+    // lowercase letter and read as truncated text rather than as a statement.
+    expect(find.text('Not a medical device'), findsOneWidget);
+    expect(find.textContaining('No accounts, no analytics'), findsOneWidget);
     expect(find.textContaining('estimates from recorded history'),
         findsOneWidget);
+  });
+
+  testWidgets('link rows name the destination and print no URL', (tester) async {
+    await pump(tester);
+
+    expect(find.text('Source code'), findsOneWidget);
+    // A URL is not a label: it truncates on a phone and tells the reader
+    // nothing the word above it did not.
+    expect(find.textContaining('github.com'), findsNothing);
+    expect(find.textContaining('http'), findsNothing);
   });
 
   testWidgets('an unchecked row says so and does not imply current',

@@ -150,7 +150,12 @@ class _AboutRow extends StatelessWidget {
   }
 }
 
-/// A tappable row with an icon and a URL, opened in the browser.
+/// A tappable row with an icon, opened in the browser.
+///
+/// The address itself is not printed. A URL in a settings list is a developer's
+/// idea of a label: it is the least readable part of the row, it truncates on a
+/// phone, and it tells someone nothing they did not already know from the word
+/// above it. The row says what it opens and the arrow says it leaves the app.
 class _LinkRow extends StatelessWidget {
   const _LinkRow({
     required this.label,
@@ -175,18 +180,9 @@ class _LinkRow extends StatelessWidget {
             Icon(icon, size: 20, color: tokens.textSecondaryStrong),
             const SizedBox(width: ElaraSpacing.md),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: type.label(tokens.textSecondaryStrong)),
-                  const SizedBox(height: 2),
-                  Text(
-                    _shortUrl(url),
-                    style: type.bodyStrong(tokens.accentText, size: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+              child: Text(
+                label,
+                style: type.body(tokens.textPrimary, size: 14),
               ),
             ),
             const SizedBox(width: ElaraSpacing.sm),
@@ -195,15 +191,6 @@ class _LinkRow extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static String _shortUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      return '${uri.host}${uri.path}';
-    } catch (_) {
-      return url;
-    }
   }
 
   static Future<void> _launchUrl(BuildContext context, String url) async {
@@ -230,19 +217,24 @@ class _LimitationsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Sentence case, because the previous lowercase fragment read as a
+          // truncated sentence and made the lowercase letter look like a
+          // typographic error rather than the start of a statement. It is a
+          // heading; it should look like one.
           Text(
-            'not a medical device.',
+            'Not a medical device',
             style: type.subtitle(tokens.textPrimary),
           ),
           const SizedBox(height: ElaraSpacing.xs),
           Text(
-            'estimates from recorded history; not a substitute for '
+            'Elara estimates from recorded history. It is not a contraceptive, '
+            'does not measure hormones, and is not a substitute for '
             'professional medical advice.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.sm),
           Text(
-            'no accounts, no analytics. nothing leaves this phone.',
+            'No accounts, no analytics, no uploads. Nothing leaves this phone.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
         ],

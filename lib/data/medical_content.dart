@@ -499,6 +499,26 @@ const List<MedicalTopic> medicalTopics = [
         ],
       ),
       MedicalSection(
+        'What is actually on the shelf here',
+        [
+          'Bangladeshi pharmacies usually dispense by generic name, and the '
+              'packets carry brand names that differ between manufacturers for '
+              'the same ingredient. The three ingredients behind most period '
+              'pain relief sold here are paracetamol, mefenamic acid and '
+              'naproxen, with ibuprofen also common. Reading the ingredient '
+              'line rather than the brand is what tells you what you are '
+              'taking.',
+          'Combination products are common: some period-pain tablets pair '
+              'paracetamol with an NSAID, and some add caffeine. Two products '
+              'with the same ingredient in them is the mistake worth avoiding, '
+              'because the risk is the total dose rather than any one tablet.',
+          'A pharmacist can tell you what a packet contains and whether it '
+              'suits someone who is pregnant, breastfeeding, asthmatic, or '
+              'already taking something else. That conversation is worth having '
+              'in person, and it is not something this app can do for you.',
+        ],
+      ),
+      MedicalSection(
         'Precautions worth knowing',
         [
           'NSAIDs can irritate the stomach and are usually avoided by people '
@@ -531,6 +551,8 @@ const List<MedicalTopic> medicalTopics = [
           'https://www.nhs.uk/medicines/paracetamol-for-adults/'),
       MedicalSource('NHS — Ibuprofen for adults',
           'https://www.nhs.uk/medicines/ibuprofen-for-adults/'),
+      MedicalSource('Directorate General of Drug Administration (Bangladesh) — '
+          'drug information', 'https://dgda.gov.bd/'),
     ],
   ),
 ];

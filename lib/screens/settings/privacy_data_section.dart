@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -75,11 +74,47 @@ class _PrivacyDataSectionState extends State<PrivacyDataSection> {
             style: type.caption(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.md),
+          // The action states what it does, in full, and then the control that
+          // does it is a single short label.
+          //
+          // It used to be an outlined button carrying the entire sentence,
+          // centred, inside a full-width box. The sentence wrapped after
+          // "delete", so the second line held one word with empty space either
+          // side of it, and an outlined control is the visual language of a
+          // secondary action — which this is not. The label above is the
+          // sentence; the button is filled, one line, and unmistakably the
+          // destructive one.
+          Text(
+            'Withdraw consent and delete everything',
+            style: type.bodyStrong(tokens.dangerText, size: 14),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Removes every recorded period, the settings and the consent '
+            'record from this phone. It cannot be undone.',
+            style: type.caption(tokens.textSecondaryStrong),
+          ),
+          const SizedBox(height: ElaraSpacing.sm),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
+            height: 46,
+            child: FilledButton.icon(
               onPressed: _working ? null : () => _revoke(context),
-              child: const Text('Withdraw consent and delete everything'),
+              icon: const Icon(ElaraIcons.undo, size: 18),
+              label: const Text('Delete everything'),
+              style: FilledButton.styleFrom(
+                backgroundColor: tokens.danger,
+                foregroundColor: tokens.bgCard,
+                disabledBackgroundColor: tokens.divider,
+                textStyle: const TextStyle(
+                  fontFamily: 'Hind Siliguri',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(ElaraRadii.chip),
+                ),
+              ),
             ),
           ),
 

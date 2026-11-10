@@ -332,7 +332,14 @@ void main() {
     testWidgets('deleting everything requires typing a word', (tester) async {
       await pumpSettings(tester);
 
-      await tester.tap(find.text('Withdraw consent and delete everything'));
+      // The sentence is a label above the control; the control itself is the
+      // short, filled, destructive button.
+      expect(
+        find.text('Withdraw consent and delete everything'),
+        findsOneWidget,
+      );
+      expect(find.text('Delete everything'), findsOneWidget);
+      await tester.tap(find.text('Delete everything'));
       await tester.pumpAndSettle();
 
       expect(find.text('Withdraw consent?'), findsOneWidget);
