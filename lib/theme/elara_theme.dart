@@ -967,3 +967,4 @@ extension ElaraThemeContext on BuildContext {
   ElaraPalette get palette => elara.palette;
   ElaraTypography get type => elara.typography;
 }
+ 
