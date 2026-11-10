@@ -208,6 +208,7 @@ IconData _resolve(String name) {
     'Icons.light_mode_outlined': Icons.light_mode_outlined,
     'Icons.dark_mode_outlined': Icons.dark_mode_outlined,
     'Icons.code_outlined': Icons.code_outlined,
+    'Icons.code_rounded': Icons.code_rounded,
     'Icons.system_update_alt_rounded': Icons.system_update_alt_rounded,
     'Icons.nightlight_outlined': Icons.nightlight_outlined,
     'Icons.add_rounded': Icons.add_rounded,

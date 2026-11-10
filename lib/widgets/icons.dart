@@ -74,7 +74,7 @@ class ElaraIcons {
 
   /// Disclosure of a chevron-style row.
   static const IconData disclosure = Icons.chevron_right_rounded;
-  static const IconData github = Icons.code_outlined;
+  static const IconData github = Icons.code_rounded;
 
   // ---- symptoms ------------------------------------------------------------
 

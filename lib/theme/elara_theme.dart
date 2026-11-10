@@ -182,7 +182,7 @@ class ElaraPalette {
     danger: Color(0xFFB07CA0),
     dangerText: Color(0xFFC08CB0),
     moonGlow: Color(0xFF1E2530),
-    onPhase: Color(0xFFE8EEF6),
+    onPhase: Color(0xFF1A1416),
     divider: Color(0xFF2E3844),
     track: Color(0xFF26303C),
     unknownPhase: Color(0xFF8A93A3),
