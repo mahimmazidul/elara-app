@@ -14,9 +14,27 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Backup policy. This is the difference between a private cycle history
+         and one copied to a Google account.
+
+         Android's defaults are allowBackup="true" with nothing excluded, so
+         every cycle date, symptom, free-text note and questionnaire answer in
+         elara.db was being uploaded to the user's Google Drive by Auto Backup
+         — while the privacy documentation stated that no server holds anyone's
+         health history. Google's servers holding the file is not a residual
+         threat; it is the claim being false.
+
+         Cloud backup and device-to-device transfer are therefore both off, and
+         the encryption rules are declared as well so a future default cannot
+         quietly re-enable them. The supported backup path is the in-app
+         encrypted export, which the user chooses to run, protects with her own
+         passphrase, and hands to a share target she picks. -->
     <application
         android:label="Elara"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
         <activity
@@ -27,16 +45,8 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-<<<<<<< HEAD
-<<<<<<< HEAD
             android:windowSoftInputMode="adjustResize"
             android:windowLayoutInDisplayCutoutMode="shortEdges">
-=======
-            android:windowSoftInputMode="adjustResize">
->>>>>>> origin/main
-=======
-            android:windowSoftInputMode="adjustResize">
->>>>>>> origin/main
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues

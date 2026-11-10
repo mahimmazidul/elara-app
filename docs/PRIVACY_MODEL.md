@@ -90,6 +90,50 @@ Reasons, in order of weight:
    design is a milestone of its own, and doing it late in a pass without a
    device to test failure recovery on would be reckless.
 
+## 4a. Correction, 10 November 2026: Android cloud backup was on
+
+The decision above covers encryption at rest. It did not cover *egress*, and the
+manifest left three defaults in place that made the app's own summary of itself
+false:
+
+| Manifest attribute | Value before | Effect |
+|---|---|---|
+| `android:allowBackup` | absent (defaults to `true`) | `elara.db` was included in Android Auto Backup |
+| `android:fullBackupContent` | absent | nothing excluded from a pre-API-31 backup |
+| `android:dataExtractionRules` | absent | nothing excluded from cloud backup or device transfer on API 31+ |
+
+So every cycle date, symptom severity, free-text note and questionnaire answer
+written on the phone was being copied to the user's Google account by the
+operating system, with no interaction from this app. Section 3 lists "a
+full-device backup that includes app data" as a residual threat; on Android 12
+and later it was not residual, it was the default behaviour, and section 1's
+statement that no server holds anyone's health history was therefore untrue.
+
+That is now fixed rather than documented:
+
+- `android:allowBackup="false"`;
+- `android:fullBackupContent="false"`;
+- `android:dataExtractionRules="@xml/data_extraction_rules"`, which excludes
+  `root`, `file`, `database`, `sharedpref` and `external` from **both**
+  cloud-backup and device-transfer;
+- `tool/check_manifest.py` fails the build if any of those three attributes
+  regress, so the next person to edit the manifest cannot silently undo it
+  (it is run by `ci.yml` and `android-ci.yml`).
+
+The supported backup is the one section 2 describes: an encrypted export the
+user runs deliberately, under her own passphrase, to a destination she picks.
+A backup she chose is a backup; a backup Google took is a copy.
+
+Two related items are still open, and are recorded here rather than claimed as
+done:
+
+1. **`FLAG_SECURE` is on** (it was not), which keeps the app out of the recents
+   thumbnail, out of screen recordings and out of `adb screencap`. The one build
+   that opts out is the screenshot pipeline, via `-PelaraScreenshots=true`.
+2. **The database is still plain SQLite**, per section 4. Physically seizing an
+   unlocked phone still reads everything. Nothing in this document should be
+   read as saying otherwise.
+
 ## 5. What the app must therefore keep saying
 
 - The Privacy and data section states that data is stored on this phone and is

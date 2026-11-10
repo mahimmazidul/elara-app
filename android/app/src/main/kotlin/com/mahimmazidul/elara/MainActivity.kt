@@ -2,6 +2,7 @@ package com.mahimmazidul.elara
 
 import android.graphics.Color
 import android.os.Build
+import android.view.WindowManager
 import android.os.Bundle
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
@@ -66,6 +67,29 @@ class MainActivity : FlutterActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isStatusBarContrastEnforced = false
             window.isNavigationBarContrastEnforced = false
+        }
+
+        // Keep this window out of the recents thumbnail and out of any screen
+        // recording. The app's whole surface is a health record: a phase, a
+        // countdown, a list of symptoms, and a partner's notes about her. On
+        // Android, a task left in recents is captured as a screenshot that
+        // anyone holding the phone can see by pressing one square button, and
+        // that screenshot was being taken with no protection at all.
+        //
+        // FLAG_SECURE blanks the thumbnail and blocks capture by other apps and
+        // by adb screencap. It is not DRM and it does not stop a photograph of
+        // the screen; it does stop the accidental, everyday exposure, which is
+        // the one that happens.
+        //
+        // The one exception is the screenshot pipeline, which captures these
+        // screens with `adb screencap` to produce the images in docs/. A
+        // secured window captures as black, so that build opts out explicitly
+        // with -PelaraScreenshots=true. Nothing else does.
+        if (!BuildConfig.ALLOW_SCREEN_CAPTURE) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE,
+            )
         }
 
         // The verification intent, if there is one, is handled after the

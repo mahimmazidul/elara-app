@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Elara stores a cycle history, symptoms, free-text notes and answers a woman
+  gave about her own body. None of it may leave the phone by a route she did not
+  choose.
+
+  `android:allowBackup="false"` in the manifest is the primary control. This file
+  is the second lock, for Android 12 (API 31) and later, where the OS reads
+  dataExtractionRules rather than fullBackupContent:
+
+    * cloud-backup  — Auto Backup to the user's Google account. Excluded.
+    * device-transfer — the cable-to-cable copy during setup of a new phone.
+      Also excluded: moving an app's data to another device is a deliberate act,
+      and Elara's answer to it is the encrypted export, not a silent copy.
+
+  The supported path is inside the app: Settings > Privacy and data > Export.
+  That file is AES-256-GCM under a passphrase the user chooses, and it goes
+  wherever she sends it.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
