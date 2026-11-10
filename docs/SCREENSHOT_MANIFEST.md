@@ -72,7 +72,7 @@ Fictional throughout; no real person's data is used or included.
 | `settings.png` | Settings, top | light | 390 × 844 | location, appearance, notification toggles | Verified |
 | `settings-privacy.png` | Settings, scrolled to the end | light | 390 × 844 | consent, notification privacy, encrypted backup, About | Verified |
 | `preferences.png` | Preferences | light | 390 × 844 | her three answers (one "Kept private"), the holder's two observations (one "Unconfirmed") | Verified |
-| `about.png` | Settings › About block | light | 390 × 844 | name, version 1.2.0+6, licence, developer, engine, the start-up update check and the medical-limitation line | Verified |
+| `about.png` | Settings › About block | light | 390 × 844 | name, version 1.3.0+7, licence, developer, engine, the start-up update check and the medical-limitation line | Verified |
 | `tablet.png` | Today on a tablet | light | 1024 × 768 (3072 × 2304 px) | navigation rail beside a centred 720 dp content column | Verified |
 | `contact-sheet.png` | index of the above | — | 2434 × 1774 | every phone capture on one page, for review | Verified |
 
