@@ -23,6 +23,7 @@ Run it with:  python3 tool/android_ui/check_scripts.py
 
 from __future__ import annotations
 
+import os
 import pathlib
 import re
 import subprocess
@@ -105,6 +106,22 @@ def check_variables(path: pathlib.Path) -> list[str]:
     ]
 
 
+def check_executable(path: pathlib.Path) -> list[str]:
+    """The workflows invoke these by path, so the exec bit has to be in git.
+
+    Every script here was committed as 100644. `run: tool/android_ui/first_launch.sh`
+    then died with exit 126, "Permission denied" - after the emulator had
+    booted, on all three API levels, with the APK already built. The mode is
+    a property of the file in git, not of anyone's working copy, so it is
+    checked here rather than assumed.
+    """
+    if os.access(path, os.X_OK):
+        return []
+    return [
+        f"{path.name}: not executable; run `chmod +x {path}` and commit the mode"
+    ]
+
+
 def check_no_hardcoded_apk(path: pathlib.Path) -> list[str]:
     """The APK path is resolved by find_apk.sh, not written into a script."""
     text = path.read_text(encoding="utf-8")
@@ -128,6 +145,7 @@ def main() -> int:
         problems += check_syntax(script)
         problems += check_variables(script)
         problems += check_no_hardcoded_apk(script)
+        problems += check_executable(script)
 
     if problems:
         print("The emulator scripts have problems:\n")
@@ -135,7 +153,10 @@ def main() -> int:
             print(f"  {problem}")
         return 1
 
-    print(f"Checked {len(scripts)} emulator script(s): syntax, variables, APK path.")
+    print(
+        f"Checked {len(scripts)} emulator script(s): "
+        "syntax, variables, APK path, exec bit."
+    )
     return 0
 
 
