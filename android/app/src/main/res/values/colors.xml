@@ -7,7 +7,8 @@
          It has to match the Flutter scaffold's background, otherwise the app
          appears to flash a different colour between the splash and the first
          frame — and, with an edge-to-edge window, a mismatch at the edges of
-         the screen as well. The light value is Elara's #FAFAF8 and the dark
-         one its #1A1A1A. -->
-    <color name="elara_page_background">#FAFAF8</color>
+         the screen as well. The light value is ElaraPalette.light.bgPrimary
+         and the dark one is ElaraPalette.dark.bgPrimary; tool/check_manifest.py
+         reads both files and fails if they disagree. -->
+    <color name="elara_page_background">#F7F3EF</color>
 </resources>

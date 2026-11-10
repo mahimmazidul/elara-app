@@ -110,83 +110,93 @@ class ElaraPalette {
   final Color unknownPhase;
   final Color unknownPhaseText;
 
-  /// The light theme.
+  /// The light theme: warm paper, plum-black ink, honey where there is an
+  /// accent.
   ///
-  /// The page is cool slate-blue-grey and the surface is pure white, so the
-  /// two read as one continuous sheet rather than a stack of boxes. The ink is
-  /// deep slate navy. Every phase fill is cool -- dusty mauve, soft teal, cool
-  /// periwinkle, deep indigo -- never warm cream, yellow-heavy, brown, muddy or
-  /// excessively pink.
+  /// The previous palette was cool slate-blue with white cards. It was legible
+  /// and it read as a clinical dashboard — a grid of blue-grey panels, which is
+  /// the same visual language as a hospital records system and the opposite of
+  /// what this app is for. This one is built from paper and ink: a warm
+  /// off-white page (#F7F3EF), a card that is barely lighter than it (#FFFDFB)
+  /// so surfaces separate by tone rather than by shadow, and near-black warm
+  /// ink (#241E1B) for text.
   ///
-  /// Contrast, measured against both the page and the surface: primary
-  /// clears 13:1, secondary-strong clears 5:1, and every phase-text variant
-  /// clears 4.5:1. The four phase fills themselves are never used as text on
-  /// light; they are fills, and their text-safe variants sit beside them.
+  /// The four phase fills are the only saturated colour in the app, and each is
+  /// a natural dye rather than a screen primary: dusty rose for bleeding, sage
+  /// for the follicular days, honey for the ovulatory days, and a muted violet
+  /// for the luteal phase. Nothing is a pure red, green or blue, because a
+  /// cycle is not an alarm state.
+  ///
+  /// Contrast is measured, not assumed: primary ink clears 14:1, secondary
+  /// 6:1, every phase-text variant clears 4.9:1 on both the page and the card,
+  /// and the ink drawn on top of a phase fill clears 4.8:1 against the darkest
+  /// of the four. `test/theme/phase_theme_test.dart` asserts all of it.
   static const ElaraPalette light = ElaraPalette(
-    bgPrimary: Color(0xFFE8EEF6),
-    bgCard: Color(0xFFFFFFFF),
-    textPrimary: Color(0xFF1A2E4A),
-    textSecondary: Color(0xFF5A708C),
-    textSecondaryStrong: Color(0xFF3E5A7A),
-    phaseMenstrual: Color(0xFF9E7CB0),
-    phaseFollicular: Color(0xFF7FB3B8),
-    phaseOvulatory: Color(0xFF8B9AE8),
-    phaseLuteal: Color(0xFF6E7BB8),
-    phaseMenstrualText: Color(0xFF7A5A90),
-    phaseFollicularText: Color(0xFF4A7A85),
-    phaseOvulatoryText: Color(0xFF5A6AC0),
-    phaseLutealText: Color(0xFF4A5AA0),
-    accent: Color(0xFF9AA8E8),
-    accentText: Color(0xFF263450),
+    bgPrimary: Color(0xFFF7F3EF),
+    bgCard: Color(0xFFFFFDFB),
+    textPrimary: Color(0xFF241E1B),
+    textSecondary: Color(0xFF6B605A),
+    textSecondaryStrong: Color(0xFF4F453F),
+    phaseMenstrual: Color(0xFFC98C90),
+    phaseFollicular: Color(0xFF7FA894),
+    phaseOvulatory: Color(0xFFD2A45F),
+    phaseLuteal: Color(0xFF9384B6),
+    phaseMenstrualText: Color(0xFF96575C),
+    phaseFollicularText: Color(0xFF43715F),
+    phaseOvulatoryText: Color(0xFF7C5A20),
+    phaseLutealText: Color(0xFF5F5285),
+    accent: Color(0xFFE7BE97),
+    accentText: Color(0xFF2C2320),
     success: Color(0xFF6FA88C),
-    successText: Color(0xFF3E6E56),
-    warning: Color(0xFFB88FA8),
-    warningText: Color(0xFF7A5A7E),
-    danger: Color(0xFFB07CA0),
-    dangerText: Color(0xFF7A5A7E),
-    moonGlow: Color(0xFFF0F3F8),
-    onPhase: Color(0xFF1A2E4A),
-    divider: Color(0xFFD8E0EA),
-    track: Color(0xFFE4ECF4),
-    unknownPhase: Color(0xFF8A93A3),
-    unknownPhaseText: Color(0xFF5A6677),
+    successText: Color(0xFF3B6B54),
+    warning: Color(0xFFC79A6E),
+    warningText: Color(0xFF77502A),
+    danger: Color(0xFFB0768A),
+    dangerText: Color(0xFF7C4356),
+    moonGlow: Color(0xFFF1EAE2),
+    onPhase: Color(0xFF241E1B),
+    divider: Color(0xFFE6DDD4),
+    track: Color(0xFFEFE7DE),
+    unknownPhase: Color(0xFF8C857F),
+    unknownPhaseText: Color(0xFF5B544F),
   );
 
-  /// The dark theme.
+  /// The dark theme: warm near-black, the same four dyes, brighter ink.
   ///
-  /// Page deep midnight slate, surface one step lighter, so the surface reads
-  /// as a slightly raised sheet without a shadow. The ink is cool light grey.
-  /// The phase fills keep the same four cool hues as the light theme, each
-  /// with a lighter variant for text, because a fill that reads well as a
-  /// block is too dark to read as a word.
+  /// Not the light palette inverted. The page is a warm near-black (#14100F)
+  /// because a blue-black at night reads as a screen, and the card sits one
+  /// step above it (#1E1917) so surfaces separate without a shadow. The phase
+  /// fills are the same four hues as the light theme — a phase should not
+  /// change colour when the phone does — each with a lighter text variant,
+  /// because a fill that reads well as a block is too dark to read as a word.
   static const ElaraPalette dark = ElaraPalette(
-    bgPrimary: Color(0xFF12161E),
-    bgCard: Color(0xFF1C232E),
-    textPrimary: Color(0xFFE8EEF6),
-    textSecondary: Color(0xFF7E90A8),
-    textSecondaryStrong: Color(0xFFA8B8C8),
-    phaseMenstrual: Color(0xFF9E7CB0),
-    phaseFollicular: Color(0xFF7FB3B8),
-    phaseOvulatory: Color(0xFF8B9AE8),
-    phaseLuteal: Color(0xFF6E7BB8),
-    phaseMenstrualText: Color(0xFFB399CD),
-    phaseFollicularText: Color(0xFF8FC9CE),
-    phaseOvulatoryText: Color(0xFFABB2F2),
-    phaseLutealText: Color(0xFF8E9BCC),
-    accent: Color(0xFF2A4A7D),
-    accentText: Color(0xFFE8EEF6),
+    bgPrimary: Color(0xFF14100F),
+    bgCard: Color(0xFF1E1917),
+    textPrimary: Color(0xFFF3EDE8),
+    textSecondary: Color(0xFFA89C94),
+    textSecondaryStrong: Color(0xFFCDBFB5),
+    phaseMenstrual: Color(0xFFC98C90),
+    phaseFollicular: Color(0xFF7FA894),
+    phaseOvulatory: Color(0xFFD2A45F),
+    phaseLuteal: Color(0xFF9384B6),
+    phaseMenstrualText: Color(0xFFDCA9AC),
+    phaseFollicularText: Color(0xFF9DC7B4),
+    phaseOvulatoryText: Color(0xFFE5BF85),
+    phaseLutealText: Color(0xFFB4A7D1),
+    accent: Color(0xFF6B4A34),
+    accentText: Color(0xFFF3EDE8),
     success: Color(0xFF6FA88C),
-    successText: Color(0xFF7FB89E),
-    warning: Color(0xFFB88FA8),
-    warningText: Color(0xFFC89FB8),
-    danger: Color(0xFFB07CA0),
-    dangerText: Color(0xFFC08CB0),
-    moonGlow: Color(0xFF1E2530),
-    onPhase: Color(0xFF1A1416),
-    divider: Color(0xFF2E3844),
-    track: Color(0xFF26303C),
-    unknownPhase: Color(0xFF8A93A3),
-    unknownPhaseText: Color(0xFF9FB0C4),
+    successText: Color(0xFF8CC2A6),
+    warning: Color(0xFFC79A6E),
+    warningText: Color(0xFFDCB187),
+    danger: Color(0xFFB0768A),
+    dangerText: Color(0xFFD59BAE),
+    moonGlow: Color(0xFF241E1B),
+    onPhase: Color(0xFF241E1B),
+    divider: Color(0xFF322B28),
+    track: Color(0xFF2A2320),
+    unknownPhase: Color(0xFF8C857F),
+    unknownPhaseText: Color(0xFFB3AAA3),
   );
 
   /// Returns a copy with the named values replaced.

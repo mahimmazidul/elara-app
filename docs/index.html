@@ -6,7 +6,7 @@
 <title>Elara — cycle awareness for the person who cares</title>
 <meta name="description" content="Elara is an offline-first Android app that helps you remember, notice, prepare and care, around your partner's cycle.">
 <meta name="color-scheme" content="light">
-<meta name="theme-color" content="#FDF6F0">
+<meta name="theme-color" content="#F7F3EF">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:title" content="Elara">
@@ -17,24 +17,38 @@
   font when offline; nothing else is fetched. No JS, no analytics, no cookies.
 -->
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+/* Hind Siliguri is the app's family: a Bengali-first face with a well-drawn
+   Latin, so the page and the screenshots on it are set in the same type. One
+   import, weights 400/600/700, and the system stack behind it for offline. */
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
 
 :root {
-  --bg: #FDF6F0;
-  --card: #FFF8F3;
-  --text: #3D2C2E;
-  --muted: #8B7D7B;
-  --accent: #D4956A;
-  --accent-ink: #241C1E;
-  --rule: #EFE2D8;
+  /* The app's palette, by name. Paper, ink and honey, with the four phase
+     dyes as the only saturated colour on the page — the same four the app
+     draws. If the app's palette changes, these are the values to change, and
+     nothing else on this page should need to move. */
+  --bg: #F7F3EF;
+  --card: #FFFDFB;
+  --text: #241E1B;
+  --muted: #6B605A;
+  --muted-strong: #4F453F;
+  --accent: #D2A45F;
+  --accent-ink: #241E1B;
+  --rule: #E6DDD4;
 
-  --menstrual: #C97B7B;
-  --follicular: #7DB8A5;
-  --ovulatory: #E8B86D;
-  --luteal: #9B8EC4;
+  --menstrual: #C98C90;
+  --follicular: #7FA894;
+  --ovulatory: #D2A45F;
+  --luteal: #9384B6;
 
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --radius: 12px;
+  /* The phase colours as readable ink, for the labels under the strip. */
+  --menstrual-ink: #96575C;
+  --follicular-ink: #43715F;
+  --ovulatory-ink: #7C5A20;
+  --luteal-ink: #5F5285;
+
+  --shadow: 0 1px 2px rgba(36, 30, 27, 0.06);
+  --radius: 14px;
 }
 
 * { box-sizing: border-box; }
@@ -111,10 +125,10 @@ h1 {
   text-align: center;
 }
 
-.phase-labels li:nth-child(1) { color: #9F6263; }
-.phase-labels li:nth-child(2) { color: #577A6F; }
-.phase-labels li:nth-child(3) { color: #896D45; }
-.phase-labels li:nth-child(4) { color: #776C93; }
+.phase-labels li:nth-child(1) { color: #96575C; }
+.phase-labels li:nth-child(2) { color: #43715F; }
+.phase-labels li:nth-child(3) { color: #7C5A20; }
+.phase-labels li:nth-child(4) { color: #5F5285; }
 
 /* ---- Sections --------------------------------------------------------- */
 
@@ -320,10 +334,10 @@ a:focus-visible,
            tree rather than read out as an unlabelled image. -->
       <svg viewBox="0 0 400 8" role="img" aria-labelledby="phases-title">
         <title id="phases-title">The four cycle phases: menstrual, follicular, ovulatory, luteal</title>
-        <rect x="0"   y="0" width="97"  height="8" rx="4" fill="#C97B7B"/>
-        <rect x="101" y="0" width="97"  height="8" rx="4" fill="#7DB8A5"/>
-        <rect x="202" y="0" width="97"  height="8" rx="4" fill="#E8B86D"/>
-        <rect x="303" y="0" width="97"  height="8" rx="4" fill="#9B8EC4"/>
+        <rect x="0"   y="0" width="97"  height="8" rx="4" fill="#C98C90"/>
+        <rect x="101" y="0" width="97"  height="8" rx="4" fill="#7FA894"/>
+        <rect x="202" y="0" width="97"  height="8" rx="4" fill="#D2A45F"/>
+        <rect x="303" y="0" width="97"  height="8" rx="4" fill="#9384B6"/>
       </svg>
       <ul class="phase-labels" aria-hidden="true">
         <li>Menstrual</li>
@@ -355,8 +369,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t1">
             <title id="t1">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Remembers the dates.</strong> An estimate of the next period,
@@ -365,8 +379,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t2">
             <title id="t2">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Suggests something kind.</strong> A few ideas for the day, in
@@ -375,8 +389,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t3">
             <title id="t3">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Reads the weather, not her mood.</strong> Heat and air quality
@@ -385,8 +399,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t4">
             <title id="t4">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Stays on the phone.</strong> No account, no sync, no analytics.
@@ -417,8 +431,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q1">
             <title id="q1">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Three honest modes.</strong> Estimate the cycle, say she
@@ -428,8 +442,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q2">
             <title id="q2">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>No countdown through a loss.</strong> The first period after
@@ -439,8 +453,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q3">
             <title id="q3">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Nothing is deleted.</strong> Switching a mode off keeps

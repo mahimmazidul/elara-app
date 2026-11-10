@@ -49,8 +49,12 @@ void main() {
       // a seam.
       final light = ElaraTheme.light().scaffoldBackgroundColor;
       final dark = ElaraTheme.dark().scaffoldBackgroundColor;
-      expect(light, const Color(0xFFE8EEF6));
-      expect(dark, const Color(0xFF12161E));
+      // The palette is the source of truth: this asserts the scaffold follows
+      // it, and tool/check_manifest.py asserts the Android launch colour does
+      // the same. Hard-coding the literals here made three copies of one
+      // colour, and two of them went stale.
+      expect(light, ElaraPalette.light.bgPrimary);
+      expect(dark, ElaraPalette.dark.bgPrimary);
     });
 
     test('the app bar is transparent over the page', () {

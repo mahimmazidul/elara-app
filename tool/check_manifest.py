@@ -155,6 +155,62 @@ def check_privacy_controls(problems: list[str]) -> None:
             )
 
 
+def check_launch_colour(problems: list[str]) -> None:
+    """The launch colour in Android must equal the app's page colour.
+
+    Two Android resources paint the window before Flutter draws anything. When
+    they disagree with the palette the app opens with a flash of the old theme
+    — and with an edge-to-edge window, a visible seam at the edges of the
+    screen. They held #FAFAF8 and #1A1A1A through two palette rewrites, which is
+    exactly the kind of copy that goes stale silently.
+    """
+    dart = ROOT / "lib" / "theme" / "elara_theme.dart"
+    if not dart.exists():
+        problems.append("lib/theme/elara_theme.dart is missing")
+        return
+    source = dart.read_text()
+
+    wanted = {}
+    for name in ("light", "dark"):
+        block = re.search(
+            rf"static const ElaraPalette {name} = ElaraPalette\((.*?)\n  \);",
+            source,
+            re.S,
+        )
+        if block is None:
+            problems.append(f"elara_theme.dart: no {name} palette found")
+            continue
+        match = re.search(r"bgPrimary: Color\(0x([0-9A-Fa-f]{8})\)", block.group(1))
+        if match is None:
+            problems.append(f"elara_theme.dart: {name} palette has no bgPrimary")
+            continue
+        wanted[name] = "#" + match.group(1)[2:].upper()
+
+    for name, resource in (
+        ("light", ROOT / "android/app/src/main/res/values/colors.xml"),
+        ("dark", ROOT / "android/app/src/main/res/values-night/colors.xml"),
+    ):
+        if name not in wanted:
+            continue
+        if not resource.exists():
+            problems.append(f"{resource.relative_to(ROOT)} is missing")
+            continue
+        match = re.search(
+            r'<color name="elara_page_background">\s*(#[0-9A-Fa-f]{6})\s*</color>',
+            resource.read_text(),
+        )
+        if match is None:
+            problems.append(
+                f"{resource.relative_to(ROOT)}: no elara_page_background colour"
+            )
+        elif match.group(1).upper() != wanted[name]:
+            problems.append(
+                f"{resource.relative_to(ROOT)}: launch colour {match.group(1)} "
+                f"does not match ElaraPalette.{name}.bgPrimary {wanted[name]}, "
+                f"so the app flashes a different colour before the first frame"
+            )
+
+
 def check_cutout(problems: list[str]) -> None:
     """The window must be allowed to draw into a display cutout.
 
@@ -196,11 +252,14 @@ def main() -> None:
     check_xml(problems)
     check_privacy_controls(problems)
     check_cutout(problems)
+    check_launch_colour(problems)
 
     if problems:
         fail(problems)
 
-    print("Manifest, XML, privacy controls and cutout mode: clean.")
+    print(
+        "Manifest, XML, privacy controls, cutout mode and launch colour: clean."
+    )
 
 
 if __name__ == "__main__":
