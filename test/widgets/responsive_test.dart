@@ -191,6 +191,81 @@ void main() {
     });
   });
 
+  // Swiping the content is now a way to move between tabs, alongside the bar.
+  // The assertions are about the tab that ends up selected, which is the only
+  // thing the reader can see the result of.
+  group('swipe', () {
+    /// Which tab the bar says is selected — the reader-visible result of a
+    /// swipe, and the only thing worth asserting.
+    int selected(WidgetTester tester) =>
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+
+    Future<void> swipe(WidgetTester tester, double dx) async {
+      await tester.drag(
+        find.byType(IndexedStack),
+        Offset(dx, 0),
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a left swipe moves forward one tab', (tester) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+      expect(find.text('Today'), findsWidgets);
+
+      expect(selected(tester), 0);
+
+      await swipe(tester, -300);
+      // Calendar follows Today in the bar's order.
+      expect(selected(tester), 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a right swipe from the first tab stays on it', (tester) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      // There is nothing to the left of Today, so the content resists and
+      // springs back rather than sliding into empty space.
+      await swipe(tester, 300);
+      expect(tester.takeException(), isNull);
+      expect(selected(tester), 0);
+      expect(find.text('Ways to help today'), findsOneWidget);
+    });
+
+    testWidgets('swiping back and forth returns to the starting tab',
+        (tester) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      await swipe(tester, -300);
+      await swipe(tester, 300);
+      expect(tester.takeException(), isNull);
+      expect(selected(tester), 0);
+      expect(find.text('Ways to help today'), findsOneWidget);
+    });
+
+    testWidgets('a short drag is not a tab change', (tester) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      // 30px on a 390dp screen is a nudge, not a swipe.
+      await swipe(tester, -30);
+      expect(selected(tester), 0);
+      expect(find.text('Ways to help today'), findsOneWidget);
+    });
+
+    testWidgets('vertical scrolling still scrolls rather than changing tab',
+        (tester) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      await tester.drag(find.byType(IndexedStack), const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      // The list scrolled; the tab has not changed.
+      expect(selected(tester), 0);
+      expect(find.text('Ways to help today'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   // The widths the brief names, checked on the tab that carries the most
   // content per row: the phase chip, the countdown and the suggestion headings.
   group('phone widths', () {

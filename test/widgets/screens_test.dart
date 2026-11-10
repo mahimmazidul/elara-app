@@ -9,6 +9,7 @@ import 'package:elara_app/providers/update_provider.dart';
 import 'package:elara_app/providers/symptoms_provider.dart';
 import 'package:elara_app/providers/settings_provider.dart';
 import 'package:elara_app/screens/calendar/calendar_screen.dart';
+import 'package:elara_app/screens/insights/cycle_length_page.dart';
 import 'package:elara_app/screens/insights/insights_screen.dart';
 import 'package:elara_app/screens/today/today_screen.dart';
 import 'package:elara_app/services/climate_service.dart';
@@ -238,7 +239,7 @@ void main() {
   // --------------------------------------------------------------- Insights --
 
   group('Insights screen', () {
-    testWidgets('shows the placeholder with fewer than two cycles',
+    testWidgets('the hub summarises before it makes you open anything',
         (tester) async {
       final started = DateTime.now().subtract(const Duration(days: 12));
       final graph = await tester.runAsync(() => buildGraph(starts: [started]));
@@ -246,6 +247,27 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Insights'), findsOneWidget);
+
+      // Three subjects, each carrying the line that says whether it needs
+      // opening. The charts themselves are behind the rows now.
+      expect(find.text('Cycle length'), findsOneWidget);
+      expect(find.text('How steady it is'), findsOneWidget);
+      expect(find.text('How the prediction was made'), findsOneWidget);
+      expect(find.text('Heat and the cycle'), findsOneWidget);
+
+      // One recorded start and no completed cycle: the summary says so rather
+      // than quoting a mean of one number.
+      expect(find.text('No completed cycles yet'), findsOneWidget);
+      expect(find.text('Needs two completed cycles'), findsOneWidget);
+    });
+
+    testWidgets('the cycle-length page shows the chart and its empty state',
+        (tester) async {
+      final started = DateTime.now().subtract(const Duration(days: 12));
+      final graph = await tester.runAsync(() => buildGraph(starts: [started]));
+      await pumpScreen(tester, graph!, const CycleLengthPage());
+
+      expect(tester.takeException(), isNull);
       // No completed cycle length exists yet, so the chart says so plainly
       // instead of drawing an empty axis.
       expect(find.text('Not enough cycles yet'), findsOneWidget);
@@ -255,13 +277,35 @@ void main() {
       );
     });
 
-    testWidgets('shows the placeholder on a completely empty database',
-        (tester) async {
+    testWidgets('a row opens its page', (tester) async {
+      final now = DateTime.now();
+      final graph = await tester.runAsync(() => buildGraph(starts: [
+            now.subtract(const Duration(days: 59)),
+            now.subtract(const Duration(days: 30)),
+            now.subtract(const Duration(days: 2)),
+          ]));
+      await pumpScreen(tester, graph!, const InsightsScreen());
+
+      await tester.tap(find.text('Cycle length'));
+      await tester.pumpAndSettle();
+
+      // The page repeats the subject as its title and carries the explanation
+      // of what the spread does to the forecast, below the two charts.
+      expect(find.text('Cycle length'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('What this does to the forecast'),
+        240,
+      );
+      expect(find.text('What this does to the forecast'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an empty database still renders the hub', (tester) async {
       final graph = await tester.runAsync(() => buildGraph(starts: const []));
       await pumpScreen(tester, graph!, const InsightsScreen());
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Not enough cycles yet'), findsOneWidget);
+      expect(find.text('No completed cycles yet'), findsOneWidget);
     });
   });
 }

@@ -203,3 +203,20 @@ has ever been deleted.
 | Preferences and symptom screens on a real device | the screen is tested and screenshotted as a widget render; the sheet editor and popup menus were not driven through a full gesture path in a test | tap through add / edit / share / delete on a device |
 | Clinical review of the medical content | no clinical reviewer involved | requires a clinician; no medical claims are made in the UI in the meantime |
 | Prediction calibration on real data | needs a real cycle history | run against a year of real entries; do not claim a coverage target |
+
+## 10. Later passes (superseding rows in sections 6–8)
+
+The table above records the P1 pass. These changes came after it, and where a row
+above says "Preserved" it no longer holds.
+
+| Area | Now | Where |
+| --- | --- | --- |
+| Settings | a hub of ten rows in three groups; every row carries a status line; each opens a page holding one subject | `settings_screen.dart`, `widgets/sub_page.dart` |
+| Insights | a hub of three subjects (cycle length, how steady it is, how the prediction was made, heat and the cycle), charts moved onto the pages behind it | `screens/insights/` |
+| Today | hero dial, countdown, guidance, then notes / weather / moon as rows opening their own pages; the climate strip and lunar strip are no longer inline | `screens/today/` |
+| Navigation | tabs swipe as well as tap; the content follows the finger, resists at both ends, and springs back on a miss | `root_scaffold.dart` › `_SwipeTabs`, `responsive_test.dart` › swipe |
+| Surfaces | glass panels on settings, Insights and the sub-pages; no outline, no `BackdropFilter` | `widgets/primitives.dart` › `ElaraGlass` |
+| Palette | warm paper and ink replaced the slate-blue/white palette; the website was recoloured with it | `theme/elara_theme.dart`, `docs/index.html` |
+| Today's advice | personalised first, then general guidance for the phase with its sources | `data/generic_guidance.dart`, `services/care_recommender.dart` |
+| Health sources | the publisher is named and the page opens; raw URLs no longer appear on any page | `medical_topic_screen.dart` |
+| README | 479 lines → 127; detail moved into `docs/` | `README.md` |
