@@ -1,0 +1,82 @@
+name: Screenshots
+
+# Screenshots are generated here, not on a developer machine. Any push that can
+# change what the app looks like regenerates them and commits the result, so the
+# README and the landing page are never showing yesterday's UI.
+#
+# The paths filter deliberately excludes docs/screenshots: the commit this
+# workflow makes touches only those files, so it cannot retrigger itself.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'tool/screenshots/**'
+      - 'android/app/src/main/res/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/screenshots.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    name: Regenerate and commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Render the screens
+        # The renderer writes PNGs into docs/screenshots/. It needs no emulator:
+        # the widget tree is laid out and rasterised headlessly.
+        run: flutter test tool/screenshots/screenshots_test.dart --timeout 120s
+
+      - name: Commit anything that changed
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain docs/screenshots)" ]; then
+            echo "Screenshots unchanged; nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          git commit -m "chore: refresh screenshots [skip ci]"
+
+          # A commit that lands on the remote between this workflow's
+          # checkout and its push makes the push a non-fast-forward. The
+          # screenshots are in a directory nobody else writes to, so the
+          # race is retried against the new head rather than reported as a
+          # failure.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "Committed refreshed screenshots."
+              exit 0
+            fi
+            echo "::notice::The push was rejected (attempt ${attempt}); rebasing onto the remote head."
+            git pull --rebase origin main || git rebase FETCH_HEAD || true
+            sleep $((attempt * 5))
+          done
+
+          echo "::error::Could not push the refreshed screenshots after five attempts."
+          exit 1

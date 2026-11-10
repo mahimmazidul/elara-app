@@ -1,0 +1,267 @@
+name: Release
+
+# Two ways in, one outcome.
+#
+#   * Bump `version:` in pubspec.yaml and push to main. That version is the
+#     release; the workflow tags it, builds it and publishes it.
+#   * Push a vX.Y.Z tag by hand, which releases that tag.
+#
+# A release also runs on demand from the Actions tab, for re-cutting the current
+# version. Code pushes that leave pubspec.yaml alone never trigger a release.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'pubspec.yaml'
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Decide what to release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      version: ${{ steps.decide.outputs.version }}
+      should_release: ${{ steps.decide.outputs.should_release }}
+      tag_exists: ${{ steps.decide.outputs.tag_exists }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the version
+        id: decide
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # A tag was pushed explicitly: release exactly that.
+            version="${GITHUB_REF_NAME}"
+            if ! printf '%s' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::Tag '$version' is not a plain version tag (expected vX.Y.Z)."
+              exit 1
+            fi
+            echo "Version from the pushed tag: $version"
+          else
+            # A normal push: pubspec.yaml is the version of record.
+            raw="$(sed -n 's/^version: *\([0-9][0-9.]*\).*/\1/p' pubspec.yaml | head -1)"
+            if [ -z "$raw" ]; then
+              echo "::error::Could not read version: from pubspec.yaml."
+              exit 1
+            fi
+            version="v${raw}"
+            echo "Version from pubspec.yaml: $version"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+          # Does this version already exist as a tag?
+          if git ls-remote --tags origin "refs/tags/${version}" | grep -q .; then
+            tag_exists=true
+          else
+            tag_exists=false
+          fi
+          echo "tag_exists=${tag_exists}" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # Releasing a tag that is already pushed: always a release.
+            should=true
+          elif [ "$tag_exists" = "true" ]; then
+            # Version unchanged since the last release: nothing to do. This is
+            # what makes ordinary pushes to main silent.
+            echo "Tag ${version} already exists; no release needed."
+            should=false
+          else
+            should=true
+          fi
+          echo "should_release=${should}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build and publish signed artifacts
+    needs: version
+    if: needs.version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    permissions:
+      # Creating the tag and the release.
+      contents: write
+
+    outputs:
+      version: ${{ needs.version.outputs.version }}
+      apk_url: ${{ steps.publish.outputs.apk_url }}
+      universal_url: ${{ steps.publish.outputs.universal_url }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # Full history, so the release notes can be generated from the commits
+          # since the previous tag.
+          fetch-depth: 0
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # Both gates run before any signing material is written to disk, so a
+      # broken build never leaves a keystore on the runner.
+      - name: Analyze
+        run: dart analyze --fatal-infos
+
+      - name: Test
+        run: flutter test --reporter expanded
+
+      # The keystore exists only inside this job: decoded from a secret into a
+      # gitignored path, used to sign, and never uploaded.
+      - name: Decode the keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is not set."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/elara-release.jks
+          test -s android/app/elara-release.jks || {
+            echo "::error::Decoded keystore is empty."
+            exit 1
+          }
+          echo "Keystore decoded ($(wc -c < android/app/elara-release.jks) bytes)"
+
+      - name: Write android/key.properties
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          if [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ] || [ -z "$STORE_PASSWORD" ]; then
+            echo "::error::KEY_ALIAS, KEY_PASSWORD and STORE_PASSWORD must all be set."
+            exit 1
+          fi
+          cat > android/key.properties <<EOF
+          storeFile=elara-release.jks
+          keyAlias=${KEY_ALIAS}
+          storePassword=${STORE_PASSWORD}
+          keyPassword=${KEY_PASSWORD}
+          EOF
+          echo "key.properties written"
+
+      # If signing silently fell back to the debug key the artifacts would be
+      # unusable for distribution, so this asserts the release key is present.
+      - name: Verify the signing configuration is wired
+        run: |
+          grep -q 'signingConfigs.getByName("release")' android/app/build.gradle.kts \
+            || { echo "::error::Release signing config is not referenced by the release build type."; exit 1; }
+          echo "Release signing config is wired"
+
+      - name: Build app bundle (release)
+        run: flutter build appbundle --release
+
+      # One universal APK, which installs on any device, and one APK per CPU
+      # architecture, which is what most people should download: a split build
+      # carries only its own native libraries, so it is a fraction of the size.
+      - name: Build APKs (release)
+        run: |
+          set -euo pipefail
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk build/universal.apk
+          flutter build apk --release --split-per-abi
+
+      # Assets are named elara-<version>-<abi>.apk so a download is identifiable
+      # once it is sitting in someone's Downloads folder, rather than arriving as
+      # app-release.apk with no way to tell which build it is.
+      - name: Name the artifacts
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          flutter_dir=build/app/outputs/flutter-apk
+
+          cp build/universal.apk "dist/elara-${VERSION}-universal.apk"
+
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            src="${flutter_dir}/app-${abi}-release.apk"
+            if [ ! -f "$src" ]; then
+              echo "::error::Expected split APK is missing: $src"
+              ls -l "$flutter_dir"
+              exit 1
+            fi
+            cp "$src" "dist/elara-${VERSION}-${abi}.apk"
+          done
+
+          cp build/app/outputs/bundle/release/app-release.aab "dist/elara-${VERSION}.aab"
+
+          ls -lh dist
+
+      # Every APK is checked, not just the one: a split build failing to sign
+      # would otherwise only surface when someone tried to install it.
+      - name: Confirm every APK is signed with the release key
+        run: python3 tool/verify_apk_signature.py dist/*.apk
+
+      - name: Publish the tag and the GitHub Release
+        id: publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG_EXISTS: ${{ needs.version.outputs.tag_exists }}
+        run: |
+          set -euo pipefail
+
+          # --generate-notes builds the body from commits since the previous tag.
+          # --target pins a newly created tag to the commit that was just built;
+          # it is omitted when the tag already exists, since then the tag is
+          # already authoritative.
+          if [ "$TAG_EXISTS" = "true" ]; then
+            gh release create "$VERSION" \
+              --title "Elara $VERSION" \
+              --generate-notes \
+              dist/*
+          else
+            gh release create "$VERSION" \
+              --target "$GITHUB_SHA" \
+              --title "Elara $VERSION" \
+              --generate-notes \
+              dist/*
+          fi
+
+          base="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}"
+          echo "apk_url=${base}/elara-${VERSION}-arm64-v8a.apk" >> "$GITHUB_OUTPUT"
+          echo "universal_url=${base}/elara-${VERSION}-universal.apk" >> "$GITHUB_OUTPUT"
+          echo "Released ${VERSION} with per-CPU APKs"
+
+  pages:
+    name: Deploy the landing page
+    needs: [version, build]
+    if: needs.build.result == 'success'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # The page lives in one place (pages.yml), so the release-triggered path and
+    # the docs-triggered path cannot drift apart.
+    uses: ./.github/workflows/pages.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      download_url: ${{ needs.build.outputs.apk_url }}
+      universal_url: ${{ needs.build.outputs.universal_url }}

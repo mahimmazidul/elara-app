@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elara — cycle awareness for the person who cares</title>
+<meta name="description" content="Elara is an offline-first Android app that helps you remember, notice, prepare and care, around your partner's cycle.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FDF6F0">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta property="og:title" content="Elara">
+<meta property="og:description" content="Cycle awareness for the person who cares. Offline-first, on your phone.">
+<meta property="og:image" content="icon.png">
+<!--
+  One font import, one family, matching the app. Falls back to the system UI
+  font when offline; nothing else is fetched. No JS, no analytics, no cookies.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #FDF6F0;
+  --card: #FFF8F3;
+  --text: #3D2C2E;
+  --muted: #8B7D7B;
+  --accent: #D4956A;
+  --accent-ink: #241C1E;
+  --rule: #EFE2D8;
+
+  --menstrual: #C97B7B;
+  --follicular: #7DB8A5;
+  --ovulatory: #E8B86D;
+  --luteal: #9B8EC4;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  /* Horizontal padding never exceeds a comfortable thumb gutter, and the whole
+     page is fluid below 420px: nothing here has a fixed width, so a 375px
+     viewport cannot produce a horizontal scrollbar. */
+  padding: 0 clamp(1rem, 5vw, 2rem) 3rem;
+  background: var(--bg);
+  color: var(--text);
+  /* The app is set in Hind Siliguri. The website cannot load the bundled
+     font file without shipping it a second time, so it names the family
+     first and falls back to the system stack - which on a device with the
+     app's font installed will match, and will not look broken when it is
+     not. */
+  font-family: 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 34rem; margin: 0 auto; }
+
+/* ---- Hero ------------------------------------------------------------- */
+
+header { padding: clamp(2.5rem, 9vw, 4.5rem) 0 0; text-align: center; }
+
+.mark {
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.25rem;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 11vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.tagline {
+  margin: 0.75rem auto 0;
+  max-width: 26rem;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+/* ---- Phase strips ----------------------------------------------------- */
+
+.phases { margin: 2rem auto 0; max-width: 26rem; }
+
+.phases svg { display: block; width: 100%; height: auto; }
+
+.phase-labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.phase-labels li:nth-child(1) { color: #9F6263; }
+.phase-labels li:nth-child(2) { color: #577A6F; }
+.phase-labels li:nth-child(3) { color: #896D45; }
+.phase-labels li:nth-child(4) { color: #776C93; }
+
+/* ---- Sections --------------------------------------------------------- */
+
+section { margin-top: clamp(2.5rem, 8vw, 3.5rem); }
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+p { margin: 0 0 0.9rem; }
+
+.points { margin: 0; padding: 0; list-style: none; }
+
+.points li {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.points li:last-child { border-bottom: 1px solid var(--rule); }
+
+.tick { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; margin-top: 0.2rem; }
+
+.points strong { font-weight: 500; }
+
+/* ---- Screenshot ------------------------------------------------------- */
+
+figure { margin: 0; text-align: center; }
+
+/* Two captures side by side where there is room, stacked on a phone. Plain CSS
+   grid, no fixed widths, so neither shot is ever squeezed. */
+.shots {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 40rem) {
+  .shots { grid-template-columns: 1fr 1fr; }
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  max-width: 19rem;
+  height: auto;
+  margin: 0 auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+figcaption {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+/* ---- Download --------------------------------------------------------- */
+
+.download {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 5vw, 1.75rem);
+  text-align: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.button {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  margin: 1rem auto 0;
+  padding: 0.85rem 1rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.note {
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.note a { color: var(--accent-ink); }
+
+/* ---- Footer ----------------------------------------------------------- */
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+footer p { margin: 0.35rem 0 0; }
+
+a { color: #95694D; text-decoration: none; }
+
+a:hover { text-decoration: underline; }
+
+/* Keyboard focus has to be visible on every interactive element, including the
+   dark-on-accent button where a default outline is easy to lose. */
+a:focus-visible,
+.button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a, .button { transition: opacity 120ms ease; }
+  .button:active { opacity: 0.88; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img class="mark" src="icon.png" width="72" height="72"
+         alt="Elara: a cream crescent moon with one gold dot on a deep brown field">
+    <h1>Elara</h1>
+    <p class="tagline">
+      Cycle awareness for the person who cares. Remember, notice, prepare, and
+      ask &mdash; without guessing.
+    </p>
+
+    <div class="phases">
+      <!-- Decorative colour reference, labelled for screen readers by the list
+           underneath, so the graphic itself is hidden from the accessibility
+           tree rather than read out as an unlabelled image. -->
+      <svg viewBox="0 0 400 8" role="img" aria-labelledby="phases-title">
+        <title id="phases-title">The four cycle phases: menstrual, follicular, ovulatory, luteal</title>
+        <rect x="0"   y="0" width="97"  height="8" rx="4" fill="#C97B7B"/>
+        <rect x="101" y="0" width="97"  height="8" rx="4" fill="#7DB8A5"/>
+        <rect x="202" y="0" width="97"  height="8" rx="4" fill="#E8B86D"/>
+        <rect x="303" y="0" width="97"  height="8" rx="4" fill="#9B8EC4"/>
+      </svg>
+      <ul class="phase-labels" aria-hidden="true">
+        <li>Menstrual</li>
+        <li>Follicular</li>
+        <li>Ovulatory</li>
+        <li>Luteal</li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="what">
+      <h2 id="what">What it does</h2>
+      <ul class="points">
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t1">
+            <title id="t1">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Remembers the dates.</strong> An estimate of the next period,
+          with the uncertainty stated in days rather than hidden.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t2">
+            <title id="t2">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Suggests something kind.</strong> A few ideas for the day, in
+          words, ranked by what she has actually said over what a calendar implies.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t3">
+            <title id="t3">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Reads the weather, not her mood.</strong> Heat and air quality
+          shape the advice. Hormones are never used to explain a person.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t4">
+            <title id="t4">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Stays on the phone.</strong> No account, no sync, no analytics.
+          What is logged here does not leave it.</span>
+        </li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="look">
+      <h2 id="look">A look</h2>
+      <div class="shots">
+        <figure>
+          <img src="screenshots/today.png"
+               alt="The Today screen: an ovulatory phase chip reading day 10, a countdown to the next estimated period with a two-day window, and a care suggestion whose source is labelled 'She told you this'.">
+          <figcaption>Today: the phase, the next estimate, and one thing worth doing.</figcaption>
+        </figure>
+        <figure>
+          <img src="screenshots/today-action.png"
+               alt="The guidance section: a suggestion driven by the weather, then the phase prompt with a food idea and the note that it is a suggestion, not a forecast.">
+          <figcaption>Each idea says where it came from &mdash; what she said, what she reported, the weather, or the estimate.</figcaption>
+        </figure>
+        <figure>
+          <img src="screenshots/settings.png"
+               alt="Settings: the Location section with two coordinate fields and a Save location button, then Preferences, Health information and Appearance as plain headed sections separated by hairlines.">
+          <figcaption>Settings is a set of sections, not a stack of cards.</figcaption>
+        </figure>
+        <figure>
+          <img src="screenshots/about.png"
+               alt="The About block: the app name and build number, then plain label-and-value rows for version, licence, developer and prediction engine, with the start-up update check.">
+          <figcaption>About states what it is, who made it, and what it will not do.</figcaption>
+        </figure>
+      </div>
+      <p class="note">
+        Every image above is a real render of the running app over a fixed
+        fictional dataset &mdash; no mockups and no edited screenshots. The
+        screenshots captured from the compiled APK on an emulator, with the
+        Android system bars in frame, are in the repository under
+        <code>docs/device-screenshots/</code>.
+      </p>
+    </section>
+
+    <section class="download" aria-labelledby="get">
+      <h2 id="get" style="margin-bottom:0.75rem">Download</h2>
+      <span class="badge">Version {{LATEST_VERSION}}</span>
+      <a class="button" href="{{DOWNLOAD_URL}}">Download the APK</a>
+      <p class="note">
+        Android 7.0 and newer, 64-bit phones &mdash; the arm64 build, which is the
+        small one. On a 32-bit device or an emulator, take the
+        <a href="{{DOWNLOAD_URL_UNIVERSAL}}">universal APK</a>.
+        Installed directly, so Play Protect asks you to confirm. Not on the Play
+        Store.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="https://github.com/mahimmazidul/elara-app">Source on GitHub</a></p>
+    <p>Free software under the GNU AGPL-3.0. No trackers, no cookies, no accounts.</p>
+  </footer>
+
+</div>
+</body>
+</html>

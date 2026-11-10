@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Elara's notification small icon.
+
+  Android draws a status-bar icon from the alpha channel of the drawable alone
+  and tints it with the system's own colour; every pixel is either fully
+  opaque (drawn, in the system tint) or fully transparent (not drawn). The
+  colour inside the path is therefore irrelevant — it is white only so the
+  file is unambiguous to read.
+
+  This is a vector rather than a set of density-specific PNGs, so it is exact
+  at every density and cannot go stale, and it is a monochrome silhouette so
+  it can be tinted. The crescent and the dot are the same shapes as the
+  launcher's monochrome layer (android/app/src/main/res/mipmap-*/ic_launcher_
+  monochrome.png), traced from it: the crescent is the area inside a circle of
+  radius 10.305 centred at (11.97, 10.71) minus a circle of radius 10.520
+  centred at (17.22, 7.77), and the dot is a circle of radius 3.118.
+
+  The artwork is inset to 21 of the 24 dp box, which is the usable area for a
+  status-bar icon; filling the whole 24 dp makes it crowd its neighbours on
+  devices that draw icons tight against the status bar clock.
+
+  There is deliberately no small internal detail: anything finer than about
+  1 dp closes up into a blob at 24 dp on a low-density screen.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M18.9975,19.3797 A10.3050,10.3050 0 1 1 9.1968,2.0306 A10.5199,10.5199 0 0 0 18.9975,19.3797 Z" />
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M16.2642,5.6302 a3.1179,3.1179 0 1 0 6.2358,0 a3.1179,3.1179 0 1 0 -6.2358,0 Z" />
+</vector>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The dark theme's page colour, matching lib/theme/elara_theme.dart. -->
+    <color name="ic_launcher_background">#3D2C2E</color>
+
+    <!-- The page colour behind the app, used by the launch theme.
+         It has to match the Flutter scaffold's background, otherwise the app
+         appears to flash a different colour between the splash and the first
+         frame — and, with an edge-to-edge window, a mismatch at the edges of
+         the screen as well. The light value is Elara's #FAFAF8 and the dark
+         one its #1A1A1A. -->
+    <color name="elara_page_background">#FAFAF8</color>
+</resources>

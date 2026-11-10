@@ -1,0 +1,212 @@
+import 'dart:convert';
+
+import 'package:elara_app/app_info.dart';
+import 'package:elara_app/data/database_helper.dart';
+import 'package:elara_app/providers/settings_provider.dart';
+import 'package:elara_app/providers/update_provider.dart';
+import 'package:elara_app/screens/settings/about_section.dart';
+import 'package:elara_app/services/update_service.dart';
+import 'package:elara_app/theme/elara_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+/// The About card and the update row: what it claims, and what it refuses to.
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late DatabaseHelper db;
+  late SettingsProvider settings;
+
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  });
+
+  setUp(() async {
+    db = DatabaseHelper.instance;
+    db.overridePath = inMemoryDatabasePath;
+    await db.close();
+    settings = SettingsProvider(database: db);
+  });
+
+  tearDown(() async {
+    await db.close();
+    db.overridePath = null;
+  });
+
+  http.Client offline() => MockClient((_) async => http.Response('', 503));
+
+  http.Client release(String tag) => MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'tag_name': tag,
+            'name': 'Elara $tag',
+            'body': 'Fixes for irregular cycles.',
+            'html_url': 'https://github.com/mahimmazidul/elara-app/releases',
+            'prerelease': false,
+            'published_at': '2026-11-01T00:00:00Z',
+            'assets': [
+              {
+                'name': 'elara-arm64-v8a.apk',
+                'browser_download_url':
+                    'https://github.com/mahimmazidul/elara-app/releases/download/v/elara-arm64-v8a.apk',
+                'size': 22000000,
+              },
+            ],
+          }),
+          200,
+        ),
+      );
+
+  Future<UpdateProvider> pump(
+    WidgetTester tester, {
+    http.Client? client,
+    Size size = const Size(390, 844),
+    double textScale = 1.0,
+  }) async {
+    final updates = UpdateProvider(
+      service: UpdateService(httpClient: client ?? offline()),
+      installedVersion: AppInfo.version,
+    );
+    await tester.runAsync(() => settings.load());
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: MediaQueryData(size: size, textScaler: TextScaler.linear(textScale)),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<SettingsProvider>.value(value: settings),
+            ChangeNotifierProvider<UpdateProvider>.value(value: updates),
+          ],
+          child: MaterialApp(
+            theme: ElaraTheme.light(),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(ElaraSpacing.lg),
+                  child: AboutSection(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    return updates;
+  }
+
+  testWidgets('shows the installed version and build from app metadata',
+      (tester) async {
+    await pump(tester);
+
+    final plus = AppInfo.version.indexOf('+');
+    final version = AppInfo.version.substring(0, plus);
+    final build = AppInfo.version.substring(plus + 1);
+
+    expect(find.text('$version (build $build)'), findsOneWidget);
+    expect(find.text(AppInfo.license), findsOneWidget);
+    expect(find.text('Md. Mazidul Islam Mahim'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('states that no social accounts exist rather than inventing them',
+      (tester) async {
+    await pump(tester);
+
+    expect(find.textContaining('publishes no social accounts'), findsOneWidget);
+    // No fabricated profile links.
+    expect(find.textContaining('twitter.com'), findsNothing);
+    expect(find.textContaining('x.com'), findsNothing);
+    expect(find.textContaining('instagram.com'), findsNothing);
+  });
+
+  testWidgets('the limitations panel carries the medical and privacy claims',
+      (tester) async {
+    await pump(tester);
+
+    expect(find.textContaining('not a medical device'), findsOneWidget);
+    expect(find.textContaining('no accounts, no analytics'), findsOneWidget);
+    expect(find.textContaining('estimates from recorded history'),
+        findsOneWidget);
+  });
+
+  testWidgets('an unchecked row says so and does not imply current',
+      (tester) async {
+    await pump(tester);
+
+    expect(find.text('Not checked yet'), findsOneWidget);
+  });
+
+  testWidgets('a newer release opens a sheet with notes and file sizes',
+      (tester) async {
+    await pump(tester, client: release('v9.9.9'));
+
+    await tester.runAsync(() async {
+      await tester.scrollUntilVisible(find.text('Check for updates'), 200);
+      await tester.tap(find.text('Check for updates'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Version 9.9.9 is available'), findsOneWidget);
+    expect(find.text('Fixes for irregular cycles.'), findsOneWidget);
+    expect(find.textContaining('elara-arm64-v8a.apk'), findsOneWidget);
+    expect(find.textContaining('21.0 MB'), findsOneWidget);
+    // It offers a link and says it will not install anything itself.
+    expect(find.textContaining('will not install this for you'), findsOneWidget);
+  });
+
+  testWidgets('an offline check explains itself and does not claim current',
+      (tester) async {
+    await pump(tester);
+
+    await tester.runAsync(() async {
+      await tester.scrollUntilVisible(find.text('Check for updates'), 200);
+      await tester.tap(find.text('Check for updates'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Could not check for updates'), findsOneWidget);
+    expect(find.textContaining('works offline'), findsOneWidget);
+  });
+
+  testWidgets('automatic checking is off by default and can be switched on',
+      (tester) async {
+    await pump(tester);
+
+    expect(settings.updatesAutoCheck, isFalse);
+    expect(find.text('Check on start-up'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.scrollUntilVisible(find.text('Check on start-up'), 200);
+      await tester.tap(find.text('Check on start-up'));
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+    });
+    await tester.pumpAndSettle();
+
+    expect(settings.updatesAutoCheck, isTrue);
+  });
+
+  for (final width in <double>[320, 360, 390, 430]) {
+    for (final scale in <double>[1.0, 1.5, 2.0]) {
+      testWidgets('lays out at ${width.toInt()}dp and ${scale}x text',
+          (tester) async {
+        await pump(
+          tester,
+          size: Size(width, 900),
+          textScale: scale,
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+}

@@ -1,0 +1,111 @@
+name: elara_app
+description: An offline-first cycle companion with local predictions and gentle daily guidance.
+publish_to: "none"
+version: 1.2.0+6
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Prediction engine: ensemble cycle forecasting, phase classification,
+  # environmental severity and action suggestions. Pure Dart, fully offline.
+  elara_core:
+    git:
+      url: https://github.com/mahimmazidul/elara-core.git
+      ref: main
+
+  # State management
+  provider: ^6.1.5+1
+
+  # Local persistence
+  sqflite: ^2.4.5
+  path: ^1.9.1
+
+  # On-device notifications and background scheduling
+  flutter_local_notifications: ^23.0.0
+  android_alarm_manager_plus: ^5.1.2
+
+  # Timezone-aware scheduling. Imported directly by the notification layer,
+  # so it is declared directly rather than relied on transitively.
+  timezone: ^0.11.2
+
+  # Environmental data (heat index, air quality)
+  http: ^1.6.0
+
+  # Launching external URLs from About (GitHub, engine, releases).
+  url_launcher: ^6.3.1
+
+  # Charts
+  fl_chart: ^1.3.0
+
+  # Formatting and locale-aware dates.
+  intl: ^0.20.3
+
+  # Hijri calendar support
+  hijri: ^3.0.1
+
+  # Backup encryption. The export contains cycle dates, which is health data, so
+  # it is encrypted with AES-GCM under a key stretched from the user's own
+  # passphrase by PBKDF2. Pure Dart: identical behaviour in tests, no platform
+  # channel, no Android SDK surface.
+  cryptography: ^2.9.0
+
+  # Hands the encrypted backup to the user's own share sheet, so it goes
+  # wherever they choose: their files, their own cloud, or a message to
+  # themselves. Without it the app could only write into its private directory,
+  # which is not a backup.
+  share_plus: ^13.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  # Test-only: runs the real sqflite schema against a native sqlite3 in unit
+  # tests, so the migrations and queries are verified rather than assumed.
+  #
+  # Pinned to the 2.3.x line deliberately. The newer sqflite_common_ffi pulls
+  # sqlite3 3.5+, whose build hook *downloads* a prebuilt libsqlite3 from a
+  # GitHub release at build time. That download is served from the same CDN
+  # that was returning 504 during CI, and when it does, the Android build dies
+  # with a hash mismatch on a file that has nothing to do with this app:
+  #
+  #   Bad state: Hash of downloaded file libsqlite3.arm64.android.so is
+  #   bef140a1..., expected 0c2d3bfc...
+  #
+  # The 2.3.x line ships the native library inside the package instead, so the
+  # APK builds without a network fetch. The pin costs nothing at runtime: this
+  # dependency is test-only and is not part of the shipped app.
+  sqflite_common_ffi: ">=2.3.0 <2.4.0"
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    # Hind Siliguri, bundled as four static weights so a first launch with no
+    # connection is fully typeset.
+    #
+    # It is a Bengali-first typeface with a well-drawn Latin, so one family
+    # draws both scripts. That matters: with two families the Bengali fell
+    # back to a visibly different typeface and sat at a different weight from
+    # the English around it.
+    #
+    # The weights are 400, 500, 600 and 700, which is one more than the app
+    # uses - 600 is there so that a caller asking for semibold gets real
+    # semibold rather than a synthesised fake.
+    #
+    # SIL Open Font License 1.1; the licence text ships alongside the files
+    # in assets/fonts/OFL.txt.
+    - family: Hind Siliguri
+      fonts:
+        - asset: assets/fonts/HindSiliguri-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/HindSiliguri-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/HindSiliguri-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/HindSiliguri-Bold.ttf
+          weight: 700

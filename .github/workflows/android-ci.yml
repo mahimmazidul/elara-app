@@ -1,0 +1,288 @@
+name: Android CI
+
+# The Android build and runtime-verification gate.
+#
+# Until this workflow existed, an APK could only be produced on a machine with
+# an Android SDK, which no development sandbox in this project has. This file
+# makes GitHub's runners the build and test environment of record:
+#
+#   source revision -> analyze -> unit/widget tests -> debug APK -> artifact
+#                   -> emulator install -> on-device flows -> screenshots
+#
+# It deliberately does NOT touch release signing. The signed, published
+# artifacts are produced by release.yml from repository secrets; this workflow
+# builds a debug APK, which is signed with the throwaway debug key and is only
+# ever installed on an emulator.
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # One place for the toolchain versions, so the build job and the emulator
+  # jobs cannot drift apart. Flutter is pinned rather than tracking `stable`
+  # so a build that passed yesterday still builds today.
+  FLUTTER_VERSION: 3.47.9
+  JAVA_VERSION: '21'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build the APK that everything downstream installs.
+  # ---------------------------------------------------------------------------
+  apk:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    outputs:
+      version_name: ${{ steps.inspect.outputs.version_name }}
+      version_code: ${{ steps.inspect.outputs.version_code }}
+      package: ${{ steps.inspect.outputs.package }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Show toolchain versions
+        run: |
+          flutter --version
+          dart --version
+          java -version
+          echo "ANDROID_HOME=${ANDROID_HOME:-unset}"
+          ls "${ANDROID_HOME}/platforms" 2>/dev/null || true
+
+      # The Gradle cache.
+      #
+      # Without it, every run downloads the whole of Gradle's dependency
+      # graph again - the Android Gradle Plugin, Kotlin, and every library
+      # the app depends on. That download is the largest single cost in this
+      # job after the APK build itself, and it is pure repetition: the
+      # dependencies do not change between runs.
+      #
+      # The key is the hash of the Gradle files, so a change to
+      # build.gradle.kts produces a new key and a fresh download, and an
+      # unchanged build reuses the previous one. The cache is saved after the
+      # build rather than before, so what is stored is the state the build
+      # actually left behind.
+      - name: Cache the Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/**', 'android/app/build.gradle.kts') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # The analysis and the test suite are NOT repeated here.
+      #
+      # ci.yml already runs both on every push to this branch:
+      # `dart analyze --fatal-infos` in its analyze job, and the whole of
+      # test/ across four shards that run in parallel (436 tests, ~70s). This
+      # workflow used to run them a second time - the analyzer serially, and
+      # the whole suite in one process - so every push ran the suite twice
+      # and the Android build waited for the slower of the two copies.
+      #
+      # The gate is not removed, it is moved to where it costs nothing:
+      # CI's analyze job is the gate, and it runs on the same commit. A
+      # revision that does not analyse cleanly fails CI, and the branch
+      # protection rules are what keep a red revision off main. The APK job
+      # below builds the revision as it stands; if CI is red, the commit is
+      # visible as red before anyone reads an emulator screenshot.
+      #
+      # What this job keeps is the check that belongs to an *artifact* rather
+      # than to the code: that the APK exists, parses, is the right package,
+      # and carries the resources it needs.
+
+      # Gradle is fetched by its wrapper on first use. That download comes from
+      # a CDN that answered 504 on the first run of this workflow, which failed
+      # the build for a reason that had nothing to do with the code. The retry
+      # is about that specific transient: it re-runs the build, and a genuine
+      # compile error fails every attempt.
+      - name: Build the debug APK
+        run: |
+          set -uo pipefail
+          for attempt in 1 2 3; do
+            echo "::group::assembleDebug attempt ${attempt}"
+            if flutter build apk --debug \
+                --target-platform android-arm64,android-arm,android-x64; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ "${attempt}" = 3 ]; then
+              echo "::error::The APK build failed on all three attempts."
+              exit 1
+            fi
+            echo "Attempt ${attempt} failed; retrying."
+            sleep $((attempt * 20))
+          done
+
+      # Compilation is not evidence on its own, so the artifact is inspected:
+      # it has to exist, parse as an APK, carry the expected package name, and
+      # report a version. The values are exported for the report.
+      - name: Inspect the APK
+        id: inspect
+        run: |
+          set -euo pipefail
+          apk=build/app/outputs/flutter-apk/app-debug.apk
+          test -s "$apk" || { echo "::error::APK missing at $apk"; exit 1; }
+          echo "APK present: $(wc -c < "$apk") bytes"
+
+          aapt="$(ls "${ANDROID_HOME}"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)"
+          if [ -z "$aapt" ]; then
+            aapt="$(find "${ANDROID_HOME}" -name aapt2 -type f | sort -V | tail -1)"
+          fi
+          test -n "$aapt" || { echo "::error::aapt2 not found"; exit 1; }
+          echo "Using $aapt"
+
+          badging="$("$aapt" dump badging "$apk")"
+          printf '%s\n' "$badging" | head -20
+
+          package="$(printf '%s\n' "$badging" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
+          version_name="$(printf '%s\n' "$badging" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")"
+          version_code="$(printf '%s\n' "$badging" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p")"
+          echo "package=$package versionName=$version_name versionCode=$version_code"
+
+          test "$package" = "com.mahimmazidul.elara" || {
+            echo "::error::Unexpected package id '$package'"; exit 1;
+          }
+          test -n "$version_name" || { echo "::error::No versionName in APK"; exit 1; }
+
+          # The APK must contain the notification icon and the launcher icon, or
+          # a later install would ship a build that cannot draw a status-bar icon.
+          "$aapt" dump resources "$apk" > /tmp/resources.txt || true
+          grep -q 'ic_stat_elara' /tmp/resources.txt || {
+            echo "::error::ic_stat_elara is missing from the packaged resources"; exit 1;
+          }
+          echo "Notification icon resource present."
+
+          {
+            echo "version_name=$version_name"
+            echo "version_code=$version_code"
+            echo "package=$package"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### APK built"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Package | \`$package\` |"
+            echo "| Version | \`$version_name\` (\`$version_code\`) |"
+            echo "| Size | $(du -h "$apk" | cut -f1) |"
+            echo "| Source revision | \`${GITHUB_SHA}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: elara-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          # Short retention: this is a test artifact, not a distributable build.
+          retention-days: 14
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Run the artifact that the job above produced. Nothing is rebuilt here: the
+  # downloaded APK is installed as-is, so what runs is exactly what the build
+  # job uploaded.
+  #
+  # The matrix covers an older release and a recent one, because the system
+  # bars behave differently across them: Android 10 introduced the contrast
+  # enforcement that paints a scrim over the navigation bar, and Android 15
+  # forces edge-to-edge for every app. An app that only ever looks right on
+  # one of them has not been verified.
+  # ---------------------------------------------------------------------------
+  emulator:
+    name: Emulator · API ${{ matrix.api-level }}
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    strategy:
+      # One API level failing must not hide the result for the others.
+      fail-fast: false
+      matrix:
+        api-level: [29, 33, 35]
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Download the APK built above
+        uses: actions/download-artifact@v4
+        with:
+          name: elara-debug-apk
+          path: artifact
+
+      - name: Enable the KVM device the emulator needs
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install and launch the artifact
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+            -camera-back none -camera-front none -no-snapshot
+          # Both scripts run in the same emulator session: the first proves the
+          # app starts, the second drives it. Starting a second emulator for
+          # the second script would double the boot time and the flakiness
+          # for no extra coverage, and the navigation script installs the
+          # artifact itself so it does not depend on the first one.
+          script: |
+            tool/android_ui/first_launch.sh
+            tool/android_ui/navigation.sh
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-evidence-api${{ matrix.api-level }}
+          path: evidence
+          retention-days: 14
+          if-no-files-found: warn

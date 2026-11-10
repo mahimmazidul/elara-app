@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  flutter_local_notifications resolves its notification icon by resource name at
+  runtime (getIdentifier(name, "drawable", package)), so the resource shrinker
+  cannot see the reference and would remove it. Keeping the launcher mipmaps and
+  the notification drawable guarantees they still exist in a release build;
+  without this, notifications can silently fail to display.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@mipmap/ic_launcher,@mipmap/ic_launcher_round,@drawable/ic_stat_elara" />

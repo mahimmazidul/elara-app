@@ -1,0 +1,104 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Release builds need this explicitly; the Flutter template only
+         grants INTERNET to the debug and profile manifests. Elara uses it
+         solely for the Open-Meteo and Open-AQ weather lookups; all cycle
+         data stays on-device. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Notifications (flutter_local_notifications). POST_NOTIFICATIONS and
+         VIBRATE come from the plugin's own manifest; these four are the ones the
+         app must declare itself. RECEIVE_BOOT_COMPLETED lets both the plugin and
+         android_alarm_manager_plus restore the schedule after a reboot.
+         SCHEDULE_EXACT_ALARM rather than USE_EXACT_ALARM: the latter is
+         restricted to alarm/calendar apps and could be refused at review, and
+         this app degrades to inexact alarms when permission is not granted. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <application
+        android:label="Elara"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+<<<<<<< HEAD
+<<<<<<< HEAD
+            android:windowSoftInputMode="adjustResize"
+            android:windowLayoutInDisplayCutoutMode="shortEdges">
+=======
+            android:windowSoftInputMode="adjustResize">
+>>>>>>> origin/main
+=======
+            android:windowSoftInputMode="adjustResize">
+>>>>>>> origin/main
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- flutter_local_notifications: shows scheduled notifications and
+             restores them after a reboot or an app update. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false"/>
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- android_alarm_manager_plus: daily wake-up that rebuilds the schedule
+             and keeps reminder text in step with the current cycle. -->
+        <service
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+        <receiver
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmBroadcastReceiver"
+            android:exported="false"/>
+        <receiver
+            android:name="dev.fluttercommunity.plus.androidalarmmanager.RebootBroadcastReceiver"
+            android:enabled="false"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>

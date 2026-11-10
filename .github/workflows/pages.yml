@@ -1,0 +1,151 @@
+name: Pages
+
+# The landing page has two ways to reach it:
+#
+#   * a push to main that touches docs/, which redeploys the page as it stands;
+#   * a call from release.yml, which passes the freshly published version and APK
+#     link straight from the build job.
+#
+# Keeping it in one place means the substitution and the deploy happen in exactly
+# one implementation, whether or not a release caused them.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
+  workflow_call:
+    inputs:
+      version:
+        description: Version tag to show. Defaults to the newest tag.
+        type: string
+        required: false
+        default: ''
+      download_url:
+        description: APK URL for the button (the per-CPU build). Defaults to the newest release asset.
+        type: string
+        required: false
+        default: ''
+      universal_url:
+        description: Universal APK URL, offered as the fallback. Defaults to the newest release.
+        type: string
+        required: false
+        default: ''
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time. A release-triggered deploy and a docs push would
+# otherwise race for the same Pages slot.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy the landing page
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the version and download link
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_DOWNLOAD_URL: ${{ inputs.download_url }}
+          INPUT_UNIVERSAL_URL: ${{ inputs.universal_url }}
+        run: |
+          set -euo pipefail
+
+          version="$INPUT_VERSION"
+          if [ -z "$version" ]; then
+            # Newest version tag, if any tag exists yet.
+            version="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -1 || true)"
+          fi
+          if [ -z "$version" ]; then
+            # No tag yet: show the version from pubspec, so the page is never
+            # published with an empty badge.
+            version="v$(sed -n 's/^version: *\([0-9.]*\).*/\1/p' pubspec.yaml | head -1)"
+          fi
+
+          # The button points at the arm64 build, which is what a phone released
+          # in the last several years needs; the page also offers the universal
+          # APK for anything older.
+          url="$INPUT_DOWNLOAD_URL"
+          universal="$INPUT_UNIVERSAL_URL"
+
+          if [ -z "$url" ] && [ -n "$INPUT_VERSION" ]; then
+            base="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${INPUT_VERSION}"
+            url="${base}/elara-${INPUT_VERSION}-arm64-v8a.apk"
+            universal="${base}/elara-${INPUT_VERSION}-universal.apk"
+          fi
+
+          if [ -z "$url" ]; then
+            # Newest published release that carries the per-CPU asset.
+            url="$(gh release view --json tagName,assets \
+              --jq '.tagName as $t | .assets[] | select(.name | endswith("-arm64-v8a.apk")) | "'"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"'/releases/download/\($t)/\(.name)"' 2>/dev/null | head -1 || true)"
+            universal="$(gh release view --json tagName,assets \
+              --jq '.tagName as $t | .assets[] | select(.name | endswith("-universal.apk")) | "'"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"'/releases/download/\($t)/\(.name)"' 2>/dev/null | head -1 || true)"
+          fi
+
+          releases_page="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/latest"
+          if [ -z "$url" ] || [ "$url" = "null" ]; then
+            url="$releases_page"
+          fi
+          if [ -z "$universal" ] || [ "$universal" = "null" ]; then
+            universal="$releases_page"
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "download_url=${url}" >> "$GITHUB_OUTPUT"
+          echo "universal_url=${universal}" >> "$GITHUB_OUTPUT"
+          echo "Resolved ${version}: ${url} (universal: ${universal})"
+
+      - name: Fill in the version and download link
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+          APK_URL: ${{ steps.resolve.outputs.download_url }}
+          UNIVERSAL_URL: ${{ steps.resolve.outputs.universal_url }}
+        run: |
+          set -euo pipefail
+          test -f docs/index.html || { echo "::error::docs/index.html is missing."; exit 1; }
+
+          # A pipe is the delimiter: neither a version tag nor a URL contains one.
+          sed -i "s|{{LATEST_VERSION}}|${VERSION}|g" docs/index.html
+          sed -i "s|{{DOWNLOAD_URL}}|${APK_URL}|g" docs/index.html
+          sed -i "s|{{DOWNLOAD_URL_UNIVERSAL}}|${UNIVERSAL_URL}|g" docs/index.html
+
+          # Publishing a page with an unsubstituted placeholder would be worse
+          # than failing the job.
+          if grep -q '{{' docs/index.html; then
+            echo "::error::Unsubstituted placeholder left in docs/index.html:"
+            grep -o '{{[A-Z_]*}}' docs/index.html | sort -u
+            exit 1
+          fi
+          echo "Page now advertises ${VERSION} with ${APK_URL}"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the docs folder
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

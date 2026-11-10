@@ -1,0 +1,230 @@
+name: CI
+
+# The verification gate for every push and every pull request.
+#
+# This workflow is the project's primary test environment. The development
+# sandbox used for this repository has a 2 GB memory ceiling, which is not
+# enough for the Dart frontend to compile the larger widget suites, so running
+# the whole of test/ locally is not possible there — and repeatedly trying is
+# what the local workflow is explicitly not supposed to do.
+#
+# The policy, applied to every test under test/:
+#
+#   * locally, run only the fast, directly relevant file(s) while debugging;
+#   * after each meaningful checkpoint, push the work and let this workflow run
+#     the complete suite;
+#   * never delete, weaken or skip a test to make a run faster.
+#
+# The suite is sharded so the wall-clock time stays reasonable while every test
+# still runs on every push. The shards are computed from the test file list, so
+# a new file is picked up automatically and no test can be quietly orphaned by
+# a hand-maintained list.
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '!.github/workflows/ci.yml'
+  pull_request:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '!.github/workflows/ci.yml'
+
+# A newer push to the same ref makes the older run pointless, so cancel it.
+# This keeps the queue short without ever cancelling a release build, which
+# lives in release.yml.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # One place for the toolchain versions, so every workflow in this repository
+  # builds the same code with the same tools. Flutter is pinned rather than
+  # tracking `stable`, so a build that passed yesterday still builds today.
+  #
+  # The shard count is deliberately NOT here: a job's `name:` cannot read
+  # `env`, and the shard count is wanted in a job name. It lives in each job's
+  # own `env:` block instead, where `run:` steps can read it.
+  FLUTTER_VERSION: 3.47.9
+
+jobs:
+  analyze:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Show toolchain versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # The fail-fast gate: no test runs until the code is clean.
+      - name: Analyze
+        run: dart analyze --fatal-infos
+
+      # The emulator scripts run on a runner, not on a developer machine, so
+      # a mistake in one is only found after twenty minutes of emulator boot.
+      # This check catches an undefined variable, a syntax error and a
+      # hardcoded APK path in a second. It has already caught one real
+      # failure: an undefined $ACTIVITY ended the API 29 run at its last
+      # step.
+      - name: Check the emulator scripts
+        run: python3 tool/android_ui/check_scripts.py
+
+      # The Kotlin is small, but a mistake in it is not cheap to find: it
+      # shows up in the APK build, after a full Flutter build and a Gradle
+      # configuration, and the build is retried three times, so one mistake
+      # costs twenty minutes. Two were found that way.
+      #
+      # This compiles it in seconds, without Gradle, the Android SDK or an
+      # emulator. It is skipped, not failed, when the dependencies are not
+      # present - the APK build remains the authority.
+      - name: Check the Kotlin compiles
+        run: |
+          set -euo pipefail
+          curl -sL -o /tmp/kotlin-compiler.zip \
+            "https://github.com/JetBrains/kotlin/releases/download/v2.4.0/kotlin-compiler-2.4.0.zip"
+          unzip -q -o /tmp/kotlin-compiler.zip -d "$HOME/kotlin"
+          mkdir -p "$HOME/androidx"
+          cd "$HOME/androidx"
+          for spec in \
+            "androidx/lifecycle/lifecycle-common-jvm/2.9.4/lifecycle-common-jvm-2.9.4.jar" \
+            "androidx/lifecycle/lifecycle-runtime-android/2.9.4/lifecycle-runtime-android-2.9.4.aar" \
+            "androidx/core/core/1.15.0/core-1.15.0.aar" \
+            "androidx/annotation/annotation/1.9.1/annotation-1.9.1.jar"; do
+            curl -sL -O "https://dl.google.com/dl/android/maven2/$spec"
+          done
+          unzip -q -o core-1.15.0.aar -d x-core
+          unzip -q -o lifecycle-runtime-android-2.9.4.aar -d x-lra
+          cd "$GITHUB_WORKSPACE"
+          # The Android platform jar, for android.os.Build and the rest.
+          curl -sL -o /tmp/platform.zip \
+            "https://dl.google.com/android/repository/platform-35_r02.zip"
+          unzip -q -o /tmp/platform.zip -d "$HOME"
+          "$HOME/kotlin/kotlinc/bin/kotlinc" -version
+          bash tool/android_ui/check_kotlin.sh
+
+  # ---------------------------------------------------------------------------
+  # The whole of test/, split into shards that each run in their own job.
+  # ---------------------------------------------------------------------------
+  plan:
+    name: Plan the test shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SHARDS: '4'
+
+    outputs:
+      ids: ${{ steps.plan.outputs.ids }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # The shard plan is computed once, here, so that every shard runs the
+      # same plan and the file list is visible in one place. Round-robin over
+      # the sorted list of test files keeps the shards balanced in size as well
+      # as in count, and a new file is picked up automatically: no test can be
+      # quietly orphaned by a hand-maintained list.
+      - name: Compute the shard plan
+        id: plan
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find test -name '*_test.dart' | sort)
+          total=${#files[@]}
+          shards="${SHARDS}"
+          echo "Total test files: $total"
+
+          ids=""
+          for ((s = 0; s < shards; s++)); do
+            list=""
+            for ((i = 0; i < total; i++)); do
+              if [ $((i % shards)) -eq "$s" ]; then
+                list="$list ${files[$i]}"
+              fi
+            done
+            echo "Shard $s:$list"
+            ids="${ids:+$ids,}$s"
+          done
+
+          echo "ids=[$ids]" >> "$GITHUB_OUTPUT"
+
+  test:
+    # The display name cannot use `env` — GitHub only allows the contexts that
+    # are known at that point (github, needs, vars, inputs, matrix), and `env`
+    # is not one of them. The count is repeated as a literal here and kept in
+    # the job's own env below, which `run:` steps can read.
+    name: Test shard ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [analyze, plan]
+
+    env:
+      SHARDS: '4'
+
+    strategy:
+      # One shard failing must not hide the others' results.
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.ids) }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Run this shard
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find test -name '*_test.dart' | sort)
+          total=${#files[@]}
+          shards="${SHARDS}"
+          shard=${{ matrix.shard }}
+          list=()
+          for ((i = 0; i < total; i++)); do
+            if [ $((i % shards)) -eq "$shard" ]; then
+              list+=("${files[$i]}")
+            fi
+          done
+          echo "Shard $shard runs ${#list[@]} file(s): ${list[*]}"
+
+          if [ "${#list[@]}" -eq 0 ]; then
+            echo "::error::Shard $shard has no test files; the shard plan is broken."
+            exit 1
+          fi
+
+          # --concurrency is left at the tool's default: the sharding already
+          # spreads the work across runners, and running several test processes
+          # inside one 2-core runner is what makes them slow.
+          flutter test --reporter expanded "${list[@]}"
