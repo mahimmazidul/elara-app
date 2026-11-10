@@ -112,6 +112,19 @@ indoors instead of proposing a walk, and on a bad air day it says why. Symptoms
 soften suggestions; nothing has to be logged, and a day with no records is a
 normal day.
 
+Underneath that, and instead of it on a first launch, sits **general guidance for
+the phase**: heat before painkillers for cramps (NICE), iron-rich food in the
+shape of lentils and small fish rather than supplements on assumption (WHO),
+protein at the first meal because a plate of rice alone will not hold a morning
+(BIRDEM), and the note that mild one-sided mid-cycle pain is common and severe
+pain is not. Every item names where it came from. None of it is personalised, so
+none of it can be wrong about her — and the screen says which paragraph is which.
+
+Settings and the pages behind it now use a **glass surface**: translucent panes
+with a lit rim and no outline, grouped so one subject is one object. Deliberately
+not a `BackdropFilter` — the blur costs a save-layer on every scroll frame, and
+the phones most of this app is read on notice.
+
 ### A calendar that admits what it is
 
 <p align="center">
