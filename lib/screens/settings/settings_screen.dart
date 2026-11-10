@@ -17,6 +17,7 @@ import '../preferences/preferences_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../symptoms/symptoms_screen.dart';
 import 'about_section.dart';
+import 'cycle_mode_section.dart';
 import 'privacy_data_section.dart';
 
 /// Settings tab: location, theme, notifications and about.
@@ -202,6 +203,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+        const SizedBox(height: ElaraSpacing.xl),
+
+        // ---- her cycle: whether the app may predict at all
+        const CycleModeSection(),
         const SizedBox(height: ElaraSpacing.xl),
 
         // ---- preferences

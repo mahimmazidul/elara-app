@@ -28,6 +28,22 @@ class SettingsKeys {
   /// over a shoulder; the default has to assume an audience.
   static const String notifyPreviewDetails = 'notify_preview_details';
 
+  /// Whether Elara predicts a cycle at all, and when it does not, why.
+  ///
+  /// Stored as a string (`predicting`, `hormonal_contraception`, `paused`)
+  /// rather than a flag, because the three states need three different
+  /// sentences on screen and a boolean cannot hold them. Defaults to
+  /// predicting, which is what every existing install is doing.
+  static const String cycleMode = 'cycle_mode';
+  static const String defaultCycleMode = 'predicting';
+
+  /// The stated reason for a pause, and the day it began.
+  ///
+  /// Both optional. The app asks, in case the answer makes the screen kinder,
+  /// and it never requires an answer to stop counting days.
+  static const String pauseReason = 'pause_reason';
+  static const String pauseSince = 'pause_since';
+
   /// Whether Elara asks GitHub for the latest release when it starts.
   /// Off by default: an update check is the one request that is about the app
   /// rather than about the weather, and it should be opted into.

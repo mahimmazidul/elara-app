@@ -38,7 +38,15 @@ void main() {
     db.overridePath = null;
   });
 
-  http.Client offline() => MockClient((_) async => http.Response('', 503));
+  /// A phone with no connection: the request itself fails, which is the only
+  /// thing that may be described to the user as offline.
+  http.Client offline() =>
+      MockClient((_) async => throw http.ClientException('Network unreachable'));
+
+  /// GitHub answering with a server error, which is a different sentence: the
+  /// phone has a connection, the service on the other end does not work.
+  http.Client serverError() =>
+      MockClient((_) async => http.Response('', 503));
 
   http.Client release(String tag) => MockClient(
         (_) async => http.Response(
@@ -177,6 +185,26 @@ void main() {
 
     expect(find.text('Could not check for updates'), findsOneWidget);
     expect(find.textContaining('works offline'), findsOneWidget);
+  });
+
+  testWidgets('a server error is not called offline, and claims nothing',
+      (tester) async {
+    await pump(tester, client: serverError());
+
+    await tester.runAsync(() async {
+      await tester.scrollUntilVisible(find.text('Check for updates'), 200);
+      await tester.tap(find.text('Check for updates'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+
+    // Once in the Settings row, once as the sheet title.
+    expect(find.text('Check failed'), findsWidgets);
+    // The exact status, because it is the only actionable part.
+    expect(find.textContaining('status 503'), findsOneWidget);
+    // And it does not tell a connected phone that it has no connection.
+    expect(find.text('Could not check for updates'), findsNothing);
+    expect(find.textContaining('You already have the latest'), findsNothing);
   });
 
   testWidgets('automatic checking is off by default and can be switched on',

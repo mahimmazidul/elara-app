@@ -6,10 +6,12 @@ import '../../providers/climate_provider.dart';
 import '../../providers/cycle_provider.dart';
 import '../../providers/prediction_provider.dart';
 import '../../providers/preferences_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/symptoms_provider.dart';
 import '../../services/care_recommender.dart';
 import '../../theme/elara_motion.dart';
 import '../../theme/elara_theme.dart';
+import '../../utils/history_quality.dart';
 import '../../utils/phase_timeline.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/phase_chip.dart';
@@ -20,6 +22,7 @@ import 'day_notes.dart';
 import 'climate_strip.dart';
 import 'lunar_strip.dart';
 import 'onboarding_card.dart';
+import 'quiet_today.dart';
 import '../../widgets/icons.dart';
 
 /// The Today tab.
@@ -38,6 +41,14 @@ class TodayScreen extends StatelessWidget {
     final prediction = context.watch<PredictionProvider>();
     final tokens = context.elara;
 
+    // A mode that is not predicting takes precedence over everything below,
+    // including onboarding: someone on the pill who has logged nothing yet
+    // should be told why Elara is quiet, not asked for a period start it is
+    // not going to use.
+    if (!context.watch<SettingsProvider>().cycleMode.predicts) {
+      return const QuietToday();
+    }
+
     if (cycles.isLoading && cycles.isEmpty) {
       return const _Loading();
     }
@@ -49,7 +60,8 @@ class TodayScreen extends StatelessWidget {
     if (result == null) {
       if (prediction.isLoading) return const _Loading();
       return _NeedsMoreHistory(
-        message: prediction.lastError ??
+        message:
+            prediction.lastError ??
             'A forecast needs at least two recorded period starts. '
                 'Log the next one when it begins.',
       );
@@ -116,8 +128,11 @@ class _NeedsMoreHistory extends StatelessWidget {
           ElaraCard(
             child: Row(
               children: [
-                Icon(ElaraIcons.recorded,
-                    size: 18, color: tokens.textSecondaryStrong),
+                Icon(
+                  ElaraIcons.recorded,
+                  size: 18,
+                  color: tokens.textSecondaryStrong,
+                ),
                 const SizedBox(width: ElaraSpacing.sm),
                 Expanded(
                   child: Text(
@@ -155,6 +170,18 @@ class _TodayContent extends StatelessWidget {
 
     final daysUntil = result.daysUntilNextPeriod;
     final isLate = daysUntil < 0;
+
+    // What the history itself implies about the estimate below it. Computed
+    // from the recorded starts and the returned window, and shown under the
+    // date rather than folded into it: a note is not a prediction.
+    final historyNotes = HistoryQuality.notesFor(
+      starts: context
+          .watch<CycleProvider>()
+          .cycles
+          .map((entry) => entry.startDate)
+          .toList(growable: false),
+      windowDays: result.windowDays,
+    );
 
     // Recomputed on every build from the stored preferences and recent
     // symptoms, so a change made on another screen is reflected here without a
@@ -223,6 +250,7 @@ class _TodayContent extends StatelessWidget {
           windowDays: result.windowDays,
           phaseKey: phaseKey,
           unavailableReason: result.unavailableReason,
+          historyNotes: historyNotes,
         ),
 
         // ---- care: the point of the screen, given the most room.
@@ -287,52 +315,72 @@ class _PhaseCircle extends StatelessWidget {
   final int? cycleDay;
   final Color fill;
 
+  /// The diameter at 1.0x text scale. A disc this size holds the phase name on
+  /// two lines and the day number beneath it.
+  static const double _baseDiameter = 150;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
+
+    // A fixed 150dp disc clips its own contents the moment the user asks
+    // Android for larger text: measured at 2.0x, the label and day number
+    // needed 152dp and the disc had 150. The largest thing on this screen is
+    // therefore allowed to grow with the setting, up to the width of the page,
+    // and the label is flexible so a long phase name ellipsises rather than
+    // overflowing.
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final maxDiameter = MediaQuery.sizeOf(context).width - ElaraSpacing.lg * 2;
+    final diameter = (_baseDiameter * textScale.clamp(1.0, 1.7)).clamp(
+      _baseDiameter,
+      maxDiameter,
+    );
+
     return ElaraAnimatedColor(
       color: fill,
+      borderRadius: diameter / 2,
       duration: ElaraMotion.medium,
-      child: Container(
-        width: 150,
-        height: 150,
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(75),
-        ),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'Hind Siliguri',
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-                height: 1.2,
-                color: tokens.onPhase,
-              ),
-            ),
-            if (cycleDay != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Day $cycleDay',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Hind Siliguri',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 13,
-                  height: 1.2,
-                  color: tokens.onPhase.withValues(alpha: 0.85),
-                  fontFeatures: [FontFeature.tabularFigures()],
+      child: SizedBox(
+        width: diameter,
+        height: diameter,
+        child: Padding(
+          padding: EdgeInsets.all(diameter * 0.12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Hind Siliguri',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    height: 1.2,
+                    color: tokens.onPhase,
+                  ),
                 ),
               ),
+              if (cycleDay != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Day $cycleDay',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Hind Siliguri',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 13,
+                    height: 1.2,
+                    color: tokens.onPhase,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -354,6 +402,7 @@ class _Countdown extends StatelessWidget {
     required this.windowDays,
     required this.phaseKey,
     required this.unavailableReason,
+    this.historyNotes = const [],
   });
 
   final int daysUntil;
@@ -362,14 +411,16 @@ class _Countdown extends StatelessWidget {
   final int windowDays;
   final String phaseKey;
   final String? unavailableReason;
+  final List<HistoryNote> historyNotes;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final type = context.type;
 
-    final numberColour =
-        isLate ? tokens.warningText : tokens.phaseText(phaseKey);
+    final numberColour = isLate
+        ? tokens.warningText
+        : tokens.phaseText(phaseKey);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,14 +473,35 @@ class _Countdown extends StatelessWidget {
             style: type.caption(tokens.textSecondaryStrong),
           ),
         ],
+        // Notes about the history behind the date, set apart with a hairline so
+        // they read as a remark about the estimate rather than as part of it.
+        if (historyNotes.isNotEmpty) ...[
+          const SizedBox(height: ElaraSpacing.sm),
+          Container(height: 1, width: 40, color: tokens.divider),
+          const SizedBox(height: ElaraSpacing.sm),
+          for (final note in historyNotes) ...[
+            Text(note.message, style: type.caption(tokens.textSecondaryStrong)),
+            const SizedBox(height: ElaraSpacing.xs),
+          ],
+        ],
       ],
     );
   }
 }
 
 const List<String> _months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 String _formatLongDate(DateTime date) =>

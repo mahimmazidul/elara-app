@@ -2,6 +2,7 @@ import 'package:elara_core/elara_core.dart' as core;
 
 import '../data/database_helper.dart';
 import '../data/models/cycle_entry.dart';
+import '../data/models/cycle_mode.dart';
 import '../models/elara_result.dart';
 import 'climate_service.dart';
 
@@ -34,6 +35,22 @@ class PredictionService {
   /// elara-core's classifier requires at least this many days per cycle.
   static const int minimumClassifiableCycleLength = 15;
 
+  /// Whether the stored mode permits a forecast at all.
+  ///
+  /// Read from the database rather than passed in, because this service is
+  /// constructed in the notification path where there is no provider tree. A
+  /// settings read that fails is treated as "predicting": the alternative is
+  /// that one transient database error silently switches off the app's main
+  /// feature, which is a worse failure than showing a forecast the user can
+  /// correct.
+  Future<bool> isPredicting() async {
+    try {
+      return cycleModeFromSettings(await _database.getAllSettings()).predicts;
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Computes the current forecast.
   ///
   /// Returns null when there is not a single recorded period, or when the
@@ -41,6 +58,14 @@ class PredictionService {
   /// has anything to extrapolate from).
   Future<ElaraResult?> predict({DateTime? date}) async {
     final now = date ?? _clock();
+
+    // The gate. Every caller of this service — the Today screen, the calendar,
+    // the day sheet, the reminder scheduler — comes through here, so a mode
+    // that is not predicting cannot leak a phase or a countdown into any of
+    // them, and no scheduled reminder can name a phase the app has said it
+    // cannot see. Returning null is this service's established way of saying
+    // "no forecast", which every caller already handles.
+    if (!await isPredicting()) return null;
 
     final List<CycleEntry> entries;
     try {

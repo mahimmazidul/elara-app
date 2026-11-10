@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/database_helper.dart';
+import '../data/models/cycle_mode.dart';
 import 'settings_keys.dart';
 
 /// Owns the key/value `settings` table and exposes typed accessors.
@@ -168,6 +169,69 @@ class SettingsProvider extends ChangeNotifier {
         SettingsKeys.notifyClimateSpike,
         value ? 'true' : 'false',
       );
+
+  // ------------------------------------------------------------- cycle mode --
+
+  /// Whether Elara is predicting, and if not, why. See [CycleMode].
+  CycleMode get cycleMode =>
+      CycleMode.fromStorageKey(_values[SettingsKeys.cycleMode]);
+
+  /// The stated reason for a pause, if any. Never required.
+  PauseReason? get pauseReason =>
+      PauseReason.fromStorageKey(_values[SettingsKeys.pauseReason]);
+
+  /// The day a pause was declared, if one was recorded.
+  DateTime? get pauseSince {
+    final raw = _values[SettingsKeys.pauseSince];
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  /// Switches the mode, keeping the audit trail the screens need.
+  ///
+  /// Leaving `predicting` records the day it began, so the panel can say how
+  /// long the app has been quiet rather than implying it has been broken.
+  /// Returning to `predicting` clears both pause fields: a stale reason shown
+  /// after someone has resumed would be a sentence about her body that she has
+  /// already told the app is no longer true.
+  Future<bool> setCycleMode(CycleMode mode, {
+    PauseReason? reason,
+    DateTime? since,
+  }) async {
+    if (mode.predicts) {
+      final ok = await setValue(SettingsKeys.cycleMode, mode.storageKey);
+      if (!ok) return false;
+      await setValue(SettingsKeys.pauseReason, '');
+      await setValue(SettingsKeys.pauseSince, '');
+      return true;
+    }
+
+    final started = (since ?? DateTime.now());
+    final day = '${started.year.toString().padLeft(4, '0')}-'
+        '${started.month.toString().padLeft(2, '0')}-'
+        '${started.day.toString().padLeft(2, '0')}';
+    try {
+      await _database.setSettings({
+        SettingsKeys.cycleMode: mode.storageKey,
+        SettingsKeys.pauseReason: reason?.storageKey ?? '',
+        SettingsKeys.pauseSince: day,
+      });
+      _values = {
+        ..._values,
+        SettingsKeys.cycleMode: mode.storageKey,
+        SettingsKeys.pauseReason: reason?.storageKey ?? '',
+        SettingsKeys.pauseSince: day,
+      };
+      _revision++;
+      _lastError = null;
+      notifyListeners();
+      return true;
+    } catch (error) {
+      _lastError = 'Could not save the cycle mode: $error';
+      notifyListeners();
+      return false;
+    }
+  }
 
   bool _readBool(String key, bool fallback) {
     final raw = _values[key];

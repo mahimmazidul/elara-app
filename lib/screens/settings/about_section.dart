@@ -115,9 +115,12 @@ class AboutSection extends StatelessWidget {
       BuildContext context, UpdateProvider updates) async {
     await updates.check();
     if (!context.mounted) return;
-    await showDialog(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (context) => _UpdateResultDialog(updates: updates),
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: context.elara.bgCard,
+      builder: (context) => _UpdateResultSheet(updates: updates),
     );
   }
 }
@@ -305,9 +308,16 @@ class _UpdateRow extends StatelessWidget {
   }
 }
 
-/// Result dialog shown after an update check.
-class _UpdateResultDialog extends StatelessWidget {
-  const _UpdateResultDialog({required this.updates});
+/// What the update check found, in a sheet rather than a bare dialog.
+///
+/// The sheet exists because of one sentence: **Elara will not install this for
+/// you**. This app is distributed as an APK from GitHub Releases, so the user
+/// does the installing, and a button labelled "Download" that silently produced
+/// an installer prompt would be the app doing something it did not say it would
+/// do. The file name and size are here for the same reason: a man on a metered
+/// connection in Khulna is entitled to know what 21 MB is before he spends it.
+class _UpdateResultSheet extends StatelessWidget {
+  const _UpdateResultSheet({required this.updates});
 
   final UpdateProvider updates;
 
@@ -315,46 +325,136 @@ class _UpdateResultDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final type = context.type;
+    final release = updates.release;
 
     final title = switch (updates.status) {
-      UpdateStatus.available => 'Version ${updates.release?.version} is available',
+      UpdateStatus.available => 'Version ${release?.version} is available',
       UpdateStatus.current => 'Up to date',
       UpdateStatus.failed =>
-          updates.isOffline ? 'Could not check for updates' : 'Check failed',
+        updates.isOffline ? 'Could not check for updates' : 'Check failed',
       _ => 'Checking…',
     };
 
-    final body = switch (updates.status) {
-      UpdateStatus.available => updates.release?.notes ??
-          'A newer release of Elara is available.',
-      UpdateStatus.current =>
-          'You already have the latest release (${updates.summary}).',
-      UpdateStatus.failed =>
-          updates.isOffline
-              ? 'Elara works the same offline. Try again when you are back '
-                  'online.'
-              : 'The update check did not produce an answer.',
-      _ => '',
-    };
-
-    return AlertDialog(
-      title: Text(title, style: type.subtitle(tokens.textPrimary)),
-      content: Text(body, style: type.body(tokens.textPrimary)),
-      actions: [
-        if (updates.status == UpdateStatus.available)
-          TextButton(
-            onPressed: () {
-              final apk = updates.release?.arm64Apk;
-              if (apk != null) _LinkRow._launchUrl(context, apk.downloadUrl);
-            },
-            child: const Text('Download APK'),
-          ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          ElaraSpacing.lg,
+          ElaraSpacing.sm,
+          ElaraSpacing.lg,
+          ElaraSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: type.subtitle(tokens.textPrimary)),
+            const SizedBox(height: ElaraSpacing.sm),
+            ..._body(context, tokens, type),
+          ],
+        ),
+      ),
     );
+  }
+
+  List<Widget> _body(BuildContext context, ElaraTokens tokens, ElaraTypography type) {
+    final release = updates.release;
+    final apk = release?.arm64Apk;
+
+    switch (updates.status) {
+      case UpdateStatus.available:
+        return [
+          if ((release?.notes ?? '').trim().isNotEmpty)
+            Text(
+              release!.notes.trim(),
+              style: type.body(tokens.textPrimary),
+            ),
+          if (apk != null) ...[
+            const SizedBox(height: ElaraSpacing.md),
+            Row(
+              children: [
+                Icon(ElaraIcons.download,
+                    size: 18, color: tokens.textSecondaryStrong),
+                const SizedBox(width: ElaraSpacing.sm),
+                Expanded(
+                  child: Text(
+                    apk.sizeLabel.isEmpty
+                        ? apk.name
+                        : '${apk.name} · ${apk.sizeLabel}',
+                    style: type.caption(tokens.textSecondaryStrong),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: ElaraSpacing.md),
+          Text(
+            'Elara will not install this for you. Android asks you to confirm '
+            'the install once the file has downloaded.',
+            style: type.caption(tokens.textSecondaryStrong),
+          ),
+          const SizedBox(height: ElaraSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: apk == null
+                      ? null
+                      : () => _LinkRow._launchUrl(context, apk.downloadUrl),
+                  child: const Text('Download APK'),
+                ),
+              ),
+              const SizedBox(width: ElaraSpacing.sm),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Not now'),
+              ),
+            ],
+          ),
+        ];
+      case UpdateStatus.current:
+        return [
+          Text(
+            'You already have the latest release (${updates.summary}).',
+            style: type.body(tokens.textPrimary),
+          ),
+          const SizedBox(height: ElaraSpacing.lg),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ),
+        ];
+      case UpdateStatus.failed:
+        return [
+          // The reason is the service's own words, not a guess made here.
+          // "Offline" has to mean offline: telling a user with four bars that
+          // she has no connection is a small lie that costs her trust in every
+          // other sentence on the screen.
+          Text(
+            updates.message ??
+                'The update check did not produce an answer.',
+            style: type.body(tokens.textPrimary),
+          ),
+          const SizedBox(height: ElaraSpacing.sm),
+          Text(
+            'Elara works offline: every screen still works without a '
+            'connection, so this changes nothing about your cycle history.',
+            style: type.caption(tokens.textSecondaryStrong),
+          ),
+          const SizedBox(height: ElaraSpacing.lg),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ),
+        ];
+      default:
+        return const [];
+    }
   }
 }
 
