@@ -171,6 +171,33 @@ void main() {
       expect(find.text(topic.sources.first.label), findsOneWidget);
     });
 
+    testWidgets('a source is named by its publisher, never by its address',
+        (tester) async {
+      final topic = medicalTopics.firstWhere((t) => t.id == 'heavy-bleeding');
+      await pump(tester, MedicalTopicScreen(topic: topic), const Size(390, 844));
+
+      await tester.scrollUntilVisible(
+        find.text(topic.sources.first.label),
+        240,
+      );
+
+      // The address is data, not copy. A phone screen full of
+      // "https://www.nice.org.uk/guidance/ng88" is unreadable, and it makes a
+      // finished app look like a debug build.
+      for (final element in tester.elementList(find.byType(Text))) {
+        final text = (element.widget as Text).data ?? '';
+        expect(
+          text.contains('http'),
+          isFalse,
+          reason: 'the page shows a raw address: "$text"',
+        );
+      }
+
+      // The publisher is still there, and the row says what a tap will do.
+      expect(find.text(topic.sources.first.label), findsOneWidget);
+      expect(find.textContaining('Opens '), findsWidgets);
+    });
+
     testWidgets('a topic with an urgent note shows it above the body',
         (tester) async {
       final topic = medicalTopics.firstWhere((t) => t.id == 'pmdd');

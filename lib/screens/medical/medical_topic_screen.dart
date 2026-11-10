@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/medical_content.dart';
@@ -177,11 +178,22 @@ class _UrgentBlock extends StatelessWidget {
 
 /// A reference. Tapping copies the URL — the app deliberately ships without a
 /// browser launcher, so a link that cannot open is better as selectable text
-/// and a clipboard notice than as a button that does nothing.
+/// and a browser than as a button that does nothing.
+///
+/// It shows the publisher and the site, not the address. A column of raw URLs
+/// with percent-escapes in it is unreadable on a phone, unmemorisable, and
+/// looks like a developer artefact that was left in the build — the reader needs
+/// to know *whose* guidance this is, and to be able to open it, and nothing more.
 class _SourceRow extends StatelessWidget {
   const _SourceRow({required this.source});
 
   final MedicalSource source;
+
+  /// The site, without the scheme or the path: "nhs.uk", "who.int".
+  static String _site(String url) {
+    final host = Uri.tryParse(url)?.host ?? '';
+    return host.startsWith('www.') ? host.substring(4) : host;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -191,11 +203,26 @@ class _SourceRow extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(ElaraRadii.chip),
       onTap: () async {
-        await Clipboard.setData(ClipboardData(text: source.url));
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reference address copied.')),
+        final uri = Uri.parse(source.url);
+        final opened = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
         );
+        if (!context.mounted) return;
+        // No browser, no handlers, a locked-down device: the address still goes
+        // somewhere the reader can use it, and the message says so rather than
+        // pretending the tap worked.
+        if (!opened) {
+          await Clipboard.setData(ClipboardData(text: source.url));
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No browser would open it, so the address is on your clipboard.',
+              ),
+            ),
+          );
+        }
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: ElaraSpacing.xs),
@@ -209,13 +236,13 @@ class _SourceRow extends StatelessWidget {
                   Text(source.label, style: type.label(tokens.textSecondaryStrong)),
                   const SizedBox(height: 2),
                   Text(
-                    source.url,
+                    'Opens ${_site(source.url)}',
                     style: type.bodyStrong(tokens.accentText, size: 13),
                   ),
                 ],
               ),
             ),
-            Icon(ElaraIcons.copy, size: 16, color: tokens.textSecondaryStrong),
+            Icon(ElaraIcons.disclosure, size: 16, color: tokens.textSecondaryStrong),
           ],
         ),
       ),
