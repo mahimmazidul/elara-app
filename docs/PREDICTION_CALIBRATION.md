@@ -8,14 +8,14 @@ This is not a validation study, and no result here should be read as evidence th
 
 | Cohort | Cycles | MAE (days) | Median AE | Within ±2 | Exact day | Mean window | In window | Gross misses (>7 d) | Bias (days) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Very regular | 2720 | 0.71 | 1.0 | 99.4% | 33.3% | ±2.1 | 100.0% | 0.0% | 0.07 |
-| Typical range | 2720 | 1.82 | 2.0 | 69.9% | 14.9% | ±3.5 | 94.7% | 0.0% | 0.03 |
-| Irregular | 2720 | 4.41 | 4.0 | 29.7% | 6.3% | ±6.3 | 78.1% | 15.8% | -0.06 |
-| Irregular, long | 2720 | 8.03 | 7.0 | 17.5% | 3.5% | ±8.1 | 58.4% | 48.1% | -3.97 |
-| Short history | 2640 | 1.81 | 2.0 | 70.9% | 14.6% | ±3.5 | 94.5% | 0.0% | -0.02 |
-| Missing records | 1280 | 21.20 | 21.0 | 0.0% | 0.0% | ±14.1 | 10.8% | 100.0% | -21.20 |
-| Long gap | 2720 | 4.41 | 2.0 | 68.9% | 12.9% | ±3.5 | 91.8% | 2.9% | -2.57 |
-| Mistyped dates | 2720 | 3.77 | 2.0 | 61.8% | 12.2% | ±5.1 | 87.4% | 11.8% | 0.37 |
+| Very regular | 2720 | 0.74 | 1.0 | 99.4% | 33.9% | ±2.2 | 100.0% | 0.0% | 0.06 |
+| Typical range | 2720 | 1.83 | 2.0 | 69.4% | 15.1% | ±3.6 | 95.4% | 0.0% | 0.03 |
+| Irregular | 2720 | 4.41 | 4.0 | 29.8% | 6.4% | ±7.1 | 83.2% | 15.8% | -0.06 |
+| Irregular, long | 2720 | 7.93 | 7.0 | 17.6% | 3.5% | ±11.5 | 76.4% | 48.0% | -3.58 |
+| Short history | 2640 | 1.82 | 2.0 | 70.8% | 14.1% | ±3.6 | 95.6% | 0.0% | -0.01 |
+| Missing records | 1280 | 3.58 | 3.0 | 44.7% | 9.5% | ±7.4 | 93.5% | 9.4% | -2.58 |
+| Long gap | 2720 | 4.39 | 2.0 | 69.3% | 13.4% | ±10.3 | 96.8% | 2.9% | -2.44 |
+| Mistyped dates | 2720 | 3.77 | 2.0 | 61.8% | 12.4% | ±7.2 | 88.3% | 11.8% | 0.36 |
 
 ## What the cohorts show
 
@@ -27,4 +27,32 @@ This is not a validation study, and no result here should be read as evidence th
 
 1. The cohorts are synthetic. A synthetic "irregular" cycle is a uniform draw around a median; real irregularity has structure this cannot model.
 2. It says nothing about whether the window is calibrated for any real user, and the app must not describe its intervals as validated.
-3. The engine has not been changed on the basis of these numbers. They were checked before deciding whether a change was warranted, and the decision recorded in `docs/PREDICTION.md` was to leave the default model alone.
+3. The engine was changed once on the basis of this report, and section 4 records what moved. Nothing else here is a reason to change a model: synthetic cohorts show how the engine responds to a distribution, not how it treats a person.
+
+## Evenly spaced starts
+
+Six recorded starts with identical spacing, which is what an every-other-period record and a genuinely long cycle both look like. Reproduce with the same script; the probe is generated, not remembered.
+
+| Recorded spacing | Predicted length | Window | Confidence |
+|---:|---:|---:|---:|
+| 30 d | 30 d | ±2 | 0.89 |
+| 45 d | 44 d | ±4 | 0.49 |
+| 60 d | 58 d | ±6 | 0.36 |
+| 75 d | 73 d | ±7 | 0.29 |
+| 90 d | 88 d | ±9 | 0.25 |
+| 120 d | 117 d | ±12 | 0.19 |
+
+## What changed in elara-core `9d35ae7`
+
+The dispersion that sets the window used to be measured over the recent intervals that fall inside the engine's plausible band, and only those. The noise was therefore defined away by the same filter that produced the estimate: a history recorded every other period looked internally consistent, so it produced a small window around a date 21 days early. Dispersion is now measured over every logged interval, while the band still guards the location of the estimate.
+
+Measured on the same seed and the same cohorts, before and after:
+
+| Cohort | MAE before | MAE after | In window before | In window after |
+|---|---:|---:|---:|---:|
+| Missing records | 21.20 d | 3.58 d | 10.8% | 93.5% |
+| Long gap | 4.41 d | 4.39 d | 91.8% | 96.8% |
+| Irregular | 4.41 d | 4.41 d | 78.1% | 83.2% |
+| Typical range | 1.82 d | 1.83 d | 94.7% | 95.4% |
+
+Windows widened where the history is genuinely uncertain and stayed where it is not: the very-regular cohort moved from ±2.1 to ±2.2 days. The 21-day error on an every-other-period history did not improve by a modelling trick - the point estimate is still early - but the window now covers it, which is the difference between a wrong answer stated firmly and a right answer stated as a range.

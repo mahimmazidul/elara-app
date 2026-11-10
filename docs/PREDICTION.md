@@ -1,9 +1,13 @@
 # Prediction reliability: what was checked, and what was changed
 
-Date of this pass: 2026-11-08. Engine: `elara-core` at the revision pinned in
-`pubspec.yaml`. **No prediction algorithm was changed in this pass** — neither
-in `elara-core` nor in this repository. The only behavioural change is an input
-guard (section 4) that refuses an entry no cycle could have produced.
+First pass: 2026-11-08. Second pass: 2026-11-10, in which the engine **was**
+changed (section 3), for the reason recorded there. Engine: `elara-core` at the
+revision pinned in `pubspec.yaml`.
+
+The first pass changed no algorithm — neither in `elara-core` nor in this
+repository — and its only behavioural change was an input guard (section 4) that
+refuses an entry no cycle could have produced. The second pass measured the
+weakness that pass recorded, then fixed it in `elara-core` (`9d35ae7`).
 
 ## 1. What the app claims, and where the numbers come from
 
@@ -46,46 +50,55 @@ Headline results (80 synthetic people × 36 cycles per cohort):
 These are **synthetic** cohorts. They show how the engine responds to a
 distribution; they say nothing about calibration for real users.
 
-## 3. The finding worth recording
+## 3. The finding worth recording, and its fix
 
-Consistently long cycle spacing is not tracked at all. Probing the ensemble
-with evenly spaced starts:
+The first pass found that consistently long cycle spacing was not tracked at
+all. Six evenly spaced starts produced a point estimate pulled toward a plausible
+range — 60-day spacing predicted 37 days, ±14 — so the interval was symmetric
+around a date about 23 days early and covered almost nothing. Confidence was
+right to collapse; the *placement* was the defect. The realistic form of that
+case is someone recording every other period, which appeared in the table above
+as a 21-day MAE with 100% gross misses.
 
-| True spacing | Predicted length | Window | Confidence |
+The cause was one line of thought, not a modelling choice: the dispersion used to
+size the window was measured over the recent intervals **that fall inside the
+engine's plausible band**, and only those. The filter that produced the estimate
+also defined away the noise in it, so an every-other-period history looked
+internally consistent.
+
+`elara-core` `9d35ae7` measures dispersion over **every** logged interval while
+the band still guards the location of the estimate; the window is
+`ceil(SD).clamp(1, 60)` on the sample (n − 1) standard deviation. The probe in
+`tool/prediction/calibration_report.dart` now generates the table below, so it
+can be reproduced rather than remembered:
+
+| Recorded spacing | Predicted length | Window | Confidence |
 |---:|---:|---:|---:|
 | 30 d | 30 d | ±2 | 0.89 |
 | 45 d | 44 d | ±4 | 0.49 |
-| 60 d | 37 d | ±14 | 0.10 |
-| 75 d | 38 d | ±18 | 0.07 |
-| 90 d | 41 d | ±23 | 0.06 |
-| 120 d | 41 d | ±29 | 0.04 |
+| 60 d | 58 d | ±6 | 0.36 |
+| 75 d | 73 d | ±7 | 0.29 |
+| 90 d | 88 d | ±9 | 0.25 |
+| 120 d | 117 d | ±12 | 0.19 |
 
-Two things are going on, and only one of them is a problem:
+And on the walk-forward cohorts, same seed, before → after:
 
-1. **Correctly signalled uncertainty.** Confidence collapses (0.89 → 0.04) and
-   the window widens (±2 → ±29). The app surfaces both, so a user with a long
-   cycle sees a wide window and an unclassified/low-confidence phase rather
-   than a firm date. That behaviour is honest and was left alone.
-2. **A window around a shrunken point.** The point estimate is pulled toward a
-   plausible range, so for 60-day spacing it sits near 37 days — about 23 days
-   early — and a symmetric ±14-day window never reaches the actual date. The
-   low confidence is right; the *placement* means the interval covers almost
-   nothing. This also appears as the 21-day MAE / 100% gross-miss row above,
-   which is the realistic case of someone recording every other period.
+| Cohort | MAE | In window | Gross misses |
+|---|---|---|---|
+| Missing records | 21.20 → **3.58** d | 10.8% → **93.5%** | 100.0% → **9.4%** |
+| Long gap | 4.41 → 4.39 d | 91.8% → 96.8% | 2.9% → 2.9% |
+| Irregular | 4.41 → 4.41 d | 78.1% → 83.2% | 15.8% → 15.8% |
+| Typical range | 1.82 → 1.83 d | 94.7% → 95.4% | 0.0% → 0.0% |
+| Very regular | 0.71 → 0.74 d | 100.0% → 100.0% | 0.0% → 0.0% |
 
-Changing this means changing `elara-core` (the fusion point estimate or an
-asymmetric window), which is a different repository with its own backtest gates
-(`test/backtest/EXPERIMENT_PLAN.md` and `IMPROVEMENT.md`). Under this
-milestone's rules — "verify before changing algorithms", "improve calibration
-only where evidence supports", "handle any `elara-core` change explicitly with
-its tests" — the correct action here was to measure, record and stop, not to
-patch a heuristic on synthetic evidence.
+The window widened where the history is genuinely uncertain and barely moved
+where it is not: ±2.1 → ±2.2 days for the very-regular cohort. The point estimate
+on an every-other-period history is still about three days early; what changed is
+that the range now covers it.
 
-**Recommendation for a future pass, with its own gate:** evaluate an asymmetric
-window (or a window anchored to the lower plausible bound) for cycles whose
-recorded lengths exceed ~45 days, on the real cohort, against the existing
-window; adopt only if it improves coverage without widening the radius for
-typical users.
+The remaining, unmeasured recommendation stands: an **asymmetric** window for
+long cycles might recover the last of that bias, and should be evaluated on the
+real cohort before adoption, not on synthetic evidence.
 
 ## 4. Behaviour the app already has, and what it prevents
 
@@ -112,6 +125,8 @@ typical users.
 
 - No real-user calibration was performed in this pass, and the synthetic table
   must not be presented as one.
-- Long-cycle placement (section 3) is a known, recorded weakness.
+- Long-cycle placement improved in `9d35ae7` but is not solved: the point
+  estimate on an every-other-period history is still a few days early, and the
+  window carries the correction rather than the model.
 - The confidence score is heuristic and is displayed as such.
 - Nothing here is clinical validation, and the app says so in-app.
