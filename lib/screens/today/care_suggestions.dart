@@ -47,10 +47,7 @@ class CareSuggestions extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _GeneralHeader(
-            empty: true,
-            phaseKey: phaseKey,
-          ),
+          _GeneralHeader(empty: true, phaseKey: phaseKey),
           const SizedBox(height: ElaraSpacing.sm),
           for (var i = 0; i < general.length; i++) ...[
             if (i > 0) const SizedBox(height: ElaraSpacing.md),
@@ -111,18 +108,15 @@ class _GeneralHeader extends StatelessWidget {
     final tokens = context.elara;
     return Row(
       children: [
-        Icon(
-          ElaraIcons.medical,
-          size: 16,
-          color: tokens.textSecondaryStrong,
-        ),
+        Icon(ElaraIcons.medical, size: 16, color: tokens.textSecondaryStrong),
         const SizedBox(width: ElaraSpacing.xs),
         Expanded(
           child: Text(
             empty
                 ? 'In general, for this phase'
                 : 'In general: ${_phaseName(phaseKey)} phase',
-            style: context.type.caption(tokens.textSecondaryStrong, size: 12)
+            style: context.type
+                .caption(tokens.textSecondaryStrong, size: 12)
                 .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.2),
           ),
         ),
@@ -160,15 +154,9 @@ class _Primary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          suggestion.title,
-          style: type.title(tokens.textPrimary, size: 19),
-        ),
+        Text(suggestion.title, style: type.title(tokens.textPrimary, size: 19)),
         const SizedBox(height: ElaraSpacing.sm),
-        Text(
-          suggestion.body,
-          style: type.body(tokens.textSecondaryStrong),
-        ),
+        Text(suggestion.body, style: type.body(tokens.textSecondaryStrong)),
         const SizedBox(height: ElaraSpacing.md),
         BasisLine(basis: suggestion.basis, phaseKey: phaseKey),
       ],
@@ -222,7 +210,10 @@ class _Secondary extends StatelessWidget {
               if (showSource && suggestion.source != null)
                 Text(
                   suggestion.source!,
-                  style: context.type.caption(tokens.textSecondaryStrong, size: 12),
+                  style: context.type.caption(
+                    tokens.textSecondaryStrong,
+                    size: 12,
+                  ),
                 )
               else
                 BasisLine(basis: suggestion.basis),
@@ -251,8 +242,8 @@ class BasisLine extends StatelessWidget {
 
     final colour = basis.isKnown
         ? (phaseKey == null
-            ? tokens.textSecondaryStrong
-            : tokens.phaseText(phaseKey!))
+              ? tokens.textSecondaryStrong
+              : tokens.phaseText(phaseKey!))
         : tokens.textSecondaryStrong;
 
     return BasisTag(

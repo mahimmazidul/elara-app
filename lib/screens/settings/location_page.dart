@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_keys.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/elara_theme.dart';
-import 'settings_page.dart';
+import '../../widgets/sub_page.dart';
 
 /// Location, as typed coordinates.
 ///
@@ -106,7 +106,7 @@ class _LocationPageState extends State<LocationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ElaraSettingsPage(
+    return ElaraSubPage(
       title: 'Location',
       subtitle:
           'Used for heat index, air quality and the Bangladesh season. Stored '

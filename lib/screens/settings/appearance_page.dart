@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/icons.dart';
-import 'settings_page.dart';
+import '../../widgets/sub_page.dart';
 
 /// Theme, and what the two palettes actually look like.
 ///
@@ -26,7 +26,7 @@ class AppearancePage extends StatelessWidget {
     final type = context.type;
     final tokens = context.elara;
 
-    return ElaraSettingsPage(
+    return ElaraSubPage(
       title: 'Appearance',
       subtitle:
           'System follows the phone\'s own light or dark setting. The palette '

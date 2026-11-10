@@ -15,14 +15,16 @@ import '../../utils/phase_timeline.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/phase_dial.dart';
 import '../../widgets/primitives.dart';
+import '../../providers/reminders_provider.dart';
+import '../../utils/moon_phase.dart';
+import '../../widgets/icons.dart';
 import 'action_cards.dart';
+import 'calendars_page.dart';
 import 'care_suggestions.dart';
-import 'day_notes.dart';
-import 'climate_strip.dart';
-import 'lunar_strip.dart';
+import 'notes_page.dart';
 import 'onboarding_card.dart';
 import 'quiet_today.dart';
-import '../../widgets/icons.dart';
+import 'weather_page.dart';
 
 /// The Today tab.
 ///
@@ -283,18 +285,42 @@ class _TodayContent extends StatelessWidget {
           ],
         ),
 
-        // ---- her notes and the day's plans, between guidance and context
-        const SizedBox(height: ElaraSpacing.lg),
-        DayNotes(),
-
-        // ---- climate, after the guidance: useful context, not the headline
+        // ---- the rest of the day, one tap away.
+        //
+        // These three used to be the bottom half of this scroll: the day's
+        // notes, the weather, the moon and the calendars. All worth having, none
+        // of them worth scrolling past to reach. As rows with a line each, the
+        // reader can see what is behind them and decide — which is what the
+        // settings hub does, and it works for the same reason here.
         const SizedBox(height: ElaraSpacing.xl),
-        ClimateStrip(snapshot: result.environment, phaseKey: phaseKey),
+        const _GroupLabel('More about today'),
+        ElaraGlassGroup(
+          children: [
+            ElaraListRow(
+              title: 'Notes and plans',
+              subtitle: _notesSummary(context),
+              icon: ElaraIcons.symptom,
+              onTap: () => Navigator.of(context).push(NotesPage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Weather and air',
+              subtitle: _weatherSummary(result),
+              icon: ElaraIcons.weather,
+              onTap: () =>
+                  Navigator.of(context).push(WeatherPage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Moon and calendars',
+              subtitle: _calendarsSummary(now),
+              icon: ElaraIcons.moon,
+              onTap: () =>
+                  Navigator.of(context).push(CalendarsPage.route(context)),
+            ),
+          ],
+        ),
         const SizedBox(height: ElaraSpacing.xl),
 
-        // ---- lunar and calendars, last and quiet
-        LunarStrip(date: now),
-        const SizedBox(height: ElaraSpacing.md),
+        // ---- the standing caveat, last and quiet
         Text(
           'Phase and period dates are estimates from recorded history, not a '
           'medical measurement. Traditional calendars are shown for '
@@ -405,6 +431,58 @@ class _Countdown extends StatelessWidget {
           ],
         ],
       ],
+    );
+  }
+}
+
+/// The one line on the notes row: what is actually waiting behind it.
+String _notesSummary(BuildContext context) {
+  final recent = context.watch<SymptomsProvider>().recent;
+  final planned = context.watch<RemindersProvider>().upcoming(days: 1);
+  if (recent.isEmpty && planned.isEmpty) return 'Nothing noted today';
+  final parts = <String>[
+    if (recent.isNotEmpty)
+      recent.length == 1 ? '1 symptom' : '${recent.length} symptoms',
+    if (planned.isNotEmpty)
+      planned.length == 1 ? '1 plan' : '${planned.length} plans',
+  ];
+  return parts.join(' · ');
+}
+
+/// The weather row: the number if there is one, and the truth if there is not.
+String _weatherSummary(ElaraResult result) {
+  final snapshot = result.environment;
+  final heat = snapshot.heatIndex.toStringAsFixed(0);
+  final source = snapshot.isFallback ? 'seasonal estimate' : 'heat index';
+  return '$heat\u00b0C $source · PM2.5 ${snapshot.pm25.toStringAsFixed(0)}';
+}
+
+/// The calendars row: the moon phase, which is the one value people look at.
+String _calendarsSummary(DateTime now) {
+  final moon = MoonPhase.forDate(now);
+  return '${moon.name} · ${moon.illuminationLabel}';
+}
+
+/// A small heading above a group of rows, matching the settings hub.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: ElaraSpacing.xxs,
+        bottom: ElaraSpacing.xs,
+      ),
+      child: Text(
+        text.toUpperCase(),
+        style: context.type
+            .caption(tokens.textSecondaryStrong, size: 11)
+            .copyWith(letterSpacing: 0.8, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

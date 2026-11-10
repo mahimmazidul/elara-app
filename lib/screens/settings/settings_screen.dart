@@ -20,7 +20,7 @@ import 'cycle_mode_section.dart';
 import 'location_page.dart';
 import 'notifications_page.dart';
 import 'privacy_data_section.dart';
-import 'settings_page.dart';
+import '../../widgets/sub_page.dart';
 
 /// The settings hub.
 ///
@@ -209,7 +209,7 @@ class CycleModePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ElaraSettingsPage(
+    return const ElaraSubPage(
       title: 'Cycle mode',
       subtitle:
           'Elara estimates a next period from recorded history. Sometimes that '
@@ -230,7 +230,7 @@ class PrivacyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ElaraSettingsPage(
+    return const ElaraSubPage(
       title: 'Privacy and data',
       subtitle: 'What is stored, what protects it, and how to remove it.',
       children: [PrivacyDataSection()],
@@ -248,7 +248,7 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ElaraSettingsPage(
+    return const ElaraSubPage(
       title: 'About',
       subtitle: 'Version, licences and the source this is built from.',
       children: [AboutSection()],

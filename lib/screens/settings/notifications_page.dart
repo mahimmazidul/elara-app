@@ -5,7 +5,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/notification_service.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/primitives.dart';
-import 'settings_page.dart';
+import '../../widgets/sub_page.dart';
 
 /// Every reminder Elara can send, on one page.
 ///
@@ -36,7 +36,7 @@ class NotificationsPage extends StatelessWidget {
       await context.read<NotificationRescheduler>().reschedule();
     }
 
-    return ElaraSettingsPage(
+    return ElaraSubPage(
       title: 'Notifications',
       subtitle:
           'Scheduled on this device by the Android alarm manager. Nothing is '

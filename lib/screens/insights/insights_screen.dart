@@ -1,20 +1,31 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/database_helper.dart';
 import '../../data/models/climate_snapshot.dart';
-import '../../models/elara_result.dart';
 import '../../providers/cycle_provider.dart';
 import '../../providers/prediction_provider.dart';
 import '../../theme/elara_theme.dart';
-import '../../utils/phase_timeline.dart';
-import '../../widgets/primitives.dart';
-import 'charts.dart';
 import '../../widgets/icons.dart';
+import '../../widgets/primitives.dart';
+import 'cycle_length_page.dart';
+import 'heat_cycle_page.dart';
+import 'insights_stats.dart';
+import 'prediction_page.dart';
 
-/// Insights tab: three charts plus a plain-language summary of the prediction.
+/// The Insights hub.
+///
+/// This was one scroll: a cycle-length chart, a mean-and-spread chart, a heat
+/// chart with phase bands across it, and a paragraph about the last prediction.
+/// Every one of those is worth having, and read in that order they answered a
+/// question nobody had asked. A reader who opens Insights usually has one of
+/// three in mind — *how regular am I*, *how sure is this date*, *does the heat
+/// have anything to do with it* — and had to scroll past two charts to reach the
+/// one that answered it.
+///
+/// So the tab is now a hub, in the same shape as Settings: three subjects, each
+/// with the line that tells you what is inside, and a page behind it holding
+/// only that subject. Nothing was removed.
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
 
@@ -56,8 +67,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
     final cycles = context.watch<CycleProvider>();
     final prediction = context.watch<PredictionProvider>();
-    final result = prediction.result;
     final lengths = cycles.completedLengths;
+    final points = InsightsStats.heatPoints(_climateHistory);
 
     return RefreshIndicator(
       color: tokens.accent,
@@ -69,8 +80,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
       child: ListView(
         padding: ElaraSpacing.pageInsets(context),
         children: [
-          Text('Insights',
-              style: type.headline(tokens.textPrimary, size: 28)),
+          Text('Insights', style: type.headline(tokens.textPrimary, size: 28)),
           const SizedBox(height: ElaraSpacing.xxs),
           Text(
             'What the last few cycles actually did.',
@@ -78,227 +88,106 @@ class _InsightsScreenState extends State<InsightsScreen> {
           ),
           const SizedBox(height: ElaraSpacing.xl),
 
-          CycleLengthChart(lengths: lengths),
-          const SizedBox(height: ElaraSpacing.md),
-
-          MeanSdChart(
-            mean: _mean(lengths),
-            standardDeviation: _sampleSd(lengths),
-            sampleCount: lengths.length,
-          ),
-          const SizedBox(height: ElaraSpacing.md),
-
-          if (_loadingHistory)
-            const ElaraCard(
-              child: SizedBox(
-                height: 120,
-                child: Center(child: _SmallSpinner()),
+          const _GroupLabel('Her cycles'),
+          ElaraGlassGroup(
+            children: [
+              ElaraListRow(
+                title: 'Cycle length',
+                subtitle: InsightsStats.cycleSummary(lengths),
+                icon: ElaraIcons.trend,
+                onTap: () =>
+                    Navigator.of(context).push(CycleLengthPage.route(context)),
               ),
-            )
-          else
-            HeatIndexChart(
-              points: _heatPoints(),
-              bands: _bandsFor(result, cycles),
-            ),
-          const SizedBox(height: ElaraSpacing.xl),
+              ElaraListRow(
+                title: 'How steady it is',
+                subtitle: InsightsStats.spreadSummary(lengths),
+                icon: ElaraIcons.observation,
+                onTap: () => Navigator.of(
+                  context,
+                ).push(CycleLengthPage.route(context, startAtSpread: true)),
+              ),
+            ],
+          ),
 
-          if (result != null) _PredictionSummary(result: result),
+          const SizedBox(height: ElaraSpacing.xl),
+          const _GroupLabel('The estimate'),
+          ElaraGlassGroup(
+            children: [
+              ElaraListRow(
+                title: 'How the prediction was made',
+                subtitle: _predictionSummary(context),
+                icon: ElaraIcons.timeline,
+                onTap: () =>
+                    Navigator.of(context).push(PredictionPage.route(context)),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: ElaraSpacing.xl),
+          const _GroupLabel('Around her'),
+          ElaraGlassGroup(
+            children: [
+              ElaraListRow(
+                title: 'Heat and the cycle',
+                subtitle: _loadingHistory
+                    ? 'Reading the last 30 days…'
+                    : (points.isEmpty
+                          ? 'No weather recorded yet'
+                          : '${points.length} days of heat index, with the phases '
+                                'drawn across them'),
+                icon: ElaraIcons.weather,
+                onTap: () =>
+                    Navigator.of(context).push(HeatCyclePage.route(context)),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: ElaraSpacing.xl),
+          Text(
+            'Everything here is computed on this phone from the dates she has '
+            'recorded. The charts show what the history did; the estimate below '
+            'them says how much to trust a forecast made from it.',
+            style: type.caption(tokens.textSecondaryStrong),
+          ),
         ],
       ),
     );
   }
 
-  // ------------------------------------------------------------- statistics --
-
-  static double _mean(List<int> values) {
-    if (values.isEmpty) return 0;
-    return values.reduce((a, b) => a + b) / values.length;
-  }
-
-  /// Sample standard deviation with the n − 1 denominator, the same estimator
-  /// drip uses for cycle variability. Reporting the population SD on a handful
-  /// of cycles would understate the spread.
-  static double _sampleSd(List<int> values) {
-    if (values.length < 2) return 0;
-    final mean = _mean(values);
-    final sumSquares = values
-        .map((v) => (v - mean) * (v - mean))
-        .reduce((a, b) => a + b);
-    return math.sqrt(sumSquares / (values.length - 1));
-  }
-
-  /// The last 30 days of cached heat index, oldest first.
-  List<({DateTime date, double heatIndex})> _heatPoints() {
-    final history = _climateHistory ?? const <ClimateSnapshot>[];
-    if (history.isEmpty) return const [];
-    final cutoff = DateTime.now().subtract(const Duration(days: 30));
-    return [
-      for (final snapshot in history)
-        if (!snapshot.date.isBefore(cutoff))
-          (date: snapshot.date, heatIndex: snapshot.heatIndex),
-    ];
-  }
-
-  /// Contiguous runs of the same phase across the charted days.
-  List<({int startIndex, int endIndex, String phaseKey})> _bandsFor(
-    ElaraResult? result,
-    CycleProvider cycles,
-  ) {
-    final points = _heatPoints();
-    final latest = cycles.latest;
-    if (points.isEmpty || latest == null || result == null) return const [];
-
-    final timeline = PhaseTimeline(
-      lastPeriodStart: latest.startDate,
-      cycleLength: result.cycleLength,
-      periodDuration: latest.duration,
-      today: DateTime.now(),
-    );
-
-    final bands = <({int startIndex, int endIndex, String phaseKey})>[];
-    var runStart = 0;
-    var currentKey = timeline.dayFor(points.first.date).key;
-
-    for (var i = 1; i < points.length; i++) {
-      final key = timeline.dayFor(points[i].date).key;
-      if (key != currentKey) {
-        bands.add((startIndex: runStart, endIndex: i - 1, phaseKey: currentKey));
-        runStart = i;
-        currentKey = key;
-      }
+  /// One line about the estimate, phrased so that having no forecast reads as a
+  /// choice rather than a failure.
+  String _predictionSummary(BuildContext context) {
+    final prediction = context.watch<PredictionProvider>();
+    final result = prediction.result;
+    if (result == null) {
+      return 'No forecast right now · see why';
     }
-    bands.add((
-      startIndex: runStart,
-      endIndex: points.length - 1,
-      phaseKey: currentKey,
-    ));
-    return bands;
+    final percent = (result.confidence * 100).round();
+    final window = result.windowDays;
+    return '$percent% ensemble score · ±$window ${window == 1 ? 'day' : 'days'}';
   }
 }
 
-class _SmallSpinner extends StatelessWidget {
-  const _SmallSpinner();
+/// A small heading above a group of rows, matching the settings hub.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.text);
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 20,
-      width: 20,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: context.elara.accent,
-      ),
-    );
-  }
-}
-
-/// Text summary of the latest prediction, with the confidence score and a
-/// warning-coloured notice below 0.6.
-class _PredictionSummary extends StatelessWidget {
-  const _PredictionSummary({required this.result});
-
-  final ElaraResult result;
-
-  /// Below this, the ensemble's own score is not worth presenting as a date
-  /// without a caveat.
-  static const double lowConfidenceThreshold = 0.6;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
-    final type = context.type;
-
-    final confidence = result.confidence;
-    final isLow = confidence < lowConfidenceThreshold;
-    final percent = (confidence * 100).round();
-    final phaseKey = phaseKeyOf(result.phaseOrUnknown);
-
-    return ElaraCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ElaraOverline('Last prediction'),
-          const SizedBox(height: ElaraSpacing.sm),
-          Text(
-            _sentence(result),
-            style: type.body(tokens.textPrimary, size: 15),
-          ),
-          const SizedBox(height: ElaraSpacing.md),
-
-          Row(
-            children: [
-              Text('Confidence',
-                  style: type.label(tokens.textSecondaryStrong)),
-              const Spacer(),
-              NumberText('$percent', size: 18,
-                  color: tokens.phaseText(phaseKey), suffix: '%'),
-            ],
-          ),
-          const SizedBox(height: ElaraSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(ElaraRadii.bar),
-            child: LinearProgressIndicator(
-              value: confidence.clamp(0.0, 1.0),
-              minHeight: 6,
-              backgroundColor: tokens.track,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isLow ? tokens.warning : tokens.phaseFill(phaseKey),
-              ),
-            ),
-          ),
-          const SizedBox(height: ElaraSpacing.sm),
-          Text(
-            'Ensemble score, not a probability. '
-            '${result.contributingEngines.join(', ')}',
-            style: type.caption(tokens.textSecondaryStrong),
-          ),
-
-          if (isLow) ...[
-            const SizedBox(height: ElaraSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(ElaraSpacing.md),
-              decoration: BoxDecoration(
-                color: tokens.warning.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(ElaraRadii.chip),
-                border: Border.all(
-                  color: tokens.warning.withValues(alpha: 0.45),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(ElaraIcons.info, size: 16, color: tokens.warningText),
-                  const SizedBox(width: ElaraSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Low confidence. The cycles so far disagree enough that '
-                      'this date could be off by more than the stated window.',
-                      style: type.caption(tokens.warningText),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: ElaraSpacing.xxs,
+        bottom: ElaraSpacing.xs,
+      ),
+      child: Text(
+        text.toUpperCase(),
+        style: context.type
+            .caption(tokens.textSecondaryStrong, size: 11)
+            .copyWith(letterSpacing: 0.8, fontWeight: FontWeight.w600),
       ),
     );
-  }
-
-  static String _sentence(ElaraResult result) {
-    final date = result.nextPeriodDate;
-    final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    final dateText = '${date.day} ${months[date.month - 1]} ${date.year}';
-    final direction = result.daysUntilNextPeriod >= 0
-        ? 'in ${result.daysUntilNextPeriod} '
-            '${result.daysUntilNextPeriod == 1 ? 'day' : 'days'}'
-        : '${result.daysUntilNextPeriod.abs()} '
-            '${result.daysUntilNextPeriod.abs() == 1 ? 'day' : 'days'} ago';
-    return 'The next period is estimated for $dateText, $direction, '
-        'with a ±${result.windowDays} day window based on a '
-        '${result.cycleLength} day cycle.';
   }
 }

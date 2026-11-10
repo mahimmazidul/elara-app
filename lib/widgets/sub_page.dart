@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/elara_theme.dart';
-import '../../widgets/icons.dart';
+import '../theme/elara_theme.dart';
+import 'icons.dart';
 
-/// One settings group, as its own page.
+/// One subject, as its own page.
 ///
-/// Settings used to be a single scroll: location, her cycle, preferences,
-/// symptoms, reminders, health information, appearance, six notification
-/// switches, privacy, data, about. Every one of those was worth having; none of
-/// them was worth reading at the same time as the other nine. The list is now a
-/// hub of rows, and each row opens a page holding exactly one subject.
+/// The pattern the settings hub established, and which Insights and the
+/// context rows on Today now follow: a screen holds a short list of subjects,
+/// each row carries the one line that says whether it needs opening, and the
+/// page behind it holds only that subject.
+///
+/// It began as the fix for a settings screen carrying nine subjects in one
+/// column. It turned out to be the right shape for the rest of the app too, so
+/// it lives here in widgets rather than in the settings folder where it was
+/// born.
 ///
 /// The page carries a plain back arrow rather than a title bar with a large
 /// heading, because the row the reader tapped already said the name and the
 /// screen below them repeats it once, in the body.
-class ElaraSettingsPage extends StatelessWidget {
-  const ElaraSettingsPage({
+class ElaraSubPage extends StatelessWidget {
+  const ElaraSubPage({
     super.key,
     required this.title,
     required this.children,
