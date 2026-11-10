@@ -228,18 +228,18 @@ class _LimitationsPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Not a medical device.',
+            'not a medical device.',
             style: type.subtitle(tokens.textPrimary),
           ),
           const SizedBox(height: ElaraSpacing.xs),
           Text(
-            'Elara estimates from recorded history. It does not diagnose, and '
-            'it is not a substitute for professional medical advice.',
+            'estimates from recorded history; not a substitute for '
+            'professional medical advice.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.sm),
           Text(
-            'No accounts, no analytics. Nothing leaves this phone.',
+            'no accounts, no analytics. nothing leaves this phone.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
         ],

@@ -269,8 +269,9 @@ class ElaraSpacing {
   /// laid out above the bar, but the last row of content was still ending level
   /// with the bar's top edge, so the final control on Settings sat half-hidden
   /// behind it. `kBottomNavigationBarHeight` (56) is the pre-M3 value and is too
-  /// small for a labelled NavigationBar.
-  static const double navigationBarHeight = 80;
+  /// small for a labelled NavigationBar. At 2.0x text scale the bar's labels
+  /// need more room, so this is sized with headroom.
+  static const double navigationBarHeight = 90;
 
   /// Page padding that centres a [readableWidth] column on wide screens.
   ///
