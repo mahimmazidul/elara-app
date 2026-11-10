@@ -119,6 +119,60 @@ hormone, and is not a contraceptive. Guessing a fertile window from a calendar
 does not make sex safe on any particular day, and the app says so where it
 matters.
 
+## The name
+
+Elara is a mortal woman in Greek myth — daughter of Orchomenus, mother of the
+giant Tityos by Zeus — who carried her child hidden beneath the earth. That is
+the whole of the classical material, and it says nothing about the moon,
+fertility or the body; she is not a lunar goddess in any ancient source, though a
+moon of Jupiter carries her name. The name here is a modern, open reading of one
+thing the two share: something carried quietly, for a long time, by someone else.
+The moon in the interface is a motif for that rhythm, not a claim about the myth.
+
+## Questions
+
+**Does anything leave my phone?**
+No. There is no account and no server to send it to. The history lives in the
+app's sandbox, Android Auto Backup is disabled in the manifest so it never
+reaches Google Drive, and the only network requests are a weather forecast for
+the coordinates you type in and an update check you have to switch on.
+
+**How accurate is the estimate?**
+It depends entirely on the history. Three estimators run on your recorded period
+starts and the app shows the window they agree on — a steady history gives a day
+or two, an irregular one gives a week, and a history too short to say anything
+gets an explanation rather than an invented date. It is arithmetic on dates; no
+hormone is measured, which is why it is not a contraceptive. Method and
+calibration: [`docs/PREDICTION.md`](docs/PREDICTION.md).
+
+**What if I am on the pill, pregnant, or have just given birth?**
+You tell it once and it stops forecasting, with the reason on the home screen.
+Pills, implants, injections and hormonal IUDs stop ovulation, so there is no
+cycle to estimate. Everything that does not depend on a forecast — notes,
+reminders, health information — stays.
+
+**Is it only for couples?**
+No. It is written for one person to use, and the partner-facing suggestions are a
+layer on top rather than the point. Alone it is a cycle log that refuses to
+pretend to certainty; used together, the suggestions are a way of being useful
+without asking someone to explain herself every evening.
+
+**Can I get my data out?**
+As one encrypted file under a passphrase you choose, containing the dates and
+nothing else. Restore puts it back on the same or a new phone. One button
+withdraws consent and deletes everything on this one.
+
+**Why Bangla fonts and Hijri dates?**
+Because the phone it is written for is in Bangladesh. Heat index matters more
+than air temperature for most of the year, and a calendar showing Hijri and
+nakshatra beside the Gregorian date is normal here rather than exotic. The
+prediction does not change either way.
+
+**Why not the Play Store?**
+A listing would need an account and a data-safety form to say what this page
+says: nothing is collected. The APK is built from the same source, signed, and
+published on the releases page.
+
 ## Credits
 
 Built by [Md. Mazidul Islam Mahim](https://github.com/mahimmazidul). Typeface:

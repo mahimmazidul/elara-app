@@ -314,6 +314,79 @@ a:focus-visible,
   .button:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10); }
   .button { transition: opacity 120ms ease, box-shadow 120ms ease; }
 }
+
+/* ---- the cycle-driven theme -------------------------------------------
+   The page takes a phase from today's date — the 1st of the month is day 1 —
+   and moves its accent, its rule colour and the hero screenshot with it. It is
+   a conceit rather than a reading of anybody's body, and the line under the
+   hero says so, because a website implying it knows a visitor's cycle would be
+   both wrong and creepy.
+
+   Everything here is a *tint*: the page stays paper, the ink stays ink, and the
+   phase colour arrives as a thin band, a label and a shadow. A visitor who
+   prefers no motion or a forced colour scheme keeps both. */
+:root {
+  --cycle-accent: var(--follicular);
+  --cycle-ink: var(--follicular-ink);
+}
+:root[data-phase="menstrual"] { --cycle-accent: var(--menstrual); --cycle-ink: var(--menstrual-ink); }
+:root[data-phase="follicular"] { --cycle-accent: var(--follicular); --cycle-ink: var(--follicular-ink); }
+:root[data-phase="ovulatory"] { --cycle-accent: var(--ovulatory); --cycle-ink: var(--ovulatory-ink); }
+:root[data-phase="luteal"] { --cycle-accent: var(--luteal); --cycle-ink: var(--luteal-ink); }
+
+.cycle-band {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cycle-accent);
+  /* The band is the only place the phase colour is allowed to be a block. It
+     fades at both ends so it reads as a highlight rather than a bar. */
+  opacity: 0.85;
+  margin: 1.1rem auto 0.5rem;
+  max-width: 220px;
+  transition: background 400ms ease;
+}
+.cycle-line {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0 auto 0.2rem;
+  max-width: 34rem;
+  text-align: center;
+}
+.cycle-line strong { color: var(--cycle-ink); font-weight: 600; }
+.hero-shot {
+  border-left: 3px solid var(--cycle-accent);
+  padding-left: 0.9rem;
+  transition: border-color 400ms ease;
+}
+
+/* ---- FAQ ------------------------------------------------------------- */
+.faq { max-width: 38rem; }
+.faq details {
+  border-top: 1px solid var(--rule);
+  padding: 0.85rem 0;
+}
+.faq details:last-of-type { border-bottom: 1px solid var(--rule); }
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+";
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: 400;
+}
+.faq details[open] summary::after { content: "\2212"; }
+.faq details p { margin: 0.6rem 0 0; color: var(--muted-strong); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cycle-band, .hero-shot { transition: none; }
+}
 </style>
 </head>
 <body>
@@ -326,6 +399,13 @@ a:focus-visible,
     <p class="tagline">
       Cycle awareness for the person who cares. Remember, notice, prepare, and
       ask &mdash; without guessing.
+    </p>
+
+    <div class="cycle-band" aria-hidden="true"></div>
+    <p class="cycle-line" id="cycle-line">
+      This page is on <strong>day 8</strong> of a 28-day cycle, so it is showing
+      the follicular screenshot. It is a calendar trick, not a reading of
+      anybody&rsquo;s body.
     </p>
 
     <div class="phases">
@@ -466,10 +546,12 @@ a:focus-visible,
     <section aria-labelledby="look">
       <h2 id="look">A look</h2>
       <div class="shots">
-        <figure>
-          <img src="screenshots/today.png"
-               alt="The Today screen: an ovulatory phase chip reading day 10, a countdown to the next estimated period with a two-day window, and a care suggestion whose source is labelled 'She told you this'.">
-          <figcaption>Today: the phase, the next estimate, and one thing worth doing.</figcaption>
+        <figure class="hero-shot">
+          <img id="today-shot" src="screenshots/today-follicular.png"
+               alt="The Today screen: the phase dial, a countdown to the next estimated period with its window, and a care suggestion whose source is labelled 'She told you this'.">
+          <figcaption id="today-caption">
+            Today: the phase, the next estimate, and one thing worth doing.
+          </figcaption>
         </figure>
         <figure>
           <img src="screenshots/today-action.png"
@@ -494,6 +576,68 @@ a:focus-visible,
         Android system bars in frame, are in the repository under
         <code>docs/device-screenshots/</code>.
       </p>
+    </section>
+
+    <section aria-labelledby="faq">
+      <h2 id="faq">Questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Does anything leave my phone?</summary>
+          <p>No. There is no account and no server to send it to. The cycle
+          history lives in the app&rsquo;s own sandbox, Android Auto Backup is
+          turned off in the manifest so it never reaches Google Drive, and the
+          only network requests are a weather forecast for the coordinates you
+          type in and an update check you have to switch on.</p>
+        </details>
+        <details>
+          <summary>How accurate is the estimate?</summary>
+          <p>It depends entirely on the history. Three estimators run on your
+          recorded period starts and the app shows the window they agree on: a
+          steady history gives a window of a day or two, an irregular one gives a
+          week, and if the history is too short to say anything the app says that
+          instead of inventing a date. It is arithmetic on dates &mdash; no
+          hormone is measured, which is why it is not a contraceptive.</p>
+        </details>
+        <details>
+          <summary>What if I am on the pill, or pregnant, or have just given
+          birth?</summary>
+          <p>You tell the app once and it stops forecasting, with the reason
+          stated on the home screen. Pills, implants, injections and hormonal
+          IUDs stop ovulation, so there is no cycle to estimate and a countdown
+          would be a lie. Everything that does not depend on a forecast &mdash;
+          your notes, the reminders, the health information &mdash; stays.</p>
+        </details>
+        <details>
+          <summary>Is it only for couples?</summary>
+          <p>No. The app is written for one person to use, and the partner-facing
+          suggestions are a layer on top rather than the point. Used alone it is
+          a cycle log that refuses to pretend to certainty; used together, the
+          suggestions are a way of being useful without asking someone to explain
+          herself every evening.</p>
+        </details>
+        <details>
+          <summary>Why Bangla fonts and Hijri dates?</summary>
+          <p>Because the phone it is written for is in Bangladesh. Bangla is a
+          first language for most of the people this is for, the heat index
+          matters more than the air temperature for most of the year, and a
+          calendar that shows Hijri and nakshatra alongside the Gregorian date is
+          normal here rather than exotic. The prediction is the same either
+          way.</p>
+        </details>
+        <details>
+          <summary>Can I get my data out?</summary>
+          <p>Yes, as one encrypted file under a passphrase you choose, containing
+          the dates and nothing else &mdash; no location, no notes, no settings.
+          Restore puts it back on the same or a new phone. There is also one
+          button that withdraws consent and deletes everything on this one.</p>
+        </details>
+        <details>
+          <summary>Why is it not on the Play Store?</summary>
+          <p>Because it would need an account, a listing and a data-safety form
+          to say the same thing this page says: nothing is collected. The APK is
+          built from the same source, signed, and published on the releases page.</p>
+        </details>
+      </div>
     </section>
 
     <section class="download" aria-labelledby="get">
@@ -521,5 +665,58 @@ a:focus-visible,
   </footer>
 
 </div>
+
+<script>
+/* The page's phase, from the date.
+ *
+ * The 1st of the month is day 1 of a 28-day cycle, so the phase is a pure
+ * function of the day of the month. It is not a reading of anybody's body and
+ * the sentence above the fold says so; what it buys is that the site looks
+ * different on the 3rd than on the 20th, in the same four colours the app
+ * draws, and that the screenshot it shows is the one that matches.
+ *
+ * The images are static files, so this costs no request beyond the one the page
+ * would have made anyway for whichever screenshot it settled on.
+ */
+(function () {
+  var PHASES = [
+    { key: "menstrual", label: "menstrual", from: 1, to: 5 },
+    { key: "follicular", label: "follicular", from: 6, to: 13 },
+    { key: "ovulatory", label: "ovulatory", from: 14, to: 16 },
+    { key: "luteal", label: "luteal", from: 17, to: 28 }
+  ];
+  var CAPTIONS = {
+    menstrual: "Today, on the second day: the phase dial, the countdown and a suggestion drawn from what she has said.",
+    follicular: "Today, in the week after bleeding: the dial, the next estimate, and one thing worth doing.",
+    ovulatory: "Today, mid-cycle: the app still calls this an estimate, because that is all it is.",
+    luteal: "Today, in the days before bleeding: the same screen, quieter, and the advice changes with it."
+  };
+
+  var now = new Date();
+  var day = now.getDate();
+  var phase = PHASES[PHASES.length - 1];
+  for (var i = 0; i < PHASES.length; i++) {
+    if (day >= PHASES[i].from && day <= PHASES[i].to) { phase = PHASES[i]; break; }
+  }
+
+  document.documentElement.setAttribute("data-phase", phase.key);
+
+  var line = document.getElementById("cycle-line");
+  if (line) {
+    line.innerHTML = "This page is on <strong>day " + day +
+      "</strong> of a 28-day cycle, so it is showing the " + phase.label +
+      " screenshot. It is a calendar trick, not a reading of anybody&rsquo;s body.";
+  }
+
+  var shot = document.getElementById("today-shot");
+  if (shot) {
+    shot.src = "screenshots/today-" + phase.key + ".png";
+    shot.alt = "The Today screen in the " + phase.label +
+      " phase: the phase dial, the countdown to the next estimated period with its window, and a care suggestion labelled with where it came from.";
+  }
+  var caption = document.getElementById("today-caption");
+  if (caption) { caption.textContent = CAPTIONS[phase.key]; }
+})();
+</script>
 </body>
 </html>

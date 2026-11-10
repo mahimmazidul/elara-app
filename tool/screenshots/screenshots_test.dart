@@ -58,10 +58,7 @@ String? _findMaterialIcons() {
   final fromEnvironment = Platform.environment['FLUTTER_ROOT'];
   // Derived from the running Dart VM: <sdk>/bin/cache/dart-sdk/bin/dart.
   final fromExecutable = Platform.resolvedExecutable.split('/bin/').first;
-  final roots = <String>[
-    ?fromEnvironment,
-    fromExecutable,
-  ];
+  final roots = <String>[?fromEnvironment, fromExecutable];
 
   for (final root in roots) {
     final candidate =
@@ -74,7 +71,9 @@ String? _findMaterialIcons() {
 Future<void> _loadFont(String family, List<String> paths) async {
   final loader = FontLoader(family);
   for (final path in paths) {
-    loader.addFont(File(path).readAsBytes().then((b) => ByteData.view(b.buffer)));
+    loader.addFont(
+      File(path).readAsBytes().then((b) => ByteData.view(b.buffer)),
+    );
   }
   await loader.load();
 }
@@ -82,43 +81,43 @@ Future<void> _loadFont(String family, List<String> paths) async {
 /// Plausible late-monsoon Dhaka weather, so the strips and charts show real
 /// numbers instead of the seasonal estimate.
 String _meteoBody(DateTime day) => jsonEncode({
-      'latitude': 23.81,
-      'longitude': 90.41,
-      'daily': {
-        'time': [
-          '${day.year}-${day.month.toString().padLeft(2, '0')}-'
-              '${day.day.toString().padLeft(2, '0')}'
-        ],
-        'temperature_2m_mean': [31.2],
-        'relative_humidity_2m_mean': [82],
-        'sunshine_duration': [19800],
-        'precipitation_sum': [1.2],
-      },
-    });
+  'latitude': 23.81,
+  'longitude': 90.41,
+  'daily': {
+    'time': [
+      '${day.year}-${day.month.toString().padLeft(2, '0')}-'
+          '${day.day.toString().padLeft(2, '0')}',
+    ],
+    'temperature_2m_mean': [31.2],
+    'relative_humidity_2m_mean': [82],
+    'sunshine_duration': [19800],
+    'precipitation_sum': [1.2],
+  },
+});
 
 String get _aqBody => jsonEncode({
-      'results': [
+  'results': [
+    {
+      'country': {'code': 'BD', 'name': 'Bangladesh'},
+      'measurements': [
         {
-          'country': {'code': 'BD', 'name': 'Bangladesh'},
-          'measurements': [
-            {
-              'parameter': {'name': 'pm25'},
-              'value': 46.0,
-            },
-          ],
+          'parameter': {'name': 'pm25'},
+          'value': 46.0,
         },
       ],
-    });
+    },
+  ],
+});
 
 http.Client _network() => MockClient((request) async {
-      if (request.url.host == 'api.open-meteo.com') {
-        return http.Response(_meteoBody(DateTime.now()), 200);
-      }
-      if (request.url.host == 'api.openaq.org') {
-        return http.Response(_aqBody, 200);
-      }
-      return http.Response('not found', 404);
-    });
+  if (request.url.host == 'api.open-meteo.com') {
+    return http.Response(_meteoBody(DateTime.now()), 200);
+  }
+  if (request.url.host == 'api.openaq.org') {
+    return http.Response(_aqBody, 200);
+  }
+  return http.Response('not found', 404);
+});
 
 /// Deterministic settling: a frame, then real time for the sqflite reads the
 /// screens kick off on init, then another frame. Never pumpAndSettle, since a
@@ -200,62 +199,84 @@ void main() {
   /// app guessed, and the README should show the former.
   Future<void> seedPreferences() async {
     final now = DateTime.now();
-    await db.insertPreference(Preference(
-      category: PreferenceCategory.food,
-      value: 'warm khichuri, not spicy',
-      source: PreferenceSource.herAnswer,
-      status: PreferenceStatus.confirmed,
-      shared: true,
-      updatedAt: now.subtract(const Duration(days: 6)),
-    ));
-    await db.insertPreference(Preference(
-      category: PreferenceCategory.comfort,
-      value: 'the grey blanket, kept warm',
-      source: PreferenceSource.herAnswer,
-      status: PreferenceStatus.confirmed,
-      shared: true,
-      updatedAt: now.subtract(const Duration(days: 6)),
-    ));
-    await db.insertPreference(Preference(
-      category: PreferenceCategory.gesture,
-      value: 'notes rather than phone calls',
-      source: PreferenceSource.herAnswer,
-      status: PreferenceStatus.confirmed,
-      // Hidden on purpose: the screenshot shows that a private answer is
-      // possible and is marked as such.
-      shared: false,
-      updatedAt: now.subtract(const Duration(days: 12)),
-    ));
-    await db.insertPreference(Preference(
-      category: PreferenceCategory.dateIdea,
-      value: 'a short walk after Maghrib',
-      source: PreferenceSource.partnerObservation,
-      status: PreferenceStatus.confirmed,
-      shared: true,
-      updatedAt: now.subtract(const Duration(days: 3)),
-    ));
-    await db.insertPreference(Preference(
-      category: PreferenceCategory.avoid,
-      value: 'being asked to choose when she is tired',
-      source: PreferenceSource.partnerObservation,
-      status: PreferenceStatus.unconfirmed,
-      shared: true,
-      updatedAt: now.subtract(const Duration(days: 1)),
-    ));
+    await db.insertPreference(
+      Preference(
+        category: PreferenceCategory.food,
+        value: 'warm khichuri, not spicy',
+        source: PreferenceSource.herAnswer,
+        status: PreferenceStatus.confirmed,
+        shared: true,
+        updatedAt: now.subtract(const Duration(days: 6)),
+      ),
+    );
+    await db.insertPreference(
+      Preference(
+        category: PreferenceCategory.comfort,
+        value: 'the grey blanket, kept warm',
+        source: PreferenceSource.herAnswer,
+        status: PreferenceStatus.confirmed,
+        shared: true,
+        updatedAt: now.subtract(const Duration(days: 6)),
+      ),
+    );
+    await db.insertPreference(
+      Preference(
+        category: PreferenceCategory.gesture,
+        value: 'notes rather than phone calls',
+        source: PreferenceSource.herAnswer,
+        status: PreferenceStatus.confirmed,
+        // Hidden on purpose: the screenshot shows that a private answer is
+        // possible and is marked as such.
+        shared: false,
+        updatedAt: now.subtract(const Duration(days: 12)),
+      ),
+    );
+    await db.insertPreference(
+      Preference(
+        category: PreferenceCategory.dateIdea,
+        value: 'a short walk after Maghrib',
+        source: PreferenceSource.partnerObservation,
+        status: PreferenceStatus.confirmed,
+        shared: true,
+        updatedAt: now.subtract(const Duration(days: 3)),
+      ),
+    );
+    await db.insertPreference(
+      Preference(
+        category: PreferenceCategory.avoid,
+        value: 'being asked to choose when she is tired',
+        source: PreferenceSource.partnerObservation,
+        status: PreferenceStatus.unconfirmed,
+        shared: true,
+        updatedAt: now.subtract(const Duration(days: 1)),
+      ),
+    );
 
-    await db.upsertSymptom(Symptom(
-      date: now.subtract(const Duration(days: 1)),
-      kind: SymptomKind.fatigue,
-      severity: 2,
-      note: null,
-      createdAt: now,
-    ));
+    await db.upsertSymptom(
+      Symptom(
+        date: now.subtract(const Duration(days: 1)),
+        kind: SymptomKind.fatigue,
+        severity: 2,
+        note: null,
+        createdAt: now,
+      ),
+    );
   }
 
-  /// Five recorded starts, roughly a 29 day rhythm, the newest nine days back.
-  Future<void> seed() async {
+  /// Five recorded starts, roughly a 29 day rhythm.
+  ///
+  /// [daysSinceLastStart] moves the whole series so that today lands in a
+  /// particular phase: the landing page changes its colour and its screenshot
+  /// with the phase of the cycle, and those four images have to be renders of a
+  /// history that actually puts the app in that phase — not four copies of one
+  /// screen with a different caption.
+  Future<void> seed({int daysSinceLastStart = 9}) async {
     final today = DateTime.now();
-    final offsets = [125, 97, 68, 39, 9];
+    // Offsets count backwards from today, so a *smaller* offset means the
+    // period started more recently. Moving the series forward by the difference
+    // is what lands today in the requested phase.
+    final shift = daysSinceLastStart - 9;
+    final offsets = [125, 97, 68, 39, 9].map((o) => o + shift).toList();
     for (final offset in offsets) {
       await db.insertCycle(
         CycleEntry(
@@ -358,14 +379,18 @@ void main() {
           ChangeNotifierProvider<CycleProvider>.value(value: graph.cycles),
           ChangeNotifierProvider<ClimateProvider>.value(value: graph.climate),
           ChangeNotifierProvider<PredictionProvider>.value(
-              value: graph.prediction),
+            value: graph.prediction,
+          ),
           ChangeNotifierProvider<PreferencesProvider>.value(
-              value: graph.preferences),
+            value: graph.preferences,
+          ),
           ChangeNotifierProvider<SymptomsProvider>.value(value: graph.symptoms),
           ChangeNotifierProvider<RemindersProvider>(
-              create: (_) => RemindersProvider(database: db)..load(),
+            create: (_) => RemindersProvider(database: db)..load(),
           ),
-          ChangeNotifierProvider<RemindersProvider>(create: (_) => RemindersProvider(database: db)..load()),
+          ChangeNotifierProvider<RemindersProvider>(
+            create: (_) => RemindersProvider(database: db)..load(),
+          ),
           ChangeNotifierProvider<UpdateProvider>(
             create: (_) => UpdateProvider(),
           ),
@@ -472,6 +497,30 @@ void main() {
   /// she is on hormonal contraception, and a pregnancy or loss that has stopped
   /// the counting. Both are rendered because both are screens someone will read
   /// in a hard week, and neither is an error state.
+  /// One Today screen per phase.
+  ///
+  /// The website decides which of these to show from the date: on the tenth of
+  /// the month it is ten days into a twenty-eight day cycle, so it shows the
+  /// follicular one. That is a conceit, and the page says so — a website is not
+  /// a person, and it has no cycle to be in.
+  for (final (phase, daysAgo) in const [
+    ('menstrual', 1),
+    ('follicular', 8),
+    ('ovulatory', 14),
+    ('luteal', 21),
+  ]) {
+    testWidgets('screenshots the $phase phase', (tester) async {
+      addTearDown(tester.view.reset);
+      setViewport(tester, _logicalSize);
+
+      await tester.runAsync(() => seed(daysSinceLastStart: daysAgo));
+      final graph = await buildGraph(tester);
+      await pumpApp(tester, graph);
+
+      await capture(tester, 'today-$phase');
+    });
+  }
+
   testWidgets('screenshots quiet today', (tester) async {
     addTearDown(tester.view.reset);
     setViewport(tester, _logicalSize);
@@ -486,8 +535,10 @@ void main() {
     await capture(tester, 'today-hormonal-contraception');
 
     await tester.runAsync(
-      () => graph.settings
-          .setCycleMode(CycleMode.paused, reason: PauseReason.loss),
+      () => graph.settings.setCycleMode(
+        CycleMode.paused,
+        reason: PauseReason.loss,
+      ),
     );
     await pumpApp(tester, graph);
     await capture(tester, 'today-paused-after-loss');
@@ -562,6 +613,14 @@ void main() {
     await tester.tap(find.text('Calendar'));
     await settle(tester);
     await capture(tester, 'calendar-dark');
+
+    // Settings in the dark palette, because the glass panels are the one
+    // surface whose light and dark versions are not the same drawing: in light
+    // the pane catches a highlight, in dark it is separated by its shadow. An
+    // image is the only way to see whether that still reads.
+    await tester.tap(find.text('Settings'));
+    await settle(tester);
+    await capture(tester, 'settings-dark');
   });
 
   // A recorded day, opened the way a user opens it: back a month to the last
@@ -709,7 +768,8 @@ void main() {
       for (var i = 0; i < 8; i++) {
         await tester.drag(find.byType(ListView).first, const Offset(0, -260));
         await tester.pump(const Duration(milliseconds: 60));
-        if (find.textContaining('\u0986', findRichText: true)
+        if (find
+            .textContaining('\u0986', findRichText: true)
             .evaluate()
             .isNotEmpty) {
           break;
@@ -734,17 +794,9 @@ void main() {
 
 /// The families the font comparison renders the real screens in.
 const List<({String id, String family, List<String> fallbacks})>
-    _comparisonCandidates = [
-  (
-    id: 'dmsans',
-    family: 'DM Sans',
-    fallbacks: ['Noto Sans Bengali'],
-  ),
-  (
-    id: 'hind-siliguri',
-    family: 'Hind Siliguri',
-    fallbacks: <String>[],
-  ),
+_comparisonCandidates = [
+  (id: 'dmsans', family: 'DM Sans', fallbacks: ['Noto Sans Bengali']),
+  (id: 'hind-siliguri', family: 'Hind Siliguri', fallbacks: <String>[]),
 ];
 
 /// The provider graph the frame reads from.
