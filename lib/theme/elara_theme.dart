@@ -321,6 +321,10 @@ class ElaraRadii {
   static const double card = 14;
   static const double sheet = 20;
   static const double bar = 6;
+
+  /// Glass panels. Generous enough that the sheen curves visibly rather than
+  /// reading as a chamfer.
+  static const double glass = 22;
 }
 
 /// The only shadow in the app: 0 1px 3px rgba(0,0,0,0.08).
@@ -332,6 +336,17 @@ class ElaraShadows {
       color: Color(0x14000000), // 8% black
       offset: Offset(0, 1),
       blurRadius: 3,
+    ),
+  ];
+
+  /// Glass panels get depth from a soft, wide, low-opacity shadow rather than
+  /// the crisp one above: a pane resting on a page, not a card lifted off it.
+  static const List<BoxShadow> glass = [
+    BoxShadow(
+      color: Color(0x0A000000),
+      offset: Offset(0, 6),
+      blurRadius: 18,
+      spreadRadius: -6,
     ),
   ];
 
@@ -521,6 +536,18 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
   Color get onPhase => palette.onPhase;
   Color get divider => palette.divider;
   Color get track => palette.track;
+
+  /// The light edge on a glass panel. Pale in both themes — a light source does
+  /// not turn dark when the room does — but weaker in dark, where a strong
+  /// highlight reads as a plastic rim.
+  Color get glassSheen => isDark
+      ? const Color(0x1AFFFFFF)
+      : const Color(0xB3FFFFFF);
+
+  /// The shaded underside of a glass panel's edge.
+  Color get glassRim => isDark
+      ? const Color(0x33FFFFFF)
+      : const Color(0x0F241E1B);
 
   /// Absence of colour, exposed as a token so call sites never reach for
   /// `Colors.transparent` themselves.

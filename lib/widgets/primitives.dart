@@ -57,6 +57,135 @@ class ElaraCard extends StatelessWidget {
   }
 }
 
+/// A glass panel: the settings-and-secondary-page surface.
+///
+/// What makes this read as glass rather than as a card is four things working
+/// together, and none of them is a box.
+///
+/// The panel has **no outline**. A hairline border draws a rectangle, and a
+/// rectangle is the thing being got rid of. Its edge is defined by a *sheen*
+/// instead: a faint light stroke that is strong at the top-left and fades out
+/// before the bottom-right, which is how a real edge catches a light source.
+///
+/// It sits **on the page rather than in it**. A slight vertical gradient from
+/// the card tone to a half-step lighter leaves the top of the panel feeling
+/// nearer than the bottom, which is the whole of the depth illusion.
+///
+/// The fill is **translucent**, so the page behind it is present but not
+/// readable through it. This is deliberately not a blur: `BackdropFilter` is the
+/// obvious way to make glass in Flutter and it is the wrong one here — it costs
+/// a save-layer on every scroll frame, and on the mid-range Android hardware
+/// most of these users are holding it is the difference between a smooth list
+/// and a stuttering one. Tinting gets the same impression for free.
+///
+/// And the **interior is inset**: content that floats inside a glass panel has
+/// to leave the panel's edge alone, or the illusion collapses into a box again.
+///
+/// Used on settings and secondary pages. Not on Today, where surfaces have to
+/// recede behind the phase dial.
+class ElaraGlass extends StatelessWidget {
+  const ElaraGlass({
+    super.key,
+    required this.child,
+    this.padding = ElaraSpacing.card,
+    this.radius,
+    this.tint,
+    this.onTap,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double? radius;
+
+  /// Override for the panel fill, e.g. a phase wash. Defaults to the card tone.
+  final Color? tint;
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final r = radius ?? ElaraRadii.glass;
+    // In light, the page is the darker of the two tones and the panel catches
+    // the light. In dark the relationship inverts: the panel is the lighter
+    // one, and the sheen stays pale so the edge still reads.
+    final base = tint ?? tokens.bgCard;
+    final top = Color.alphaBlend(
+      (tokens.isDark ? Colors.white : Colors.white).withValues(alpha: 0.06),
+      base,
+    );
+    final bottom = Color.alphaBlend(
+      (tokens.isDark ? Colors.black : Colors.black).withValues(alpha: 0.03),
+      base,
+    );
+
+    // The rim is two lines doing different jobs: a pale one on top, where the
+    // light lands, and a dark one underneath, where the pane shades the page.
+    // Together they read as thickness. Either alone reads as a border.
+    final panel = Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(r),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [top, bottom],
+        ),
+        border: Border.all(color: tokens.glassSheen, width: 1),
+        boxShadow: tokens.isDark ? ElaraShadows.none : ElaraShadows.glass,
+      ),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(r),
+        border: Border(
+          bottom: BorderSide(color: tokens.glassRim, width: 1),
+        ),
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+
+    if (onTap == null) return panel;
+    return ElaraPressable(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(r),
+        child: panel,
+      ),
+    );
+  }
+}
+
+/// A group of rows inside one glass panel, with hairlines between them.
+///
+/// Rows in a settings list used to be separate full-width blocks, each with its
+/// own gutters. Treated as one panel with dividers, the list reads as a single
+/// object — which is what it is: one set of related choices.
+class ElaraGlassGroup extends StatelessWidget {
+  const ElaraGlassGroup({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    const rowInset = EdgeInsets.symmetric(horizontal: ElaraSpacing.lg);
+
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      if (i > 0) {
+        rows.add(Padding(
+          padding: rowInset,
+          child: Divider(height: 1, thickness: 1, color: tokens.divider),
+        ));
+      }
+      rows.add(Padding(padding: rowInset, child: children[i]));
+    }
+
+    return ElaraGlass(
+      padding: const EdgeInsets.symmetric(vertical: ElaraSpacing.xs),
+      child: Column(children: rows),
+    );
+  }
+}
+
 /// Small all-caps label above a value.
 class ElaraOverline extends StatelessWidget {
   const ElaraOverline(this.text, {super.key, this.color});

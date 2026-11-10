@@ -42,47 +42,63 @@ class NotificationsPage extends StatelessWidget {
           'Scheduled on this device by the Android alarm manager. Nothing is '
           'sent to a server.',
       children: [
-        _ToggleRow(
-          label: 'Enable notifications',
-          subtitle: 'Master switch for all reminders.',
-          value: settings.notificationsEnabled,
-          onChanged: (value) => apply(settings.setNotificationsEnabled, value),
-        ),
-        const Hairline(),
-        _ToggleRow(
-          label: 'Daily briefing',
-          subtitle: 'A short morning summary of the current phase.',
-          value: settings.notifyDailyBriefing,
-          onChanged: (value) => apply(settings.setNotifyDailyBriefing, value),
-          enabled: settings.notificationsEnabled,
-        ),
-        _ToggleRow(
-          label: 'PMS warning',
-          subtitle: 'Heads-up before the late luteal phase.',
-          value: settings.notifyPmsWarning,
-          onChanged: (value) => apply(settings.setNotifyPmsWarning, value),
-          enabled: settings.notificationsEnabled,
-        ),
-        _ToggleRow(
-          label: 'Ovulation window',
-          subtitle: 'When the estimated fertile window opens.',
-          value: settings.notifyOvulationWindow,
-          onChanged: (value) => apply(settings.setNotifyOvulationWindow, value),
-          enabled: settings.notificationsEnabled,
-        ),
-        _ToggleRow(
-          label: 'Period start',
-          subtitle: 'On the day a period is expected.',
-          value: settings.notifyPeriodStart,
-          onChanged: (value) => apply(settings.setNotifyPeriodStart, value),
-          enabled: settings.notificationsEnabled,
-        ),
-        _ToggleRow(
-          label: 'Climate spike',
-          subtitle: 'When heat index or PM2.5 rises sharply.',
-          value: settings.notifyClimateSpike,
-          onChanged: (value) => apply(settings.setNotifyClimateSpike, value),
-          enabled: settings.notificationsEnabled,
+        ElaraGlass(
+          padding: const EdgeInsets.symmetric(
+            horizontal: ElaraSpacing.lg,
+            vertical: ElaraSpacing.sm,
+          ),
+          child: Column(
+            children: [
+              _ToggleRow(
+                label: 'Enable notifications',
+                subtitle: 'Master switch for all reminders.',
+                value: settings.notificationsEnabled,
+                onChanged: (value) =>
+                    apply(settings.setNotificationsEnabled, value),
+              ),
+              const Hairline(),
+              _ToggleRow(
+                label: 'Daily briefing',
+                subtitle: 'A short morning summary of the current phase.',
+                value: settings.notifyDailyBriefing,
+                onChanged: (value) =>
+                    apply(settings.setNotifyDailyBriefing, value),
+                enabled: settings.notificationsEnabled,
+              ),
+              _ToggleRow(
+                label: 'PMS warning',
+                subtitle: 'Heads-up before the late luteal phase.',
+                value: settings.notifyPmsWarning,
+                onChanged: (value) =>
+                    apply(settings.setNotifyPmsWarning, value),
+                enabled: settings.notificationsEnabled,
+              ),
+              _ToggleRow(
+                label: 'Ovulation window',
+                subtitle: 'When the estimated fertile window opens.',
+                value: settings.notifyOvulationWindow,
+                onChanged: (value) =>
+                    apply(settings.setNotifyOvulationWindow, value),
+                enabled: settings.notificationsEnabled,
+              ),
+              _ToggleRow(
+                label: 'Period start',
+                subtitle: 'On the day a period is expected.',
+                value: settings.notifyPeriodStart,
+                onChanged: (value) =>
+                    apply(settings.setNotifyPeriodStart, value),
+                enabled: settings.notificationsEnabled,
+              ),
+              _ToggleRow(
+                label: 'Climate spike',
+                subtitle: 'When heat index or PM2.5 rises sharply.',
+                value: settings.notifyClimateSpike,
+                onChanged: (value) =>
+                    apply(settings.setNotifyClimateSpike, value),
+                enabled: settings.notificationsEnabled,
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: ElaraSpacing.md),
         Text(

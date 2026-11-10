@@ -61,94 +61,106 @@ class SettingsScreen extends StatelessWidget {
 
         // ---- her cycle, first: it decides what the app is willing to say
         const _GroupLabel('Her cycle'),
-        ElaraListRow(
-          title: 'Cycle mode',
-          subtitle: settings.cycleMode.summary,
-          icon: ElaraIcons.timeline,
-          onTap: () => Navigator.of(context).push(CycleModePage.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'Preferences',
-          subtitle: preferences.summary,
-          icon: ElaraIcons.care,
-          onTap: () =>
-              Navigator.of(context).push(PreferencesScreen.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'Symptoms',
-          subtitle: symptoms.summary,
-          icon: ElaraIcons.symptom,
-          onTap: () => Navigator.of(context).push(SymptomsScreen.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'Care reminders',
-          subtitle: reminders.summary,
-          icon: ElaraIcons.notification,
-          onTap: () =>
-              Navigator.of(context).push(RemindersScreen.route(context)),
+        ElaraGlassGroup(
+          children: [
+            ElaraListRow(
+              title: 'Cycle mode',
+              subtitle: settings.cycleMode.summary,
+              icon: ElaraIcons.timeline,
+              onTap: () =>
+                  Navigator.of(context).push(CycleModePage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Preferences',
+              subtitle: preferences.summary,
+              icon: ElaraIcons.care,
+              onTap: () =>
+                  Navigator.of(context).push(PreferencesScreen.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Symptoms',
+              subtitle: symptoms.summary,
+              icon: ElaraIcons.symptom,
+              onTap: () =>
+                  Navigator.of(context).push(SymptomsScreen.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Care reminders',
+              subtitle: reminders.summary,
+              icon: ElaraIcons.notification,
+              onTap: () =>
+                  Navigator.of(context).push(RemindersScreen.route(context)),
+            ),
+          ],
         ),
 
         // ---- the app itself
         const SizedBox(height: ElaraSpacing.xl),
         const _GroupLabel('The app'),
-        ElaraListRow(
-          title: 'Notifications',
-          subtitle: settings.notificationsEnabled
-              ? 'On · ${settings.enabledReminderCount} of 5 reminders'
-              : 'Off',
-          icon: ElaraIcons.notification,
-          onTap: () => Navigator.of(context).push(NotificationsPage.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'Location',
-          subtitle:
-              '${settings.latitude.toStringAsFixed(3)}, '
-              '${settings.longitude.toStringAsFixed(3)} · typed in',
-          icon: ElaraIcons.weather,
-          onTap: () => Navigator.of(context).push(LocationPage.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'Appearance',
-          subtitle: switch (settings.themeMode) {
-            ThemeMode.system => 'Follows the phone',
-            ThemeMode.light => 'Light',
-            ThemeMode.dark => 'Dark',
-          },
-          icon: ElaraIcons.themeSystem,
-          onTap: () => Navigator.of(context).push(AppearancePage.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'Health information',
-          subtitle:
-              '${medicalTopics.length} topics · not personalised · sources dated',
-          icon: ElaraIcons.medical,
-          onTap: () => Navigator.of(context).push(MedicalScreen.route(context)),
+        ElaraGlassGroup(
+          children: [
+            ElaraListRow(
+              title: 'Notifications',
+              subtitle: settings.notificationsEnabled
+                  ? 'On · ${settings.enabledReminderCount} of 5 reminders'
+                  : 'Off',
+              icon: ElaraIcons.notification,
+              onTap: () =>
+                  Navigator.of(context).push(NotificationsPage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Location',
+              subtitle:
+                  '${settings.latitude.toStringAsFixed(3)}, '
+                  '${settings.longitude.toStringAsFixed(3)} · typed in',
+              icon: ElaraIcons.weather,
+              onTap: () =>
+                  Navigator.of(context).push(LocationPage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Appearance',
+              subtitle: switch (settings.themeMode) {
+                ThemeMode.system => 'Follows the phone',
+                ThemeMode.light => 'Light',
+                ThemeMode.dark => 'Dark',
+              },
+              icon: ElaraIcons.themeSystem,
+              onTap: () =>
+                  Navigator.of(context).push(AppearancePage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'Health information',
+              subtitle:
+                  '${medicalTopics.length} topics · not personalised · '
+                  'sources dated',
+              icon: ElaraIcons.medical,
+              onTap: () =>
+                  Navigator.of(context).push(MedicalScreen.route(context)),
+            ),
+          ],
         ),
 
         // ---- what is stored, and how to get rid of it
         const SizedBox(height: ElaraSpacing.xl),
         const _GroupLabel('Data'),
-        ElaraListRow(
-          title: 'Privacy and data',
-          subtitle: consent.hasConsent
-              ? 'Consent recorded · export, restore, delete everything'
-              : 'Consent not recorded',
-          icon: ElaraIcons.privacy,
-          onTap: () =>
-              Navigator.of(context).push(PrivacyPage.route(context)),
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        ElaraListRow(
-          title: 'About',
-          subtitle: 'Version, licences, source, update check',
-          icon: ElaraIcons.info,
-          onTap: () => Navigator.of(context).push(AboutPage.route(context)),
+        ElaraGlassGroup(
+          children: [
+            ElaraListRow(
+              title: 'Privacy and data',
+              subtitle: consent.hasConsent
+                  ? 'Consent recorded · export, restore, delete everything'
+                  : 'Consent not recorded',
+              icon: ElaraIcons.privacy,
+              onTap: () =>
+                  Navigator.of(context).push(PrivacyPage.route(context)),
+            ),
+            ElaraListRow(
+              title: 'About',
+              subtitle: 'Version, licences, source, update check',
+              icon: ElaraIcons.info,
+              onTap: () => Navigator.of(context).push(AboutPage.route(context)),
+            ),
+          ],
         ),
 
         const SizedBox(height: ElaraSpacing.xl),
@@ -179,7 +191,8 @@ class _GroupLabel extends StatelessWidget {
       ),
       child: Text(
         text.toUpperCase(),
-        style: context.type.caption(tokens.textSecondaryStrong, size: 11)
+        style: context.type
+            .caption(tokens.textSecondaryStrong, size: 11)
             .copyWith(letterSpacing: 0.8, fontWeight: FontWeight.w600),
       ),
     );

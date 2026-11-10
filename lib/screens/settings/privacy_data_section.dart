@@ -48,7 +48,7 @@ class _PrivacyDataSectionState extends State<PrivacyDataSection> {
     final cycles = context.watch<CycleProvider>();
     final settings = context.watch<SettingsProvider>();
 
-    return ElaraCard(
+    return ElaraGlass(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

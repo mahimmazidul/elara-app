@@ -213,7 +213,7 @@ class _LimitationsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final type = context.type;
-    return ElaraCard(
+    return ElaraGlass(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
