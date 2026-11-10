@@ -40,6 +40,19 @@ enum CycleMode {
   /// decides, so a screen cannot accidentally disagree with the engine.
   bool get predicts => this == CycleMode.predicting;
 
+  /// One line for the settings hub, so the current mode is legible without
+  /// opening the page. It states the mode, not a judgement about it.
+  String get summary {
+    switch (this) {
+      case CycleMode.predicting:
+        return 'Estimating the next period from recorded history';
+      case CycleMode.hormonalContraception:
+        return 'No forecast: no ovulatory cycle to estimate';
+      case CycleMode.paused:
+        return 'Paused: no forecast, nothing removed';
+    }
+  }
+
   String get storageKey {
     switch (this) {
       case CycleMode.predicting:

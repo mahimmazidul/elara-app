@@ -510,6 +510,9 @@ void main() {
     // The screen transition is a fade and a rise, so one settle can land
     // mid-animation and capture a frame that is offset by a few pixels.
     await settle(tester);
+    await tester.tap(find.text('Cycle mode'));
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 400));
     await settle(tester);
     await capture(tester, 'settings-cycle-mode');
   });
@@ -594,13 +597,13 @@ void main() {
 
     await tester.tap(find.text('Settings'));
     await settle(tester);
-    // Scrolled down to the privacy section, which is the part a reviewer of a
-    // health app will look for first.
-    // Dragged past the end so the list clamps at its maximum extent: the frame
-    // then shows the last of the privacy section and the page's bottom padding,
-    // rather than slicing a line of copy at the viewport edge.
-    await tester.dragFrom(const Offset(195, 500), const Offset(0, -4000));
+    // Privacy is its own page now, so the capture is of the subject rather than
+    // of wherever a long scroll happened to stop.
+    await tester.scrollUntilVisible(find.text('Privacy and data'), 200);
     await settle(tester);
+    await tester.tap(find.text('Privacy and data'));
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 400));
     await settle(tester);
     await capture(tester, 'settings-privacy');
   });
@@ -617,16 +620,15 @@ void main() {
 
     await tester.tap(find.text('Settings'));
     await settle(tester);
-    // A single drag is limited by the scroll physics, so the list is scrolled
-    // in steps until the About heading is on screen.
-    for (var i = 0; i < 6; i++) {
-      await tester.dragFrom(const Offset(195, 500), const Offset(0, -500));
-      await settle(tester);
-      if (find.text('About').evaluate().isNotEmpty) break;
-    }
-    // Then settle so the About card sits fully in frame above the navigation
-    // bar: licence, engine, source link and the medical-limitation line.
-    await tester.dragFrom(const Offset(195, 400), const Offset(0, -630));
+    await tester.scrollUntilVisible(find.text('About'), 200);
+    await settle(tester);
+    await tester.tap(find.text('About'));
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    await settle(tester);
+    // Dragged to the foot of the page: licence, engine, source link and the
+    // medical-limitation line.
+    await tester.dragFrom(const Offset(195, 500), const Offset(0, -180));
     await settle(tester);
     await capture(tester, 'about');
   });
@@ -641,7 +643,7 @@ void main() {
 
     await tester.tap(find.text('Settings'));
     await settle(tester);
-    await tester.tap(find.text('Open preferences'));
+    await tester.tap(find.text('Preferences'));
     // A pushed route animates for 300 ms; without advancing past that the
     // capture catches the two screens cross-faded on top of each other.
     await settle(tester);

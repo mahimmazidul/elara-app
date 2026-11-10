@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -240,7 +242,6 @@ class _Bar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final width = MediaQuery.sizeOf(context).width;
     final tabCount = _RootScaffoldState._destinations.length;
-    final tabWidth = width / tabCount;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -282,8 +283,6 @@ class _Bar extends StatelessWidget {
               index: index,
               previousIndex: previousIndex,
               controller: controller,
-              tabLeft: previousIndex * tabWidth,
-              tabRight: index * tabWidth,
               width: width,
               tabCount: tabCount,
               direction: direction,
@@ -371,8 +370,6 @@ class _TravelingFill extends StatelessWidget {
     required this.index,
     required this.previousIndex,
     required this.controller,
-    required this.tabLeft,
-    required this.tabRight,
     required this.width,
     required this.tabCount,
     required this.direction,
@@ -382,8 +379,6 @@ class _TravelingFill extends StatelessWidget {
   final int index;
   final int previousIndex;
   final AnimationController controller;
-  final double tabLeft;
-  final double tabRight;
   final double width;
   final int tabCount;
   final int direction;
@@ -391,45 +386,32 @@ class _TravelingFill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reduced = ElaraMotion.reduceMotion(context);
-    final fractionWidth = 1.0 / tabCount;
-
     final phaseKey = _phaseKeyForTab(index);
     final fill = tokens.phaseFill(phaseKey);
 
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final t = CurvedAnimation(parent: controller, curve: ElaraMotion.curve);
+        final t = CurvedAnimation(
+          parent: controller,
+          curve: ElaraMotion.curve,
+        ).value;
 
-        // Left edge: glides from previous tab to current tab.
-        final left = Tween<double>(
-          begin: tabLeft,
-          end: tabRight,
-        ).animate(t);
-
-        // Width: stretches toward the direction of travel while animating.
-        final baseWidth = tabRight - tabLeft;
-        final stretchExtra = baseWidth * 0.12;
-        final currentWidth = Tween<double>(
-          begin: baseWidth,
-          end: baseWidth + stretchExtra,
-        ).animate(t);
-
-        // Compensate so the stretch appears in the direction of travel:
-        // moving right, the fill extends rightward; moving left, leftward.
-        final offsetCompensation = Tween<double>(
-          begin: 0.0,
-          end: direction > 0 ? -stretchExtra / 2 : stretchExtra / 2,
-        ).animate(t);
+        final geometry = NavFillGeometry.resolve(
+          index: index,
+          previousIndex: previousIndex,
+          tabCount: tabCount,
+          pageWidth: width,
+          t: t,
+        );
 
         return Positioned(
-          left: left.value + offsetCompensation.value,
+          left: geometry.left,
           bottom: 4,
           child: AnimatedContainer(
             duration: ElaraMotion.medium,
             curve: ElaraMotion.curve,
-            width: reduced ? fractionWidth * width : currentWidth.value,
+            width: geometry.width,
             height: 6,
             decoration: BoxDecoration(
               color: fill,
@@ -444,6 +426,52 @@ class _TravelingFill extends StatelessWidget {
   String _phaseKeyForTab(int i) {
     const keys = ['ovulatory', 'follicular', 'luteal', 'menstrual'];
     return keys[i % keys.length];
+  }
+}
+
+/// Where the traveling fill is at a point in the animation.
+///
+/// This was three tweens inside the widget, and it was wrong in a way that only
+/// showed up when the reader moved *left*: the width was computed as
+/// `to - from`, which is negative when the destination tab sits left of the
+/// current one, so the bar asked for a negative width and Flutter threw
+/// "BoxConstraints has a negative minimum width" while the tab change was in
+/// flight. Moving right worked, which is why it survived — the first four tabs
+/// are reached left-to-right.
+///
+/// It also rested 12% wider than its tab, because the stretch tween ended at
+/// the stretched value. The stretch now follows a bell: zero at both ends, one
+/// in the middle, so the bar is exactly one tab wide when it is standing still
+/// and swells only while it travels, in either direction.
+class NavFillGeometry {
+  const NavFillGeometry({required this.left, required this.width});
+
+  final double left;
+  final double width;
+
+  /// How far the bar swells at mid-flight, as a fraction of a tab.
+  static const double stretchFraction = 0.12;
+
+  static NavFillGeometry resolve({
+    required int index,
+    required int previousIndex,
+    required int tabCount,
+    required double pageWidth,
+    required double t,
+  }) {
+    final tabWidth = pageWidth / tabCount;
+    final from = previousIndex * tabWidth;
+    final to = index * tabWidth;
+
+    // Sine of pi * t: 0 at rest, 1 at the midpoint, 0 at the end.
+    final bell = math.sin(math.pi * t.clamp(0.0, 1.0));
+    final stretch = tabWidth * stretchFraction * bell;
+
+    final left = from + (to - from) * t;
+    return NavFillGeometry(
+      left: left - stretch / 2,
+      width: tabWidth + stretch,
+    );
   }
 }
 

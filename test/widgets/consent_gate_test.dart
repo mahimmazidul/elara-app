@@ -294,8 +294,17 @@ void main() {
       await tester.pump();
     }
 
+    // Settings is a hub of rows; each subject now has its own page.
+    Future<void> openPrivacy(WidgetTester tester) async {
+      await tester.tap(find.text('Privacy and data'));
+      await tester.pumpAndSettle();
+      // The page title repeats the row's name, so there are two of them.
+      expect(find.text('Consent'), findsOneWidget);
+    }
+
     testWidgets('shows consent, privacy, backup and deletion', (tester) async {
       await pumpSettings(tester);
+      await openPrivacy(tester);
 
       expect(find.text('Privacy and data'), findsOneWidget);
       expect(find.text('Consent'), findsOneWidget);
@@ -311,6 +320,7 @@ void main() {
 
     testWidgets('reminder details are off by default', (tester) async {
       await pumpSettings(tester);
+      await openPrivacy(tester);
 
       // The switch that governs what appears on a lock screen must start off.
       final toggle = tester.widget<Switch>(
@@ -331,6 +341,7 @@ void main() {
 
     testWidgets('deleting everything requires typing a word', (tester) async {
       await pumpSettings(tester);
+      await openPrivacy(tester);
 
       // The sentence is a label above the control; the control itself is the
       // short, filled, destructive button.

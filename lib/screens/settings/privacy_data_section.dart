@@ -100,10 +100,10 @@ class _PrivacyDataSectionState extends State<PrivacyDataSection> {
             height: 46,
             child: FilledButton.icon(
               onPressed: _working ? null : () => _revoke(context),
-              icon: const Icon(ElaraIcons.undo, size: 18),
+              icon: const Icon(ElaraIcons.delete, size: 18),
               label: const Text('Delete everything'),
               style: FilledButton.styleFrom(
-                backgroundColor: tokens.danger,
+                backgroundColor: tokens.dangerText,
                 foregroundColor: tokens.bgCard,
                 disabledBackgroundColor: tokens.divider,
                 textStyle: const TextStyle(

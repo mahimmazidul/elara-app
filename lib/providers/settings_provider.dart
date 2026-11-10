@@ -125,6 +125,19 @@ class SettingsProvider extends ChangeNotifier {
         SettingsKeys.defaultNotifyClimateSpike,
       );
 
+  /// How many of the five individual reminders are switched on.
+  ///
+  /// The settings hub shows this so the Notifications row says something
+  /// useful before it is opened, rather than repeating the word "Notifications"
+  /// back at the reader.
+  int get enabledReminderCount => [
+        notifyDailyBriefing,
+        notifyPmsWarning,
+        notifyOvulationWindow,
+        notifyPeriodStart,
+        notifyClimateSpike,
+      ].where((on) => on).length;
+
   /// True only when the user has asked for reminder text to be specific.
   bool get notifyPreviewDetails => _readBool(
         SettingsKeys.notifyPreviewDetails,
