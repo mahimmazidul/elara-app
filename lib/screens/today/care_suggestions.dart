@@ -22,7 +22,6 @@ class CareSuggestions extends StatelessWidget {
     super.key,
     required this.suggestions,
     required this.phaseKey,
-    this.general = const [],
   });
 
   /// What the app knows about her: her answers, what she reported, what you
@@ -31,115 +30,84 @@ class CareSuggestions extends StatelessWidget {
 
   final String phaseKey;
 
-  /// General, source-backed advice for this phase. Shown underneath the
-  /// personalised list, or instead of it when there is nothing personal.
-  final List<CareSuggestion> general;
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
+    final type = context.type;
 
-    // Where the personalised list is empty, the general one leads — and says
-    // so. An app that has nothing personal to go on should still be useful in
-    // the first five seconds, and its first suggestion should not be an
-    // apology.
+    // Nothing personal yet. The screen does not apologise for that here,
+    // because the phase block below it is already filling the space with
+    // something sourced; one line saying why is enough.
     if (suggestions.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _GeneralHeader(empty: true, phaseKey: phaseKey),
-          const SizedBox(height: ElaraSpacing.sm),
-          for (var i = 0; i < general.length; i++) ...[
-            if (i > 0) const SizedBox(height: ElaraSpacing.md),
-            _Secondary(suggestion: general[i], showSource: true),
-          ],
-          const SizedBox(height: ElaraSpacing.lg),
-          Text(
-            'None of this is about her yet. Add something she has told you in '
-            'Preferences, or log a symptom, and these become specific.',
-            style: context.type.caption(tokens.textSecondaryStrong),
-          ),
-        ],
+      return Text(
+        'Nothing she has told you yet. Add something in Preferences, or record '
+        'a symptom, and these become specific to her.',
+        style: type.caption(tokens.textSecondaryStrong),
       );
     }
 
     final primary = suggestions.first;
     final rest = suggestions.skip(1).toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _Primary(suggestion: primary, phaseKey: phaseKey),
-        if (rest.isNotEmpty) ...[
-          const SizedBox(height: ElaraSpacing.lg),
-          for (var i = 0; i < rest.length; i++) ...[
-            if (i > 0) const SizedBox(height: ElaraSpacing.md),
-            _Secondary(suggestion: rest[i]),
+    // One pane, with hairlines between. Three floating paragraphs at the same
+    // weight was the reason this section read as a wall: the pane says "these
+    // belong together", the dividers say they are separate, and the padding
+    // gives each one somewhere to breathe.
+    return ElaraGlass(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ElaraSpacing.lg,
+        vertical: ElaraSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Primary(suggestion: primary, phaseKey: phaseKey),
+          for (final suggestion in rest) ...[
+            const SizedBox(height: ElaraSpacing.lg),
+            Divider(height: 1, thickness: 1, color: tokens.divider),
+            const SizedBox(height: ElaraSpacing.lg),
+            _Secondary(suggestion: suggestion),
           ],
         ],
-        if (general.isNotEmpty) ...[
-          const SizedBox(height: ElaraSpacing.lg),
-          _GeneralHeader(empty: false, phaseKey: phaseKey),
-          const SizedBox(height: ElaraSpacing.sm),
-          for (var i = 0; i < general.length; i++) ...[
-            if (i > 0) const SizedBox(height: ElaraSpacing.md),
-            _Secondary(suggestion: general[i], showSource: true),
-          ],
-        ],
-      ],
+      ),
     );
   }
 }
 
-/// The heading above the general layer.
+/// One general, sourced item for the phase.
 ///
-/// It has to be clear about what follows, because this is the part that is not
-/// about her. "In general, this phase" says that the advice is about the phase
-/// rather than about her, which is exactly true, and the sources under each item
-/// say where it came from.
-class _GeneralHeader extends StatelessWidget {
-  const _GeneralHeader({required this.empty, required this.phaseKey});
+/// Rendered with the citation instead of a basis tag: the basis is always the
+/// same ("this is published guidance"), so the useful line is which guidance.
+class GeneralGuidanceList extends StatelessWidget {
+  const GeneralGuidanceList({
+    super.key,
+    required this.items,
+    required this.phaseKey,
+  });
 
-  final bool empty;
+  final List<CareSuggestion> items;
   final String phaseKey;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.elara;
-    return Row(
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(ElaraIcons.medical, size: 16, color: tokens.textSecondaryStrong),
-        const SizedBox(width: ElaraSpacing.xs),
-        Expanded(
-          child: Text(
-            empty
-                ? 'In general, for this phase'
-                : 'In general: ${_phaseName(phaseKey)} phase',
-            style: context.type
-                .caption(tokens.textSecondaryStrong, size: 12)
-                .copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.2),
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(height: ElaraSpacing.lg),
+          _Secondary(
+            suggestion: items[i],
+            showSource: true,
+            phaseKey: phaseKey,
           ),
-        ),
+        ],
       ],
     );
   }
-
-  static String _phaseName(String key) {
-    switch (key) {
-      case 'menstrual':
-        return 'menstrual';
-      case 'follicular':
-        return 'follicular';
-      case 'ovulatory':
-        return 'ovulatory';
-      case 'luteal':
-        return 'luteal';
-      default:
-        return 'any';
-    }
-  }
 }
 
+/// The primary suggestion, given the room to read as a paragraph.
 class _Primary extends StatelessWidget {
   const _Primary({required this.suggestion, required this.phaseKey});
 
@@ -165,13 +133,20 @@ class _Primary extends StatelessWidget {
 }
 
 class _Secondary extends StatelessWidget {
-  const _Secondary({required this.suggestion, this.showSource = false});
+  const _Secondary({
+    required this.suggestion,
+    this.showSource = false,
+    this.phaseKey = 'unknown',
+  });
 
   final CareSuggestion suggestion;
 
   /// General advice names its source, because "a general idea" is not a
   /// citation. Personal advice does not need one: the source is her.
   final bool showSource;
+
+  /// Only used for the general layer, whose icon carries the phase dot.
+  final String phaseKey;
 
   @override
   Widget build(BuildContext context) {
@@ -201,19 +176,16 @@ class _Secondary extends StatelessWidget {
                 suggestion.title,
                 style: type.subtitle(tokens.textPrimary, size: 15),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: ElaraSpacing.xs),
               Text(
                 suggestion.body,
-                style: type.caption(tokens.textSecondaryStrong, size: 13),
+                style: type.caption(tokens.textSecondaryStrong, size: 13.5),
               ),
-              const SizedBox(height: ElaraSpacing.xs),
+              const SizedBox(height: ElaraSpacing.sm),
               if (showSource && suggestion.source != null)
                 Text(
                   suggestion.source!,
-                  style: context.type.caption(
-                    tokens.textSecondaryStrong,
-                    size: 12,
-                  ),
+                  style: type.caption(tokens.textSecondaryStrong, size: 12),
                 )
               else
                 BasisLine(basis: suggestion.basis),

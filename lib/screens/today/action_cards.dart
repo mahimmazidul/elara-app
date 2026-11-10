@@ -1,10 +1,12 @@
 import 'package:elara_core/elara_core.dart' as core;
 import 'package:flutter/material.dart';
 
+import '../../services/care_recommender.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/food_chip_row.dart';
 import '../../widgets/icons.dart';
 import '../../widgets/primitives.dart';
+import 'care_suggestions.dart';
 
 /// The action card on Today: elara-core's phase prompt, and the foods that go
 /// with it.
@@ -36,12 +38,19 @@ class ActionCards extends StatelessWidget {
     super.key,
     required this.action,
     required this.phaseKey,
+    this.general = const [],
     this.unavailableReason,
   });
 
   /// The phase-derived action, or null when the phase cannot be classified.
   final core.ActionResult? action;
   final String phaseKey;
+
+  /// General, sourced guidance for the phase, shown under the prompt and above
+  /// the foods. It lives here rather than in [CareSuggestions] because it
+  /// belongs to the same idea as the prompt — this phase, for everyone — and
+  /// splitting the two put two different "in general" headings on one screen.
+  final List<CareSuggestion> general;
 
   /// Shown when [action] is null, explaining why rather than leaving a gap.
   final String? unavailableReason;
@@ -122,10 +131,7 @@ class ActionCards extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      card.title,
-                      style: type.label(tokens.textPrimary),
-                    ),
+                    Text(card.title, style: type.label(tokens.textPrimary)),
                     const SizedBox(height: ElaraSpacing.xxs),
                     Text(
                       card.body,
@@ -135,13 +141,14 @@ class ActionCards extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: ElaraSpacing.md),
+            const SizedBox(height: ElaraSpacing.lg),
+
+            // ---- general, sourced guidance for the phase
+            GeneralGuidanceList(items: general, phaseKey: phaseKey),
+            if (general.isNotEmpty) const SizedBox(height: ElaraSpacing.lg),
 
             // ---- food
-            FoodChipRow(
-              foods: result.foodSuggestions,
-              phaseKey: phaseKey,
-            ),
+            FoodChipRow(foods: result.foodSuggestions, phaseKey: phaseKey),
             const SizedBox(height: ElaraSpacing.sm),
             Text(
               'Ideas to offer, not instructions for anyone\u2019s appetite.',

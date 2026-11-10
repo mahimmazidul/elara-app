@@ -271,15 +271,12 @@ class _TodayContent extends StatelessWidget {
         ElaraSection(
           title: 'Ways to help today',
           children: [
-            CareSuggestions(
-              suggestions: suggestions,
-              phaseKey: phaseKey,
-              general: general,
-            ),
-            const SizedBox(height: ElaraSpacing.lg),
+            CareSuggestions(suggestions: suggestions, phaseKey: phaseKey),
+            const SizedBox(height: ElaraSpacing.xxl),
             ActionCards(
               action: result.action,
               phaseKey: phaseKey,
+              general: general,
               unavailableReason: result.unavailableReason,
             ),
           ],
