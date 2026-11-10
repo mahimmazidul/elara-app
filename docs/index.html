@@ -225,6 +225,21 @@ figcaption {
 
 .button svg { flex: none; }
 
+/* The one action the page exists for sits under the tagline, where the eye
+   already is, rather than at the foot of a page whose whole job is to hand
+   someone an APK. Everything the button used to be surrounded by - the card,
+   the badge, the file-size note - stays at the foot as install notes. */
+.cta { margin-top: 1.75rem; }
+
+.cta .button { margin-top: 0; }
+
+.cta-meta {
+  margin: 0.7rem 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* The fallback for a 32-bit phone should not look like a second primary
    action, and it should not be a sentence buried in the note either. */
 .button--quiet {
@@ -316,6 +331,20 @@ a:focus-visible,
         <li>Ovulatory</li>
         <li>Luteal</li>
       </ul>
+    </div>
+
+    <div class="cta">
+      <a class="button" href="{{DOWNLOAD_URL}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12"></path>
+          <path d="m7 11 5 5 5-5"></path>
+          <path d="M4 20h16"></path>
+        </svg>
+        Download for Android
+      </a>
+      <p class="cta-meta">Version {{LATEST_VERSION}} &middot; Android 7.0+</p>
     </div>
   </header>
 
@@ -454,23 +483,11 @@ a:focus-visible,
     </section>
 
     <section class="download" aria-labelledby="get">
-      <h2 id="get" style="margin-bottom:0.75rem">Download</h2>
-      <span class="badge">Version {{LATEST_VERSION}} &middot; Android 7.0+</span>
-      <div>
-        <a class="button" href="{{DOWNLOAD_URL}}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round"
-               stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3v12"></path>
-            <path d="m7 11 5 5 5-5"></path>
-            <path d="M4 20h16"></path>
-          </svg>
-          Download for Android
-        </a>
-      </div>
-      <p class="note">
-        The 64-bit build, which is the small one. Android will ask you to
-        confirm the install &mdash; Elara is not on the Play Store.
+      <h2 id="get" style="margin-bottom:0.75rem">Install notes</h2>
+      <p class="note" style="margin-top:0">
+        The 64-bit build is the small one, and it covers almost every phone made
+        since 2015. Android will ask you to confirm the install &mdash; Elara is
+        not on the Play Store.
       </p>
       <a class="button--quiet" href="{{DOWNLOAD_URL_UNIVERSAL}}">
         Need the universal APK? (32-bit phones, emulators)
