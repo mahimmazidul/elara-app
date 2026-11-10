@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -58,6 +59,27 @@ class _RootScaffoldState extends State<RootScaffold>
   /// Animates the screen slide between tabs.
   late final AnimationController _slideController;
 
+  /// How far the content is currently dragged, in logical pixels.
+  ///
+  /// Driven by a horizontal drag anywhere on the content and read by a
+  /// [ValueListenableBuilder] rather than [setState], so following a finger does
+  /// not rebuild the whole shell sixty times a second — only the transform.
+  final ValueNotifier<double> _drag = ValueNotifier<double>(0);
+
+  /// The raw distance of the current gesture, before the edge resistance is
+  /// applied. The decision to change tab is made from this, not from [_drag],
+  /// or a swipe at the first tab would need a much longer gesture than one in
+  /// the middle.
+  double _dragRaw = 0;
+
+  /// How far a gesture has to travel before it counts as a tab change. Low
+  /// enough to work with a thumb on a 320dp phone, high enough that a diagonal
+  /// scroll does not change tabs by accident.
+  static const double _swipeFraction = 0.16;
+
+  /// Where the content stops following the finger, as a fraction of the width.
+  static const double _dragLimitFraction = 0.34;
+
   /// The start-up update check runs once per launch at most, and only when the
   /// user has switched it on. It is a single public request to GitHub that
   /// carries nothing about this phone.
@@ -89,8 +111,55 @@ class _RootScaffoldState extends State<RootScaffold>
     });
   }
 
+  /// Resistance is what tells the finger there is nothing to the left of the
+  /// first tab. Without it the content slides freely into empty space and the
+  /// app feels broken at both ends.
+  double _resist(double raw, double width) {
+    final atStart = _index == 0 && raw > 0;
+    final atEnd = _index == _tabCount - 1 && raw < 0;
+    final scaled = (atStart || atEnd) ? raw * 0.22 : raw;
+    final limit = width * _dragLimitFraction;
+    return scaled.clamp(-limit, limit);
+  }
+
+  static int get _tabCount => _destinations.length;
+
+  void _onDragStart(DragStartDetails details) {
+    _dragRaw = 0;
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _dragRaw += details.delta.dx;
+    // A reduced-motion user gets the same navigation, without the content
+    // sliding under their finger while they do it.
+    if (ElaraMotion.reduceMotion(context)) return;
+    _drag.value = _resist(_dragRaw, MediaQuery.sizeOf(context).width);
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    final width = MediaQuery.sizeOf(context).width;
+    final distance = _dragRaw;
+    final velocity = details.velocity.pixelsPerSecond.dx;
+    _dragRaw = 0;
+    // Spring back first, so the content is never left offset when the gesture
+    // is a miss.
+    _drag.value = 0;
+
+    final travelled = distance.abs() > width * _swipeFraction;
+    // A quick flick counts even when it is short: that is how it feels natural
+    // to move between tabs one-handed.
+    final flicked = velocity.abs() > 320 && distance.abs() > 24;
+    if (!travelled && !flicked) return;
+
+    final forwards = distance < 0;
+    final target = _index + (forwards ? 1 : -1);
+    if (target < 0 || target >= _tabCount) return;
+    _selectTab(target);
+  }
+
   @override
   void dispose() {
+    _drag.dispose();
     _navController.dispose();
     _slideController.dispose();
     super.dispose();
@@ -149,10 +218,16 @@ class _RootScaffoldState extends State<RootScaffold>
 
     final content = ElaraContentWidth(
       maxWidth: isWide ? 720 : double.infinity,
-      child: _ScreenSlide(
-        controller: _slideController,
-        direction: _direction,
-        child: IndexedStack(index: _index, children: _tabs),
+      child: _SwipeTabs(
+        drag: _drag,
+        onStart: _onDragStart,
+        onUpdate: _onDragUpdate,
+        onEnd: _onDragEnd,
+        child: _ScreenSlide(
+          controller: _slideController,
+          direction: _direction,
+          child: IndexedStack(index: _index, children: _tabs),
+        ),
       ),
     );
 
@@ -176,6 +251,57 @@ class _RootScaffoldState extends State<RootScaffold>
         controller: _navController,
         direction: _direction,
         onSelected: _selectTab,
+      ),
+    );
+  }
+}
+
+/// Makes the content follow a horizontal drag, so the tabs can be swiped as
+/// well as tapped.
+///
+/// It sits *outside* the tab content and uses a plain horizontal drag
+/// recogniser, which is what makes it safe: a vertical scroll in any tab's list
+/// claims the gesture first (different axis, no contest), and any horizontal
+/// scroller inside a tab — a chart that pans, a row that scrolls — wins the
+/// arena over this one because the deepest recogniser takes the prize. So a
+/// swipe only changes tab when nothing else wanted the gesture, which is exactly
+/// when the reader meant the tab.
+///
+/// The content moves with the finger and springs back on a miss. Following the
+/// finger is the whole difference between "swipe navigation" and "a tab change
+/// that happens to be triggered by a swipe": one feels like a surface being
+/// pushed, the other like a button being pressed out of sight.
+class _SwipeTabs extends StatelessWidget {
+  const _SwipeTabs({
+    required this.drag,
+    required this.onStart,
+    required this.onUpdate,
+    required this.onEnd,
+    required this.child,
+  });
+
+  final ValueListenable<double> drag;
+  final GestureDragStartCallback onStart;
+  final GestureDragUpdateCallback onUpdate;
+  final GestureDragEndCallback onEnd;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      // Translucent, so the areas of a tab that are not painted (the gaps
+      // between rows) still start a swipe.
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: onStart,
+      onHorizontalDragUpdate: onUpdate,
+      onHorizontalDragEnd: onEnd,
+      child: ValueListenableBuilder<double>(
+        valueListenable: drag,
+        builder: (context, dx, inner) => Transform.translate(
+          offset: Offset(dx, 0),
+          child: inner,
+        ),
+        child: child,
       ),
     );
   }
