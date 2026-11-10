@@ -93,6 +93,17 @@ jobs:
       - name: Check the manifest and the privacy controls
         run: python3 tool/check_manifest.py
 
+      # The bundled Hind Siliguri shipped without Bengali layout tables: Latin
+      # rendered perfectly, and every Bengali conjunct and vowel sign came out
+      # unshaped. Nothing in the Dart suite could see it, because no test looks
+      # at a font's GSUB table. This shapes real words with HarfBuzz and fails
+      # if the conjunct, the matra reordering or GPOS is missing.
+      - name: Check the bundled fonts can shape Bengali
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check \
+            fonttools uharfbuzz
+          python3 tool/fonts/build_hind_siliguri.py --check
+
       # The emulator scripts run on a runner, not on a developer machine, so
       # a mistake in one is only found after twenty minutes of emulator boot.
       # This check catches an undefined variable, a syntax error and a
