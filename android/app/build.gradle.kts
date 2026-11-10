@@ -54,12 +54,35 @@ android {
 
     defaultConfig {
         applicationId = "com.mahimmazidul.elara"
+
+        // FLAG_SECURE keeps this app out of the recents thumbnail, out of
+        // screen recordings and out of `adb screencap`, because every screen is
+        // a health record. That also blinds the screenshot pipeline in
+        // tool/android_ui/, which captures the app with `adb exec-out
+        // screencap`. The screenshot run builds with
+        //   flutter build apk --debug --android-project-arg=elaraScreenshots=true
+        // and this field is the only way to ask for a window that can be
+        // captured. It defaults to false, so an unflagged build cannot be
+        // screenshotted.
+        buildConfigField(
+            "boolean",
+            "ALLOW_SCREEN_CAPTURE",
+            project.hasProperty("elaraScreenshots").toString(),
+        )
+
         // The spec asked for 21, but it cannot build: Flutter 3.47's default
         // minimum is 24, and flutter_local_notifications 23.0.0 declares
         // minSdk 24 itself, so the manifest merge would fail with
         // "minSdkVersion 21 cannot be smaller than version 24".
         minSdk = 24
-        targetSdk = 34
+        // Google Play refused every new app and every update below Android 16
+        // (API 36) from 31 August 2026, so 34 was a build that could only ever
+        // be sideloaded. Raising it turns on per-app language, predictive back,
+        // enforced edge-to-edge (which this app already draws) and, importantly
+        // here, stricter exact-alarm and foreground-service rules — which is
+        // why the reminder scheduling has to be re-tested on a real API 36
+        // device rather than assumed to survive the number change.
+        targetSdk = 36
         // Required alongside desugaring once the method count grows past the
         // single-dex limit on API 21-23 devices.
         multiDexEnabled = true

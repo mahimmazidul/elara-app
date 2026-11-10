@@ -84,6 +84,15 @@ jobs:
       - name: Analyze
         run: dart analyze --fatal-infos
 
+      # Nothing above this line parses an Android file. On 10 November 2026 the
+      # manifest on main carried committed merge-conflict markers, twice, and
+      # no APK could be built — while this workflow was green, because
+      # `dart analyze` and `flutter test` had never opened the file. This step
+      # reads the manifest, every Android XML, the Gradle targetSdk and the
+      # backup rules, and fails in under a second.
+      - name: Check the manifest and the privacy controls
+        run: python3 tool/check_manifest.py
+
       # The emulator scripts run on a runner, not on a developer machine, so
       # a mistake in one is only found after twenty minutes of emulator boot.
       # This check catches an undefined variable, a syntax error and a

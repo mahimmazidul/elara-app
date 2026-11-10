@@ -13,10 +13,19 @@ dependencies:
 
   # Prediction engine: ensemble cycle forecasting, phase classification,
   # environmental severity and action suggestions. Pure Dart, fully offline.
+  #
+  # Pinned to a commit, not to `main`. While this was `ref: main`, a push to
+  # elara-core changed the medical estimates shipped by an already-validated
+  # build of this app, with no commit here, no review and no way to reproduce
+  # yesterday's APK. A prediction engine is not a utility library.
+  #
+  # To move it: change the SHA in a pull request, run the tests, and say in the
+  # description which engine behaviour changed. `tool/check_engine_pin.py`
+  # fails the build if this file and the resolved lock disagree.
   elara_core:
     git:
       url: https://github.com/mahimmazidul/elara-core.git
-      ref: main
+      ref: 9d35ae70a7dd43e0a0a69f5338e1ba511c2e2b02
 
   # State management
   provider: ^6.1.5+1

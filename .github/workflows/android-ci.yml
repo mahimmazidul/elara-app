@@ -129,6 +129,11 @@ jobs:
       # the build for a reason that had nothing to do with the code. The retry
       # is about that specific transient: it re-runs the build, and a genuine
       # compile error fails every attempt.
+      # Before the SDK is even considered: a manifest that does not parse is a
+      # 20-minute build that was never going to work.
+      - name: Check the manifest and the privacy controls
+        run: python3 tool/check_manifest.py
+
       - name: Build the debug APK
         run: |
           set -uo pipefail

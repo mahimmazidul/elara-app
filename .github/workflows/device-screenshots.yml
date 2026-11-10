@@ -89,7 +89,11 @@ jobs:
           set -uo pipefail
           for attempt in 1 2 3; do
             echo "::group::assembleDebug attempt ${attempt}"
+            # The captures below use `adb exec-out screencap`, which a window
+            # protected by FLAG_SECURE returns as black. This is the one build
+            # that is allowed to be captured, and it says so explicitly.
             if flutter build apk --debug \
+                --android-project-arg=elaraScreenshots=true \
                 --target-platform android-arm64,android-arm,android-x64; then
               echo "::endgroup::"
               exit 0

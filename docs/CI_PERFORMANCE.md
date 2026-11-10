@@ -6,16 +6,6 @@ the wall-clock time between a job's `started_at` and `completed_at`.
 The point of this file is to record where the time actually goes, so the next
 change to a workflow can be judged against a number rather than a hunch.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
----
-
->>>>>>> origin/main
-=======
----
-
->>>>>>> origin/main
 ## Where the time goes today
 
 ### The `CI` workflow — run 42614732478, `643a0f2`
@@ -30,17 +20,8 @@ change to a workflow can be judged against a number rather than a hunch.
 | Test shard 3/4 | 72 s | success |
 
 **Total wall clock: 2 m 2 s.** The shards run in parallel, so the longest
-<<<<<<< HEAD
-<<<<<<< HEAD
-one — shard 3 — sets the floor at 72 s.
-=======
 one — shard 3 — sets the floor at 72 s. Adding a fifth shard would not
 shorten the run unless shard 3's files were rebalanced.
->>>>>>> origin/main
-=======
-one — shard 3 — sets the floor at 72 s. Adding a fifth shard would not
-shorten the run unless shard 3's files were rebalanced.
->>>>>>> origin/main
 
 ### The `Android CI` workflow — run 42613036500, `79dbb6b`
 
@@ -58,29 +39,18 @@ the APK job, so the emulator matrix costs 329 s on top of the build.
 
 54 s end to end.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 ---
 
->>>>>>> origin/main
-=======
 ---
 
->>>>>>> origin/main
 ## The known waste, and what was done about it
 
 ### The APK job ran the whole test suite a second time
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 `android-ci.yml`'s `apk` job had `dart analyze --fatal-infos` and
 `flutter test` steps. `ci.yml` runs both of those, in parallel, on the same
 commit. So every push paid for the 436-test suite twice: once in `CI` and
 once in `Android CI`, and the second copy gated the APK.
-=======
-=======
->>>>>>> origin/main
 `android-ci.yml`'s `apk` job had these steps:
 
 ```yaml
@@ -97,23 +67,14 @@ paid for the 436-test suite twice: once in the `CI` workflow and once in the
 **Measured cost:** the `CI` workflow's analysis plus shards is 45 s + up to
 72 s, of which the duplicated portion inside the APK job is roughly 90 s of
 the 325 s. The APK itself — Gradle, dexing, packaging — is the rest.
-<<<<<<< HEAD
->>>>>>> origin/main
-=======
->>>>>>> origin/main
 
 **What was done:** the `apk` job no longer runs the suite, and no longer runs
 the analyzer either. Both belong to `ci.yml`, which runs them on the same
 commit: `dart analyze --fatal-infos` in the analyze job, and the whole of
 `test/` across four shards in parallel.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 **Measured — two runs, so the cache's own contribution can be separated from
 the de-duplication's.**
-=======
-=======
->>>>>>> origin/main
 **Why the tests were not simply dropped:** the APK must never be built from a
 revision that fails its own tests. Dropping the gate entirely would let a
 broken revision produce an artifact. Instead the gate moves to the workflow
@@ -129,10 +90,6 @@ across four runners in 72 s.
 
 **Measured — two runs, so the cache's own contribution can be separated
 from the de-duplication's.**
-<<<<<<< HEAD
->>>>>>> origin/main
-=======
->>>>>>> origin/main
 
 | | baseline (`79dbb6b`) | cold cache (`45ef3af`) | warm cache (`61a7c1b`) |
 | --- | ---: | ---: | ---: |
@@ -140,15 +97,10 @@ from the de-duplication's.**
 | — the Gradle build inside it | ~280 s | 199 s | **112 s** |
 | `Android CI` wall clock | 11 m 00 s | 11 m 07 s | see below |
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 The de-duplication was worth 126 s and the Gradle cache 39 s. The workflow's
 wall clock did not move (11 m 00 s → 11 m 07 s) because the emulator matrix
 decides it: API 35 at 367 s is the floor, and one emulator cannot run three
 API levels.
-=======
-=======
->>>>>>> origin/main
 The log confirms the mechanism: the cold run says `Cache not found for input
 keys: gradle-Linux-…` and saves the cache at the end; the warm run says
 `Cache restored from key: gradle-Linux-874f4c05…` and the Gradle build
@@ -167,16 +119,10 @@ and the three jobs already run in parallel. So the saving is real but it is
 The emulator jobs also got slower by 11–40 s in the same run, which is
 noise from a shared runner rather than a regression: the same scripts, on
 the same code, and the API 29 job was unchanged at 280 s against 281 s.
-<<<<<<< HEAD
->>>>>>> origin/main
-=======
->>>>>>> origin/main
 
 ### The emulator jobs each boot their own emulator
 
 Three API levels, three boots, each 281–329 s. The boot itself is the
-<<<<<<< HEAD
-<<<<<<< HEAD
 dominant cost inside those jobs. The three jobs are already parallel, so the
 matrix costs one boot's wall clock rather than three.
 
@@ -185,9 +131,6 @@ matrix costs one boot's wall clock rather than three.
 It builds its own debug APK (~4 minutes) rather than downloading the one
 `Android CI` uploaded. Deliberate duplication: the two workflows run in
 parallel, so sharing an artifact would make the second wait for the first.
-=======
-=======
->>>>>>> origin/main
 dominant cost inside those jobs: `reactivecircus/android-emulator-runner`
 logs a boot of roughly 50 s on API 33, and the rest is the script's own
 sleeps and captures.
@@ -247,16 +190,10 @@ The number to compare is the *second* run's APK job against the **199 s**
 that the cache-less, de-duplicated build already achieved.
 
 ---
-<<<<<<< HEAD
->>>>>>> origin/main
-=======
->>>>>>> origin/main
 
 ## Failures that cost time, and how they are avoided now
 
 | failure | what it cost | the fix |
-<<<<<<< HEAD
-<<<<<<< HEAD
 |---|---|---|
 | Gradle distribution CDN returned 504 | a whole failed 5-minute run | three-attempt retry in the build step |
 | sqlite3 native library truncated on download | another whole failed run | `sqflite_common_ffi` pinned to `>=2.3.0 <2.4.0` |
@@ -265,9 +202,6 @@ that the cache-less, de-duplicated build already achieved.
 | `artifact/app-debug.apk` did not exist | emulator booted, then install failed | `tool/android_ui/find_apk.sh` looks in both places |
 | `$ACTIVITY` undefined in `navigation.sh` | all three emulator jobs died | `tool/android_ui/check_scripts.py` checks every variable |
 | screenshot workflow push non-fast-forward | run failed after doing all work | both screenshot workflows retry the push against the new head |
-=======
-=======
->>>>>>> origin/main
 | --- | --- | --- |
 | Gradle distribution CDN returned 504 | a whole failed 5-minute run | a three-attempt retry in the build step, with the delay growing |
 | the sqlite3 native library was truncated on download | another whole failed run | `sqflite_common_ffi` pinned to `>=2.3.0 <2.4.0` in `446b4f9` |
@@ -282,17 +216,11 @@ were each specific to one line of one script; the check catches the whole
 class.
 
 ---
-<<<<<<< HEAD
->>>>>>> origin/main
-=======
->>>>>>> origin/main
 
 ## Measurements to compare against after the next change
 
 | metric | before | after |
 | --- | --- | --- |
-<<<<<<< HEAD
-<<<<<<< HEAD
 | `CI` wall clock | 2 m 2 s | (re-measure after this milestone) |
 | APK job — whole | 325 s | **160 s** (measured, warm cache) |
 | APK job — Gradle build alone | ~280 s | **112 s** (measured, warm cache) |
@@ -305,9 +233,6 @@ class.
 they cannot be made to share: one emulator cannot run three API levels, and
 the three jobs already run in parallel. If the wall clock has to come down
 further, the matrix has to shrink — a coverage decision, not a speed one.
-=======
-=======
->>>>>>> origin/main
 | `CI` wall clock | 2 m 2 s | 2 m 2 s (unchanged) |
 | APK job — whole | 325 s | **160 s** (measured, run `42621616138`, warm cache) |
 | APK job — Gradle build alone | ~280 s | **112 s** (measured, same run) |
@@ -332,7 +257,3 @@ to share: one emulator cannot run three API levels, and the three jobs
 already run in parallel. If the wall clock has to come down further, the
 matrix has to shrink — which is a coverage decision, not a speed one, and
 it is not a change to make without saying so.
-<<<<<<< HEAD
->>>>>>> origin/main
-=======
->>>>>>> origin/main
