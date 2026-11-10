@@ -9,12 +9,11 @@ import '../../providers/preferences_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/symptoms_provider.dart';
 import '../../services/care_recommender.dart';
-import '../../theme/elara_motion.dart';
 import '../../theme/elara_theme.dart';
 import '../../utils/history_quality.dart';
 import '../../utils/phase_timeline.dart';
 import '../../widgets/motion.dart';
-import '../../widgets/phase_chip.dart';
+import '../../widgets/phase_dial.dart';
 import '../../widgets/primitives.dart';
 import 'action_cards.dart';
 import 'care_suggestions.dart';
@@ -211,34 +210,35 @@ class _TodayContent extends StatelessWidget {
                 _formatLongDate(now),
                 style: type.caption(tokens.textSecondaryStrong),
               ),
-              const SizedBox(height: ElaraSpacing.md),
-              Row(
-                children: [
-                  Flexible(
-                    child: PhaseChip(
-                      label: phaseLabel,
-                      phaseKey: phaseKey,
-                      cycleDay: result.phase?.cycleDay,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
 
-        // ---- hero: centered phase circle, focal element of the screen
-        // A large circle filled with the phase colour, labelled in onPhase ink,
-        // with the day number beneath it. For the unknown phase it is neutral
-        // slate grey and says so, never implying a cycle state the data cannot
-        // support. Cross-fades when the phase changes (ElaraAnimatedColor).
+        // ---- hero: the cycle dial, focal element of the screen.
+        //
+        // Where today sits in the cycle, as a ring: the sweep is the cycle, the
+        // gap is what is left of it, the dot is today, and the moon inside it
+        // is the cycle's moon rather than the sky's. With no phase the ring is
+        // neutral and has no sweep at all, rather than sitting at 0%.
         const SizedBox(height: ElaraSpacing.xl),
         Center(
-          child: _PhaseCircle(
+          child: PhaseDial(
             label: phaseLabel,
+            phaseKey: phaseKey,
             cycleDay: result.phase?.cycleDay,
+            cycleLength: result.cycleLength,
             fill: tokens.phaseFill(phaseKey),
           ),
+        ),
+
+        // The chip that used to sit here repeated the dial's own label one line
+        // above it. The thing worth keeping from it was not the phase name but
+        // the word "estimate", so that is what stays — once, under the dial.
+        const SizedBox(height: ElaraSpacing.sm),
+        Text(
+          'Estimated phase, from recorded history',
+          textAlign: TextAlign.center,
+          style: type.caption(tokens.textSecondaryStrong, size: 12),
         ),
 
         // ---- compact countdown: two facts on one line, no box around them
@@ -295,94 +295,6 @@ class _TodayContent extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-}
-
-/// The phase circle: fill with phase colour, label in onPhase ink.
-///
-/// At 150 logical pixels it reads as a focal element without crowding the
-/// countdown below it. The day number sits under the phase name in smaller
-/// type, part of the same circle rather than repeated beneath it.
-class _PhaseCircle extends StatelessWidget {
-  const _PhaseCircle({
-    required this.label,
-    required this.cycleDay,
-    required this.fill,
-  });
-
-  final String label;
-  final int? cycleDay;
-  final Color fill;
-
-  /// The diameter at 1.0x text scale. A disc this size holds the phase name on
-  /// two lines and the day number beneath it.
-  static const double _baseDiameter = 150;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.elara;
-
-    // A fixed 150dp disc clips its own contents the moment the user asks
-    // Android for larger text: measured at 2.0x, the label and day number
-    // needed 152dp and the disc had 150. The largest thing on this screen is
-    // therefore allowed to grow with the setting, up to the width of the page,
-    // and the label is flexible so a long phase name ellipsises rather than
-    // overflowing.
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final maxDiameter = MediaQuery.sizeOf(context).width - ElaraSpacing.lg * 2;
-    final diameter = (_baseDiameter * textScale.clamp(1.0, 1.7)).clamp(
-      _baseDiameter,
-      maxDiameter,
-    );
-
-    return ElaraAnimatedColor(
-      color: fill,
-      borderRadius: diameter / 2,
-      duration: ElaraMotion.medium,
-      child: SizedBox(
-        width: diameter,
-        height: diameter,
-        child: Padding(
-          padding: EdgeInsets.all(diameter * 0.12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Hind Siliguri',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
-                    height: 1.2,
-                    color: tokens.onPhase,
-                  ),
-                ),
-              ),
-              if (cycleDay != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Day $cycleDay',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Hind Siliguri',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13,
-                    height: 1.2,
-                    color: tokens.onPhase,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

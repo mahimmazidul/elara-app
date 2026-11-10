@@ -44,15 +44,22 @@ class LunarStrip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // The moon gets its own line because it is the one astronomical
-          // value most people actually look at, and the Bangla name is longer
-          // than the English bucket name it replaces.
+          // value most people actually look at.
+          //
+          // The name is English. It used to be the Bangla bucket name, which
+          // read as broken text: the bundled font had no Bengali layout tables,
+          // so a compound like শুক্লপক্ষের came out as loose consonants and
+          // misplaced vowel signs. The font is fixed (tool/fonts/), but the
+          // label stays English anyway — "Waxing crescent" is what this line is
+          // for, and the eight Bangla names for the quarter phases were
+          // descriptive rather than everyday words.
           Row(
             children: [
-              MoonGlyph(phaseFraction: moon.phaseFraction, size: 20),
+              MoonGlyph(phaseFraction: moon.phaseFraction, size: 22),
               const SizedBox(width: ElaraSpacing.sm),
               Expanded(
                 child: Text(
-                  moon.nameBangla,
+                  moon.name,
                   style: type.body(tokens.textPrimary),
                 ),
               ),

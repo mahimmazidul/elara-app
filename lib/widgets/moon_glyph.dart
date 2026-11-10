@@ -17,10 +17,19 @@ class MoonGlyph extends StatelessWidget {
     super.key,
     required this.phaseFraction,
     this.size = 18,
+    this.lit,
+    this.shadow,
   });
 
   final double phaseFraction;
   final double size;
+
+  /// Colour of the lit side. Defaults to the accent; the Today dial passes the
+  /// phase colour, so the moon belongs to the same palette as the ring.
+  final Color? lit;
+
+  /// Colour of the unlit side, so a new moon still reads as a disc.
+  final Color? shadow;
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +38,8 @@ class MoonGlyph extends StatelessWidget {
       size: Size.square(size),
       painter: _MoonPainter(
         phaseFraction: phaseFraction,
-        lit: tokens.accent,
-        shadow: tokens.moonGlow,
+        lit: lit ?? tokens.accent,
+        shadow: shadow ?? tokens.moonGlow,
         outline: tokens.textSecondaryStrong,
       ),
     );

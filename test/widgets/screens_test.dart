@@ -14,7 +14,7 @@ import 'package:elara_app/screens/today/today_screen.dart';
 import 'package:elara_app/services/climate_service.dart';
 import 'package:elara_app/services/prediction_service.dart';
 import 'package:elara_app/theme/elara_theme.dart';
-import 'package:elara_app/widgets/phase_chip.dart';
+import 'package:elara_app/widgets/phase_dial.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -166,9 +166,9 @@ void main() {
       // The onboarding prompt is gone: there is history now.
       expect(find.text('Welcome to Elara'), findsNothing);
       // Whatever the engine can offer from one data point, the screen shows
-      // something real: either a phase chip, or the explicit "not enough
+      // something real: either the phase dial, or the explicit "not enough
       // history" explanation. It never renders a blank frame.
-      final showsPhase = find.byType(PhaseChip).evaluate().isNotEmpty;
+      final showsPhase = find.byType(PhaseDial).evaluate().isNotEmpty;
       final explains = find.text('Not enough history yet').evaluate().isNotEmpty;
       expect(showsPhase || explains, isTrue);
     });
