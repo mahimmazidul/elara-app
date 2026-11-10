@@ -332,6 +332,16 @@ Color? _paintedColour(WidgetTester tester) {
     }
   }
   if (found != null) return found;
+  // With animations removed the widget paints a DecoratedBox directly, so that
+  // path has to be read too — otherwise the test would pass by finding nothing
+  // and comparing null to null.
+  for (final box in tester.widgetList<DecoratedBox>(find.byType(DecoratedBox))) {
+    final decoration = box.decoration;
+    if (decoration is BoxDecoration && decoration.color != null) {
+      found = decoration.color;
+    }
+  }
+  if (found != null) return found;
   for (final box in tester.widgetList<ColoredBox>(find.byType(ColoredBox))) {
     found = box.color;
   }

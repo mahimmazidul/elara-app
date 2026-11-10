@@ -214,6 +214,8 @@ IconData _resolve(String name) {
     'Icons.add_rounded': Icons.add_rounded,
     'Icons.more_horiz_rounded': Icons.more_horiz_rounded,
     'Icons.radio_button_unchecked': Icons.radio_button_unchecked,
+    'Icons.radio_button_checked_rounded': Icons.radio_button_checked_rounded,
+    'Icons.radio_button_unchecked_rounded': Icons.radio_button_unchecked_rounded,
   };
   final icon = known[name];
   if (icon == null) {

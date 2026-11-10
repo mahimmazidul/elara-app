@@ -44,14 +44,12 @@ class PhaseChip extends StatelessWidget {
     // entirely when the platform has asked for animations to be removed.
     return ElaraAnimatedColor(
       color: fill,
+      borderRadius: ElaraRadii.chip,
       duration: ElaraMotion.medium,
-      child: Container(
+      child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: compact ? ElaraSpacing.md : ElaraSpacing.lg,
           vertical: compact ? ElaraSpacing.xs : ElaraSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ElaraRadii.chip),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -72,12 +70,13 @@ class PhaseChip extends StatelessWidget {
               SizedBox(width: compact ? ElaraSpacing.sm : ElaraSpacing.md),
               Text(
                 'Day $cycleDay',
-                style: (compact
-                        ? context.type.label(tokens.onPhase)
-                        : context.type.caption(tokens.onPhase))
-                    .copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+                style:
+                    (compact
+                            ? context.type.label(tokens.onPhase)
+                            : context.type.caption(tokens.onPhase))
+                        .copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
               ),
             ],
           ],

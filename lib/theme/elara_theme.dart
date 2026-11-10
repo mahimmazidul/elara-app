@@ -204,6 +204,7 @@ class ElaraPalette {
     Color? dangerText,
     Color? warningText,
     Color? successText,
+    Color? onPhase,
   }) {
     return ElaraPalette(
       bgPrimary: bgPrimary ?? this.bgPrimary,
@@ -228,7 +229,7 @@ class ElaraPalette {
       danger: danger,
       dangerText: dangerText ?? this.dangerText,
       moonGlow: moonGlow,
-      onPhase: onPhase,
+      onPhase: onPhase ?? this.onPhase,
       divider: divider,
       track: track,
       unknownPhase: unknownPhase,
@@ -650,10 +651,14 @@ class ElaraTheme {
     final accent = _phaseFill(base, phaseKey!);
     final isDark = base.bgPrimary.computeLuminance() < 0.5;
 
-    Color ink(Color colour, {double minRatio = 4.5, Color? on}) => _ensureContrast(
+    // Text is set on a card and on the page. Those two surfaces differ by a
+    // few percent of luminance, which was enough to put the follicular and
+    // ovulatory accent labels at 4.08:1 and 4.23:1 on the page while they
+    // cleared AA on the card. The ink has to clear both.
+    Color ink(Color colour) => _ensureContrastOn(
           colour,
-          on ?? base.bgCard,
-          minRatio: minRatio,
+          [base.bgCard, base.bgPrimary],
+          minRatio: 4.5,
           towards: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
         );
 
@@ -664,6 +669,15 @@ class ElaraTheme {
     // through [ElaraTokens.phaseWash].
     return base.copyWith(
       accent: accent,
+      // Ink for text painted on a phase-filled surface: the phase circle, the
+      // chip, the primary button. The fills sit in the middle of the tonal
+      // range, so a single ink cannot serve all four: measured against the
+      // declared fills, the light theme's deep ink reached 3.38:1 on luteal and
+      // 3.89:1 on menstrual, and the dark theme's near-black reached 4.49:1 on
+      // luteal. Those are the numbers a woman reads in sunlight, on a phone
+      // whose screen cost a fifth of the one this was designed on, so the ink
+      // is chosen per phase and then pushed until it clears AA.
+      onPhase: _inkOn(accent),
       // The phase's text-safe variant is the starting point for a phase-coloured
       // label, which is what accentText is for.
       accentText: ink(_phaseText(base, phaseKey)),
@@ -704,9 +718,53 @@ class ElaraTheme {
     return towards;
   }
 
+  /// [colour] pushed until it clears [minRatio] against *every* background in
+  /// [backgrounds], not just the first one.
+  ///
+  /// A single checksum against one surface is how a label ends up readable on
+  /// a card and not on the page behind it. Bounded, like [_ensureContrast].
+  static Color _ensureContrastOn(
+    Color colour,
+    List<Color> backgrounds, {
+    required double minRatio,
+    required Color towards,
+  }) {
+    double worst(Color c) => backgrounds
+        .map((background) => contrastRatio(c, background))
+        .reduce((a, b) => a < b ? a : b);
+
+    var candidate = colour;
+    for (var step = 0; step < 20; step++) {
+      if (worst(candidate) >= minRatio) return candidate;
+      candidate = Color.alphaBlend(towards.withValues(alpha: 0.03), candidate);
+    }
+    // The extreme clears every background a text colour can be asked for.
+    return towards;
+  }
+
+  /// The ink that clears AA on a phase-filled surface.
+  ///
+  /// A phase fill is a mid-tone, so neither a deep ink nor a cream one is safe
+  /// by construction: the deep ink reached 3.38:1 on the luteal fill and the
+  /// cream reached 4.49:1 on the same fill in the dark palette. This picks
+  /// whichever extreme is closer to clearing the ratio and then blends it the
+  /// rest of the way, so the label on the phase circle is readable for a woman
+  /// standing in a bus queue in the sun rather than only in a design review.
+  static Color _inkOn(Color fill) {
+    const deep = Color(0xFF141C28);
+    const cream = Color(0xFFFFFBF4);
+    final useDeep =
+        contrastRatio(deep, fill) >= contrastRatio(cream, fill);
+    return _ensureContrast(
+      useDeep ? deep : cream,
+      fill,
+      minRatio: 4.5,
+      towards: useDeep ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+    );
+  }
+
   /// WCAG 2.1 contrast ratio between two opaque colours, 1.0 to 21.0.
-  static double contrastRatio(Color a, Color b) {
-    final la = a.computeLuminance();
+  static double contrastRatio(Color a, Color b) {    final la = a.computeLuminance();
     final lb = b.computeLuminance();
     final lighter = la > lb ? la : lb;
     final darker = la > lb ? lb : la;

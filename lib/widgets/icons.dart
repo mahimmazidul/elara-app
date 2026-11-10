@@ -138,6 +138,14 @@ class ElaraIcons {
   /// Insights and analysis.
   static const IconData insights = Icons.insights_outlined;
 
+  // ---- selection -----------------------------------------------------------
+
+  /// The chosen option in a set of choices.
+  static const IconData selected = Icons.radio_button_checked_rounded;
+
+  /// An option that is not chosen.
+  static const IconData unselected = Icons.radio_button_unchecked_rounded;
+
   // ---- privacy and data ----------------------------------------------------
 
   /// Consent, privacy and data handling.

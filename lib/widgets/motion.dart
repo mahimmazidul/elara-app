@@ -25,6 +25,7 @@ class ElaraAnimatedColor extends StatelessWidget {
     super.key,
     required this.color,
     required this.child,
+    this.borderRadius,
     this.duration,
     this.curve,
   });
@@ -32,8 +33,19 @@ class ElaraAnimatedColor extends StatelessWidget {
   /// The colour to move towards.
   final Color color;
 
-  /// The subtree that is painted in [color].
+  /// The subtree drawn on [color].
   final Widget child;
+
+  /// The corner radius of the painted fill, in logical pixels.
+  ///
+  /// This exists because the fill is painted by *this* widget, not by the
+  /// child: a plain `ColoredBox` or `AnimatedContainer(color:)` paints the full
+  /// rectangle, so a child that declared a rounded shape was drawn on top of a
+  /// square in the same colour and the shape was invisible. On the Today screen
+  /// that turned the phase circle into a 150x150 square, and the phase chip's
+  /// corners square with it — both shipped that way, and both are visible in
+  /// the screenshots in docs/.
+  final double? borderRadius;
 
   /// How long the change takes. Defaults to [ElaraMotion.fast].
   final Duration? duration;
@@ -44,15 +56,21 @@ class ElaraAnimatedColor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolved = duration ?? ElaraMotion.fast;
+    final decoration = BoxDecoration(
+      color: color,
+      borderRadius: borderRadius == null
+          ? null
+          : BorderRadius.circular(borderRadius!),
+    );
     if (ElaraMotion.reduceMotion(context)) {
       // Not a shorter animation - no animation. The colour is simply the new
       // one from the first frame.
-      return ColoredBox(color: color, child: child);
+      return DecoratedBox(decoration: decoration, child: child);
     }
     return AnimatedContainer(
       duration: resolved,
       curve: curve ?? ElaraMotion.curve,
-      color: color,
+      decoration: decoration,
       child: child,
     );
   }
@@ -134,10 +152,7 @@ class _ElaraFadeInState extends State<ElaraFadeIn>
     if (ElaraMotion.reduceMotion(context)) {
       return widget.child;
     }
-    return FadeTransition(
-      opacity: _controller,
-      child: widget.child,
-    );
+    return FadeTransition(opacity: _controller, child: widget.child);
   }
 }
 
@@ -302,8 +317,7 @@ class _ElaraPressableState extends State<ElaraPressable> {
 
   @override
   Widget build(BuildContext context) {
-    final bool interactive =
-        widget.onTap != null || widget.onLongPress != null;
+    final bool interactive = widget.onTap != null || widget.onLongPress != null;
 
     Widget surface = widget.child;
 
@@ -311,9 +325,7 @@ class _ElaraPressableState extends State<ElaraPressable> {
     // removed.
     if (widget.pressedColour != null) {
       surface = ColoredBox(
-        color: _down
-            ? widget.pressedColour!
-            : const Color(0x00000000),
+        color: _down ? widget.pressedColour! : const Color(0x00000000),
         child: surface,
       );
     }
@@ -321,8 +333,7 @@ class _ElaraPressableState extends State<ElaraPressable> {
     if (ElaraMotion.reduceMotion(context)) {
       return GestureDetector(
         behavior: widget.behaviour,
-        onTapDown:
-            interactive ? (_) => _set(true) : null,
+        onTapDown: interactive ? (_) => _set(true) : null,
         onTapCancel: interactive ? () => _set(false) : null,
         onTapUp: interactive ? (_) => _set(false) : null,
         onTap: widget.onTap,
