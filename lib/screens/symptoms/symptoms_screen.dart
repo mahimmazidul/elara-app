@@ -28,11 +28,8 @@ class SymptomsScreen extends StatelessWidget {
   /// platform's animation setting, which is read at push time: when the
   /// setting asks for animations to be removed, the screen arrives with no
   /// transition at all.
-  static Route<void> route(BuildContext context) => elaraRoute<void>(
-        context,
-        const SymptomsScreen(),
-        name: 'symptoms',
-      );
+  static Route<void> route(BuildContext context) =>
+      elaraRoute<void>(context, const SymptomsScreen(), name: 'symptoms');
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +51,8 @@ class SymptomsScreen extends StatelessWidget {
         backgroundColor: tokens.bgPrimary,
       ),
       body: ListView(
-        padding: ElaraSpacing.pageInsets(context),
+        // An AppBar already sits below the status bar.
+        padding: ElaraSpacing.pageInsets(context, underStatusBar: false),
         children: [
           Text(
             'Anything she has mentioned, written down so it is not forgotten. '
@@ -114,8 +112,18 @@ class SymptomsScreen extends StatelessWidget {
   }
 
   static const List<String> _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   static String _dayLabel(DateTime day) {

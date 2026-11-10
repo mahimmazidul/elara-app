@@ -31,11 +31,8 @@ class PreferencesScreen extends StatelessWidget {
   ///
   /// It takes a [BuildContext] because the transition depends on the
   /// platform's animation setting, which is read at push time.
-  static Route<void> route(BuildContext context) => elaraRoute<void>(
-        context,
-        const PreferencesScreen(),
-        name: 'preferences',
-      );
+  static Route<void> route(BuildContext context) =>
+      elaraRoute<void>(context, const PreferencesScreen(), name: 'preferences');
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +47,8 @@ class PreferencesScreen extends StatelessWidget {
         backgroundColor: tokens.bgPrimary,
       ),
       body: ListView(
-        padding: ElaraSpacing.pageInsets(context),
+        // An AppBar already sits below the status bar.
+        padding: ElaraSpacing.pageInsets(context, underStatusBar: false),
         children: [
           Text(
             'Two lists. What she has told you carries more weight than what '
@@ -76,7 +74,8 @@ class PreferencesScreen extends StatelessWidget {
               const SizedBox(height: ElaraSpacing.md),
               if (prefs.herAnswers.isEmpty)
                 _Empty(
-                  message: 'No answers yet. Hand her the phone, or open the '
+                  message:
+                      'No answers yet. Hand her the phone, or open the '
                       'questionnaire together.',
                 )
               else
@@ -88,10 +87,8 @@ class PreferencesScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: () => _openEditor(
-                    context,
-                    source: PreferenceSource.herAnswer,
-                  ),
+                  onPressed: () =>
+                      _openEditor(context, source: PreferenceSource.herAnswer),
                   icon: const Icon(ElaraIcons.plus, size: ElaraIcons.size),
                   label: const Text('Add an answer she gave'),
                 ),
@@ -113,15 +110,13 @@ class PreferencesScreen extends StatelessWidget {
               const SizedBox(height: ElaraSpacing.md),
               if (prefs.observations.isEmpty)
                 _Empty(
-                  message: 'Nothing recorded yet. Foods, comforts, gestures, '
+                  message:
+                      'Nothing recorded yet. Foods, comforts, gestures, '
                       'things to avoid — anything you have noticed.',
                 )
               else
                 for (final preference in prefs.observations) ...[
-                  _PreferenceRow(
-                    preference: preference,
-                    herPerspective: false,
-                  ),
+                  _PreferenceRow(preference: preference, herPerspective: false),
                   const Hairline(margin: 0),
                 ],
               const SizedBox(height: ElaraSpacing.sm),
@@ -178,7 +173,10 @@ class _Empty extends StatelessWidget {
 
 /// One stored preference: category, the value, and where it came from.
 class _PreferenceRow extends StatelessWidget {
-  const _PreferenceRow({required this.preference, required this.herPerspective});
+  const _PreferenceRow({
+    required this.preference,
+    required this.herPerspective,
+  });
 
   final Preference preference;
   final bool herPerspective;
@@ -196,7 +194,8 @@ class _PreferenceRow extends StatelessWidget {
 
     return ElaraListRow(
       title: preference.value,
-      subtitle: '${preference.category.label} · ${preference.source.label} · '
+      subtitle:
+          '${preference.category.label} · ${preference.source.label} · '
           '$status',
       icon: herPerspective ? ElaraIcons.confirmed : ElaraIcons.observation,
       onTap: () => PreferencesScreen._openEditor(
@@ -320,21 +319,21 @@ class _PreferenceEditorState extends State<_PreferenceEditor> {
               status: _isHerAnswer
                   ? existing.status
                   : (_confirmed
-                      ? PreferenceStatus.confirmed
-                      : PreferenceStatus.unconfirmed),
+                        ? PreferenceStatus.confirmed
+                        : PreferenceStatus.unconfirmed),
             ),
           )
         : _isHerAnswer
-            ? await prefs.addHerAnswer(
-                category: _category,
-                value: text,
-                share: _shared,
-              )
-            : await prefs.addObservation(
-                category: _category,
-                value: text,
-                confirmedByHer: _confirmed,
-              );
+        ? await prefs.addHerAnswer(
+            category: _category,
+            value: text,
+            share: _shared,
+          )
+        : await prefs.addObservation(
+            category: _category,
+            value: text,
+            confirmedByHer: _confirmed,
+          );
 
     if (!mounted) return;
     if (ok) {
@@ -378,17 +377,17 @@ class _PreferenceEditorState extends State<_PreferenceEditor> {
                 editing
                     ? 'Edit'
                     : _isHerAnswer
-                        ? 'An answer from her'
-                        : 'Something you noticed',
+                    ? 'An answer from her'
+                    : 'Something you noticed',
                 style: type.title(tokens.textPrimary, size: 20),
               ),
               const SizedBox(height: ElaraSpacing.xs),
               Text(
                 _isHerAnswer
                     ? 'Only write what she actually said. You can mark it '
-                        'private if she does not want it used.'
+                          'private if she does not want it used.'
                     : 'Phrase it as something you observed, not as a fact about '
-                        'her.',
+                          'her.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
               const SizedBox(height: ElaraSpacing.lg),

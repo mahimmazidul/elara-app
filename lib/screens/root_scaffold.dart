@@ -9,6 +9,7 @@ import '../providers/update_provider.dart';
 import '../theme/elara_theme.dart';
 import '../theme/elara_motion.dart';
 import '../widgets/primitives.dart';
+import '../widgets/status_bar_scrim.dart';
 import 'calendar/calendar_screen.dart';
 import 'insights/insights_screen.dart';
 import 'settings/settings_screen.dart';
@@ -195,19 +196,23 @@ class _RootScaffoldState extends State<RootScaffold>
   ];
 
   static const List<({IconData icon, IconData selected, String label})>
-      _destinations = [
+  _destinations = [
     (icon: Icons.today_outlined, selected: Icons.today, label: 'Today'),
     (
       icon: Icons.calendar_month_outlined,
       selected: Icons.calendar_month,
-      label: 'Calendar'
+      label: 'Calendar',
     ),
     (
       icon: Icons.insights_outlined,
       selected: Icons.insights,
-      label: 'Insights'
+      label: 'Insights',
     ),
-    (icon: Icons.settings_outlined, selected: Icons.settings, label: 'Settings'),
+    (
+      icon: Icons.settings_outlined,
+      selected: Icons.settings,
+      label: 'Settings',
+    ),
   ];
 
   @override
@@ -234,24 +239,36 @@ class _RootScaffoldState extends State<RootScaffold>
     return Scaffold(
       backgroundColor: tokens.bgPrimary,
       extendBody: true,
-      body: SafeArea(
-        bottom: false,
-        child: isWide
-            ? Row(
-                children: [
-                  _Rail(index: _index, onSelected: _selectTab),
-                  Expanded(child: content),
-                ],
-              )
-            : content,
+      // No SafeArea: the pages carry the status-bar inset themselves, so their
+      // lists run to the top edge of the display and scroll up under the clock
+      // the way a mail list does. The scrim keeps the icons legible without
+      // putting content back in a box.
+      body: Stack(
+        // Explicitly expand: a Stack that holds only positioned children takes
+        // the smallest size its constraints allow, and a zero-height body
+        // renders nothing at all — which the widget tests caught immediately.
+        fit: StackFit.expand,
+        children: [
+          isWide
+              ? Row(
+                  children: [
+                    _Rail(index: _index, onSelected: _selectTab),
+                    Expanded(child: content),
+                  ],
+                )
+              : content,
+          const ElaraStatusBarScrim(),
+        ],
       ),
-      bottomNavigationBar: isWide ? null : _Bar(
-        index: _index,
-        previousIndex: _previousIndex,
-        controller: _navController,
-        direction: _direction,
-        onSelected: _selectTab,
-      ),
+      bottomNavigationBar: isWide
+          ? null
+          : _Bar(
+              index: _index,
+              previousIndex: _previousIndex,
+              controller: _navController,
+              direction: _direction,
+              onSelected: _selectTab,
+            ),
     );
   }
 }
@@ -297,10 +314,8 @@ class _SwipeTabs extends StatelessWidget {
       onHorizontalDragEnd: onEnd,
       child: ValueListenableBuilder<double>(
         valueListenable: drag,
-        builder: (context, dx, inner) => Transform.translate(
-          offset: Offset(dx, 0),
-          child: inner,
-        ),
+        builder: (context, dx, inner) =>
+            Transform.translate(offset: Offset(dx, 0), child: inner),
         child: child,
       ),
     );
@@ -391,14 +406,14 @@ class _Bar extends StatelessWidget {
               ),
               destinations: [
                 for (var i = 0; i < tabCount; i++)
-                NavigationDestination(
-                  icon: _NavIcon(
-                    i: i,
-                    isSelected: i == index,
-                    tokens: tokens,
+                  NavigationDestination(
+                    icon: _NavIcon(
+                      i: i,
+                      isSelected: i == index,
+                      tokens: tokens,
+                    ),
+                    label: _RootScaffoldState._destinations[i].label,
                   ),
-                  label: _RootScaffoldState._destinations[i].label,
-                ),
               ],
             ),
 
@@ -420,8 +435,7 @@ class _Bar extends StatelessWidget {
     );
   }
 
-  static TextStyle? _labelStyle(ElaraTokens tokens,
-      Set<WidgetState> states) {
+  static TextStyle? _labelStyle(ElaraTokens tokens, Set<WidgetState> states) {
     final selected = states.contains(WidgetState.selected);
     return TextStyle(
       fontFamily: 'Hind Siliguri',
@@ -431,7 +445,6 @@ class _Bar extends StatelessWidget {
       color: selected ? tokens.accentText : tokens.textSecondaryStrong,
     );
   }
-
 }
 
 /// One tap target in the traveling bar: icon with phase colour and press
@@ -462,7 +475,9 @@ class _NavIconState extends State<_NavIcon> {
   @override
   Widget build(BuildContext context) {
     final reduced = ElaraMotion.reduceMotion(context);
-    final colour = widget.isSelected ? widget.tokens.accentText : widget.tokens.textSecondaryStrong;
+    final colour = widget.isSelected
+        ? widget.tokens.accentText
+        : widget.tokens.textSecondaryStrong;
     final iconData = widget.isSelected
         ? _RootScaffoldState._destinations[widget.i].selected
         : _RootScaffoldState._destinations[widget.i].icon;
@@ -472,9 +487,7 @@ class _NavIconState extends State<_NavIcon> {
       onTapUp: reduced ? null : (_) => _set(false),
       onTapCancel: reduced ? null : () => _set(false),
       child: AnimatedScale(
-        scale: reduced
-            ? 1.0
-            : (_down || widget.isSelected ? 0.94 : 1.0),
+        scale: reduced ? 1.0 : (_down || widget.isSelected ? 0.94 : 1.0),
         duration: ElaraMotion.press,
         curve: ElaraMotion.curve,
         child: Icon(iconData, size: 22, color: colour),
@@ -594,10 +607,7 @@ class NavFillGeometry {
     final stretch = tabWidth * stretchFraction * bell;
 
     final left = from + (to - from) * t;
-    return NavFillGeometry(
-      left: left - stretch / 2,
-      width: tabWidth + stretch,
-    );
+    return NavFillGeometry(left: left - stretch / 2, width: tabWidth + stretch);
   }
 }
 
@@ -605,10 +615,7 @@ class NavFillGeometry {
 ///
 /// The rail's selected indicator uses the phase colour.
 class _Rail extends StatelessWidget {
-  const _Rail({
-    required this.index,
-    required this.onSelected,
-  });
+  const _Rail({required this.index, required this.onSelected});
 
   final int index;
   final ValueChanged<int> onSelected;
@@ -627,28 +634,30 @@ class _Rail extends StatelessWidget {
         indicatorColor: tokens.transparent,
         labelType: NavigationRailLabelType.all,
         destinations: [
-          for (var i = 0;
-              i < _RootScaffoldState._destinations.length;
-              i++)
-          NavigationRailDestination(
-            icon: Icon(
-              _RootScaffoldState._destinations[i].icon,
-              color: i == index ? tokens.accentText : tokens.textSecondaryStrong,
-            ),
-            selectedIcon: Icon(
-              _RootScaffoldState._destinations[i].selected,
-              color: tokens.accentText,
-            ),
-            label: Text(
-              _RootScaffoldState._destinations[i].label,
-              style: TextStyle(
-                fontFamily: 'Hind Siliguri',
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-                color: i == index ? tokens.textPrimary : tokens.textSecondaryStrong,
+          for (var i = 0; i < _RootScaffoldState._destinations.length; i++)
+            NavigationRailDestination(
+              icon: Icon(
+                _RootScaffoldState._destinations[i].icon,
+                color: i == index
+                    ? tokens.accentText
+                    : tokens.textSecondaryStrong,
+              ),
+              selectedIcon: Icon(
+                _RootScaffoldState._destinations[i].selected,
+                color: tokens.accentText,
+              ),
+              label: Text(
+                _RootScaffoldState._destinations[i].label,
+                style: TextStyle(
+                  fontFamily: 'Hind Siliguri',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  color: i == index
+                      ? tokens.textPrimary
+                      : tokens.textSecondaryStrong,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -109,37 +109,72 @@ class ElaraGlass extends StatelessWidget {
     // In light, the page is the darker of the two tones and the panel catches
     // the light. In dark the relationship inverts: the panel is the lighter
     // one, and the sheen stays pale so the edge still reads.
-    final base = tint ?? tokens.bgCard;
+    final base = tint ?? tokens.glassBase;
+
+    // In dark the panel is not "the card tone, lighter": a near-black pane with
+    // a white stroke reads as etched plastic, which is what made the first
+    // version look generated rather than designed. Real glass in a dark room
+    // shows almost nothing at the edge and everything in the falloff, so the
+    // dark panel gets a smaller highlight, a *deeper* fill than the page is
+    // not possible without losing the shape — instead it stays a shade above
+    // the page and buys its separation from a wide, very soft shadow below.
     final top = Color.alphaBlend(
-      (tokens.isDark ? Colors.white : Colors.white).withValues(alpha: 0.06),
+      Colors.white.withValues(alpha: tokens.isDark ? 0.035 : 0.06),
       base,
     );
     final bottom = Color.alphaBlend(
-      (tokens.isDark ? Colors.black : Colors.black).withValues(alpha: 0.03),
+      Colors.black.withValues(alpha: tokens.isDark ? 0.05 : 0.03),
       base,
     );
 
-    // The rim is two lines doing different jobs: a pale one on top, where the
-    // light lands, and a dark one underneath, where the pane shades the page.
-    // Together they read as thickness. Either alone reads as a border.
-    final panel = Container(
+    // The rim is two lines doing different jobs: a pale one where the light
+    // lands, a darker one underneath where the pane shades the page. In light
+    // it goes round the whole pane; in dark only the top lip catches anything,
+    // and a stroke all the way round is the tell of a fake.
+    //
+    // They are drawn as two 1px lines inside a clipped panel rather than as a
+    // `Border`, because a border cannot hold two colours and a rounded corner at
+    // the same time — Flutter rejects it, and the first version of this widget
+    // failed its own tests for exactly that reason.
+    final panel = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(r),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [top, bottom],
-        ),
-        border: Border.all(color: tokens.glassSheen, width: 1),
-        boxShadow: tokens.isDark ? ElaraShadows.none : ElaraShadows.glass,
+        boxShadow: tokens.isDark ? ElaraShadows.glassDark : ElaraShadows.glass,
       ),
-      foregroundDecoration: BoxDecoration(
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(r),
-        border: Border(
-          bottom: BorderSide(color: tokens.glassRim, width: 1),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [top, bottom],
+            ),
+            border: Border.all(color: tokens.glassSheen, width: 1),
+          ),
+          child: Stack(
+            children: [
+              Padding(padding: padding, child: child),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                child: IgnorePointer(
+                  child: ColoredBox(color: tokens.glassTopEdge),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                child: IgnorePointer(child: ColoredBox(color: tokens.glassRim)),
+              ),
+            ],
+          ),
         ),
       ),
-      child: Padding(padding: padding, child: child),
     );
 
     if (onTap == null) return panel;
@@ -171,10 +206,12 @@ class ElaraGlassGroup extends StatelessWidget {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        rows.add(Padding(
-          padding: rowInset,
-          child: Divider(height: 1, thickness: 1, color: tokens.divider),
-        ));
+        rows.add(
+          Padding(
+            padding: rowInset,
+            child: Divider(height: 1, thickness: 1, color: tokens.divider),
+          ),
+        );
       }
       rows.add(Padding(padding: rowInset, child: children[i]));
     }
@@ -250,7 +287,8 @@ class NumberText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
-    final base = style ?? context.type.number(color ?? tokens.textPrimary, size: size);
+    final base =
+        style ?? context.type.number(color ?? tokens.textPrimary, size: size);
     return Text.rich(
       TextSpan(
         text: value,
@@ -258,8 +296,9 @@ class NumberText extends StatelessWidget {
           if (suffix != null)
             TextSpan(
               text: suffix,
-              style:
-                  context.type.label(base.color ?? tokens.textSecondaryStrong),
+              style: context.type.label(
+                base.color ?? tokens.textSecondaryStrong,
+              ),
             ),
         ],
       ),
@@ -374,11 +413,18 @@ class ElaraSection extends StatelessWidget {
           Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: ElaraIcons.size, color: tokens.textSecondaryStrong),
+                Icon(
+                  icon,
+                  size: ElaraIcons.size,
+                  color: tokens.textSecondaryStrong,
+                ),
                 const SizedBox(width: ElaraSpacing.sm),
               ],
               Expanded(
-                child: Text(title, style: type.title(tokens.textPrimary, size: 17)),
+                child: Text(
+                  title,
+                  style: type.title(tokens.textPrimary, size: 17),
+                ),
               ),
               ?trailing,
             ],
@@ -449,7 +495,11 @@ class DetailRow extends StatelessWidget {
           if (icon != null) ...[
             Padding(
               padding: const EdgeInsets.only(top: 1),
-              child: Icon(icon, size: ElaraIcons.size, color: tokens.textSecondaryStrong),
+              child: Icon(
+                icon,
+                size: ElaraIcons.size,
+                color: tokens.textSecondaryStrong,
+              ),
             ),
             const SizedBox(width: ElaraSpacing.md),
           ],
@@ -462,7 +512,11 @@ class DetailRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (trailingIcon != null) ...[
-                  Icon(trailingIcon, size: 15, color: valueColor ?? tokens.textSecondaryStrong),
+                  Icon(
+                    trailingIcon,
+                    size: 15,
+                    color: valueColor ?? tokens.textSecondaryStrong,
+                  ),
                   const SizedBox(width: ElaraSpacing.xs),
                 ],
                 Flexible(
@@ -524,7 +578,9 @@ class ElaraListRow extends StatelessWidget {
               child: Icon(
                 icon,
                 size: ElaraIcons.rowSize,
-                color: destructive ? tokens.dangerText : tokens.textSecondaryStrong,
+                color: destructive
+                    ? tokens.dangerText
+                    : tokens.textSecondaryStrong,
               ),
             ),
             const SizedBox(width: ElaraSpacing.md),
@@ -536,7 +592,10 @@ class ElaraListRow extends StatelessWidget {
                 Text(title, style: type.subtitle(titleColour, size: 15)),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
-                  Text(subtitle!, style: type.caption(tokens.textSecondaryStrong)),
+                  Text(
+                    subtitle!,
+                    style: type.caption(tokens.textSecondaryStrong),
+                  ),
                 ],
               ],
             ),
@@ -605,10 +664,7 @@ class BasisTag extends StatelessWidget {
           const SizedBox(width: ElaraSpacing.xs),
         ],
         Flexible(
-          child: Text(
-            label,
-            style: context.type.caption(tint, size: 12),
-          ),
+          child: Text(label, style: context.type.caption(tint, size: 12)),
         ),
       ],
     );

@@ -298,8 +298,15 @@ class ElaraSpacing {
     BuildContext context, {
     double top = lg,
     double bottom = xxl,
+    bool underStatusBar = true,
   }) {
     final media = MediaQuery.of(context);
+    // The shell no longer wraps the tabs in a SafeArea, so the status-bar
+    // inset arrives here and is added to the page's own top padding. That is
+    // what lets a list scroll *under* the clock instead of starting below it:
+    // the first line still begins where it always did, and everything after it
+    // can travel up into the notch band and be read through the scrim.
+    final statusBar = underStatusBar ? media.padding.top : 0.0;
     // The bar sits inside the Scaffold body inset, so its height is not part of
     // the safe area the screen already receives.
     final barHeight = media.size.width >= 720
@@ -309,7 +316,12 @@ class ElaraSpacing {
     final gutter = available > readableWidth
         ? (available - readableWidth) / 2
         : lg.toDouble();
-    return EdgeInsets.fromLTRB(gutter, top, gutter, bottom + barHeight);
+    return EdgeInsets.fromLTRB(
+      gutter,
+      statusBar + top,
+      gutter,
+      bottom + barHeight,
+    );
   }
 }
 
@@ -350,6 +362,24 @@ class ElaraShadows {
     ),
   ];
 
+  /// The same idea in a dark room: a deeper, wider shadow, because a dark
+  /// surface on a dark page is separated by what it takes away from the page
+  /// rather than by a highlight it adds.
+  static const List<BoxShadow> glassDark = [
+    BoxShadow(
+      color: Color(0x66000000),
+      offset: Offset(0, 8),
+      blurRadius: 22,
+      spreadRadius: -6,
+    ),
+    BoxShadow(
+      color: Color(0x2E000000),
+      offset: Offset(0, 2),
+      blurRadius: 6,
+      spreadRadius: -2,
+    ),
+  ];
+
   /// No shadow at all. Named so call sites read intentionally.
   static const List<BoxShadow> none = [];
 }
@@ -384,8 +414,7 @@ class ElaraTypography {
   /// identical content. They are set only by that harness; the app always
   /// uses [family] and [banglaFamily].
   static String get activeFamily => _activeFamily ?? family;
-  static List<String> get activeFallbacks =>
-      _activeFallbacks ?? banglaFamily;
+  static List<String> get activeFallbacks => _activeFallbacks ?? banglaFamily;
   static String? _activeFamily;
   static List<String>? _activeFallbacks;
 
@@ -394,7 +423,10 @@ class ElaraTypography {
   /// Not for use in the app. It exists so that
   /// tool/screenshots/screenshots_test.dart can render the real screens in a
   /// candidate family and have them compared against the current one.
-  static void overrideFamily(String family, {List<String> fallbacks = const []}) {
+  static void overrideFamily(
+    String family, {
+    List<String> fallbacks = const [],
+  }) {
     _activeFamily = family;
     _activeFallbacks = fallbacks;
   }
@@ -422,8 +454,7 @@ class ElaraTypography {
     // for a weight the font does not carry makes Flutter synthesise a fake
     // one, which looks bolder and blockier than the real thing.
     final resolved = switch (weight) {
-      FontWeight.w700 || FontWeight.w800 || FontWeight.w900 =>
-        FontWeight.w700,
+      FontWeight.w700 || FontWeight.w800 || FontWeight.w900 => FontWeight.w700,
       FontWeight.w600 => FontWeight.w600,
       FontWeight.w500 => FontWeight.w500,
       // Below 400 rounds up rather than down: a caller asking for a light
@@ -448,15 +479,17 @@ class ElaraTypography {
 
   /// Every numeral in the app goes through this: tabular figures, so a value
   /// that changes in place keeps its width and the layout does not shift.
-  static const List<FontFeature> tabularFigures = [FontFeature.tabularFigures()];
+  static const List<FontFeature> tabularFigures = [
+    FontFeature.tabularFigures(),
+  ];
 
   /// Big numerals: "20" days, heat index.
   TextStyle displayNumber(Color color, {double size = 56}) => _style(
-        TextStyle(color: color, fontFeatures: tabularFigures),
-        weight: FontWeight.w700,
-        size: size,
-        height: 1.05,
-      );
+    TextStyle(color: color, fontFeatures: tabularFigures),
+    weight: FontWeight.w700,
+    size: size,
+    height: 1.05,
+  );
 
   /// Medium numerals: percentages, chart labels, cycle day.
   TextStyle number(Color color, {double size = 18, FontWeight? weight}) =>
@@ -466,40 +499,68 @@ class ElaraTypography {
         size: size,
       );
 
-  TextStyle headline(Color color, {double size = 24}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w700, size: size, height: 1.2);
+  TextStyle headline(Color color, {double size = 24}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w700,
+    size: size,
+    height: 1.2,
+  );
 
-  TextStyle title(Color color, {double size = 18}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w700, size: size, height: 1.25);
+  TextStyle title(Color color, {double size = 18}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w700,
+    size: size,
+    height: 1.25,
+  );
 
-  TextStyle subtitle(Color color, {double size = 15}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w500, size: size, height: 1.35);
+  TextStyle subtitle(Color color, {double size = 15}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w500,
+    size: size,
+    height: 1.35,
+  );
 
   /// Primary body copy. 1.5 line height: long paragraphs of guidance are the
   /// main reading on the Today screen, and Hind Siliguri at 15pt sits tightly
   /// at the default height.
-  TextStyle body(Color color, {double size = 15}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w500, size: size, height: 1.5);
+  TextStyle body(Color color, {double size = 15}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w500,
+    size: size,
+    height: 1.5,
+  );
 
-  TextStyle bodyStrong(Color color, {double size = 15}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w700, size: size, height: 1.45);
+  TextStyle bodyStrong(Color color, {double size = 15}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w700,
+    size: size,
+    height: 1.45,
+  );
 
   /// Secondary copy: weight 400, per the type scale.
-  TextStyle label(Color color, {double size = 13}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w400, size: size, height: 1.4);
+  TextStyle label(Color color, {double size = 13}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w400,
+    size: size,
+    height: 1.4,
+  );
 
   /// Small caption. Uses the AA-safe secondary token by default.
-  TextStyle caption(Color color, {double size = 12}) =>
-      _style(TextStyle(color: color), weight: FontWeight.w400, size: size, height: 1.4);
+  TextStyle caption(Color color, {double size = 12}) => _style(
+    TextStyle(color: color),
+    weight: FontWeight.w400,
+    size: size,
+    height: 1.4,
+  );
 
   /// Letter-spaced all-caps eyebrow above a value.
   TextStyle overline(Color color) => _style(
-        TextStyle(color: color),
-        weight: FontWeight.w500,
-        size: 11,
-        height: 1.2,
-        letterSpacing: 0.8,
-      );
+    TextStyle(color: color),
+    weight: FontWeight.w500,
+    size: 11,
+    height: 1.2,
+    letterSpacing: 0.8,
+  );
 }
 
 /// Colours, type and shadows resolved for the active brightness.
@@ -540,14 +601,27 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
   /// The light edge on a glass panel. Pale in both themes — a light source does
   /// not turn dark when the room does — but weaker in dark, where a strong
   /// highlight reads as a plastic rim.
-  Color get glassSheen => isDark
-      ? const Color(0x1AFFFFFF)
-      : const Color(0xB3FFFFFF);
+  Color get glassSheen =>
+      isDark ? const Color(0x0AFFFFFF) : const Color(0xB3FFFFFF);
+
+  /// Where the light lands on the top lip of a glass panel. In light this is
+  /// the same white as [glassSheen] and the two are one stroke; in dark it is
+  /// the only bright edge the panel has, so it is slightly stronger than the
+  /// outline and much weaker than the version that read as plastic.
+  Color get glassTopEdge =>
+      isDark ? const Color(0x14FFFFFF) : const Color(0x00FFFFFF);
 
   /// The shaded underside of a glass panel's edge.
-  Color get glassRim => isDark
-      ? const Color(0x33FFFFFF)
-      : const Color(0x0F241E1B);
+  Color get glassRim =>
+      isDark ? const Color(0x0AFFFFFF) : const Color(0x0F241E1B);
+
+  /// The body of a glass panel, before the gradient.
+  ///
+  /// In dark this is deliberately *not* [bgCard]: the page is #14100F and the
+  /// card is #1E1917, and a panel at the card tone with a white outline sits so
+  /// close to the page that the outline does all the work. A half-step above the
+  /// card leaves the fill and the shadow able to do it instead.
+  Color get glassBase => isDark ? const Color(0xFF221C1A) : palette.bgCard;
 
   /// Absence of colour, exposed as a token so call sites never reach for
   /// `Colors.transparent` themselves.
@@ -623,8 +697,7 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
         phaseOvulatory: mix(a.phaseOvulatory, b.phaseOvulatory),
         phaseLuteal: mix(a.phaseLuteal, b.phaseLuteal),
         phaseMenstrualText: mix(a.phaseMenstrualText, b.phaseMenstrualText),
-        phaseFollicularText:
-            mix(a.phaseFollicularText, b.phaseFollicularText),
+        phaseFollicularText: mix(a.phaseFollicularText, b.phaseFollicularText),
         phaseOvulatoryText: mix(a.phaseOvulatoryText, b.phaseOvulatoryText),
         phaseLutealText: mix(a.phaseLutealText, b.phaseLutealText),
         accent: mix(a.accent, b.accent),
@@ -668,21 +741,18 @@ class ElaraTheme {
 
   /// Whether [phaseKey] names one of the four cycle phases.
   static bool isCyclePhase(String? phaseKey) => const {
-        'menstrual',
-        'follicular',
-        'ovulatory',
-        'luteal',
-      }.contains(phaseKey);
+    'menstrual',
+    'follicular',
+    'ovulatory',
+    'luteal',
+  }.contains(phaseKey);
 
   /// The palette for a phase: the accent follows the phase, the two surface
   /// colours carry an 8% tint of it, and everything else is unchanged.
   ///
   /// Semantic colours (danger, warning, success) are deliberately not touched:
   /// a warning must stay a warning whatever phase it is.
-  static ElaraPalette paletteFor(
-    ElaraPalette base,
-    String? phaseKey,
-  ) {
+  static ElaraPalette paletteFor(ElaraPalette base, String? phaseKey) {
     if (!isCyclePhase(phaseKey)) return base;
 
     final accent = _phaseFill(base, phaseKey!);
@@ -693,11 +763,11 @@ class ElaraTheme {
     // ovulatory accent labels at 4.08:1 and 4.23:1 on the page while they
     // cleared AA on the card. The ink has to clear both.
     Color ink(Color colour) => _ensureContrastOn(
-          colour,
-          [base.bgCard, base.bgPrimary],
-          minRatio: 4.5,
-          towards: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
-        );
+      colour,
+      [base.bgCard, base.bgPrimary],
+      minRatio: 4.5,
+      towards: isDark ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+    );
 
     // The page and the surface stay exactly as declared. A phase wash belongs
     // on a designated surface — the care card, the phase chip — not across the
@@ -790,8 +860,7 @@ class ElaraTheme {
   static Color _inkOn(Color fill) {
     const deep = Color(0xFF141C28);
     const cream = Color(0xFFFFFBF4);
-    final useDeep =
-        contrastRatio(deep, fill) >= contrastRatio(cream, fill);
+    final useDeep = contrastRatio(deep, fill) >= contrastRatio(cream, fill);
     return _ensureContrast(
       useDeep ? deep : cream,
       fill,
@@ -801,7 +870,8 @@ class ElaraTheme {
   }
 
   /// WCAG 2.1 contrast ratio between two opaque colours, 1.0 to 21.0.
-  static double contrastRatio(Color a, Color b) {    final la = a.computeLuminance();
+  static double contrastRatio(Color a, Color b) {
+    final la = a.computeLuminance();
     final lb = b.computeLuminance();
     final lighter = la > lb ? la : lb;
     final darker = la > lb ? lb : la;
@@ -924,13 +994,16 @@ class ElaraTheme {
         // dark icons by default and invisible on a dark theme.
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-          statusBarBrightness:
-              brightness == Brightness.dark ? Brightness.dark : Brightness.light,
+          statusBarIconBrightness: brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+          statusBarBrightness: brightness == Brightness.dark
+              ? Brightness.dark
+              : Brightness.light,
           systemNavigationBarColor: Colors.transparent,
-          systemNavigationBarIconBrightness:
-              brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+          systemNavigationBarIconBrightness: brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
           systemNavigationBarDividerColor: Colors.transparent,
           systemNavigationBarContrastEnforced: false,
         ),
@@ -1063,4 +1136,3 @@ extension ElaraThemeContext on BuildContext {
   ElaraPalette get palette => elara.palette;
   ElaraTypography get type => elara.typography;
 }
- 
