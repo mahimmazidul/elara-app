@@ -8,12 +8,11 @@ class AppInfo {
   const AppInfo._();
 
   static const String name = 'Elara';
-  static const String version = '2.0.0+8';
+  static const String version = '2.1.0+9';
   static const String license = 'AGPL-3.0';
   static const String repositoryUrl =
       'https://github.com/mahimmazidul/elara-app';
-  static const String engineUrl =
-      'https://github.com/mahimmazidul/elara-core';
+  static const String engineUrl = 'https://github.com/mahimmazidul/elara-core';
 
   static const String tagline =
       'An offline cycle companion. Nothing leaves this phone.';
