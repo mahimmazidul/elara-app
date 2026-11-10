@@ -14,6 +14,7 @@ import 'dart:ui' as ui;
 
 import 'package:elara_app/data/database_helper.dart';
 import 'package:elara_app/data/models/climate_snapshot.dart';
+import 'package:elara_app/data/models/cycle_mode.dart';
 import 'package:elara_app/data/models/cycle_entry.dart';
 import 'package:elara_app/data/models/preference.dart';
 import 'package:elara_app/data/models/symptom.dart';
@@ -128,7 +129,15 @@ Future<void> settle(WidgetTester tester) async {
     () => Future<void>.delayed(const Duration(milliseconds: 300)),
   );
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 50));
+  // Advance the *fake* clock past the longest animation in the app. The
+  // entrance fade is 200 ms and the phase chip's colour move is 200 ms, and
+  // `pump(Duration.zero)` does not move either: the screenshots in docs/ used
+  // to show the Today heading at about 25% opacity and the phase chip's fill
+  // half-way between its old colour and its new one, because the capture was
+  // taken a few frames into the fade. Letting the animation finish makes the
+  // image show the screen a person actually sees.
+  await tester.pump(const Duration(milliseconds: 500));
+  await tester.pump(const Duration(milliseconds: 16));
 }
 
 void main() {
@@ -457,6 +466,52 @@ void main() {
     await tester.tap(find.text('Settings'));
     await settle(tester);
     await capture(tester, 'settings');
+  });
+
+  /// The two states this app did not have before: a partner told the app that
+  /// she is on hormonal contraception, and a pregnancy or loss that has stopped
+  /// the counting. Both are rendered because both are screens someone will read
+  /// in a hard week, and neither is an error state.
+  testWidgets('screenshots quiet today', (tester) async {
+    addTearDown(tester.view.reset);
+    setViewport(tester, _logicalSize);
+
+    await tester.runAsync(seed);
+    final graph = await buildGraph(tester);
+
+    await tester.runAsync(
+      () => graph.settings.setCycleMode(CycleMode.hormonalContraception),
+    );
+    await pumpApp(tester, graph);
+    await capture(tester, 'today-hormonal-contraception');
+
+    await tester.runAsync(
+      () => graph.settings
+          .setCycleMode(CycleMode.paused, reason: PauseReason.loss),
+    );
+    await pumpApp(tester, graph);
+    await capture(tester, 'today-paused-after-loss');
+
+    await tester.runAsync(
+      () => graph.settings.setCycleMode(
+        CycleMode.paused,
+        reason: PauseReason.postpartum,
+      ),
+    );
+    await pumpApp(tester, graph);
+    await capture(tester, 'today-paused-after-birth');
+
+    // And the setting itself, so the wording is reviewable in the same pass.
+    await tester.runAsync(
+      () => graph.settings.setCycleMode(CycleMode.predicting),
+    );
+    await pumpApp(tester, graph);
+    await tester.tap(find.text('Settings'));
+    // The screen transition is a fade and a rise, so one settle can land
+    // mid-animation and capture a frame that is offset by a few pixels.
+    await settle(tester);
+    await settle(tester);
+    await capture(tester, 'settings-cycle-mode');
   });
 
   // The guidance section sits below the fold on a 390x844 phone. Scrolling the

@@ -201,20 +201,46 @@ figcaption {
 }
 
 .button {
-  display: block;
-  width: 100%;
-  max-width: 22rem;
+  /* Sized to its own label, not to the card.
+     A full-width, 22rem-max, shadowed block inside a padded card read as a
+     second panel rather than as one action: on a 390px phone it filled the
+     width of the card it sat in, which is the largest object on the page and
+     the least information per pixel. A pill that hugs its text is the size of
+     the decision being asked for - "install this app" - and leaves the file
+     size and version as the things the eye lands on next. */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 1rem auto 0;
-  padding: 0.85rem 1rem;
+  padding: 0.7rem 1.35rem;
   background: var(--accent);
   color: var(--accent-ink);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   text-align: center;
   text-decoration: none;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border: 1px solid transparent;
+  border-radius: 999px;
 }
+
+.button svg { flex: none; }
+
+/* The fallback for a 32-bit phone should not look like a second primary
+   action, and it should not be a sentence buried in the note either. */
+.button--quiet {
+  display: inline-block;
+  margin: 0.6rem auto 0;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.button--quiet:hover { color: var(--text); }
 
 .note {
   margin: 0.9rem 0 0;
@@ -253,6 +279,11 @@ a:focus-visible,
 @media (prefers-reduced-motion: no-preference) {
   a, .button { transition: opacity 120ms ease; }
   .button:active { opacity: 0.88; }
+  /* A single, small lift on the one primary action. The shadow was removed
+     from the resting state and returns only as feedback, so the button reads
+     as part of the page rather than as a separate object floating on it. */
+  .button:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10); }
+  .button { transition: opacity 120ms ease, box-shadow 120ms ease; }
 }
 </style>
 </head>
@@ -335,6 +366,60 @@ a:focus-visible,
       </ul>
     </section>
 
+    <section aria-labelledby="quiet">
+      <h2 id="quiet">When a prediction is not the answer</h2>
+      <p>
+        A calendar estimate assumes there is a cycle to estimate. On hormonal
+        contraception there is not one: bleeding is withdrawal or breakthrough,
+        and a countdown built from those days would describe something that is
+        not happening. The same is true of a pregnancy, a loss, and the months
+        after a birth.
+      </p>
+      <figure>
+        <img src="screenshots/today-hormonal-contraception.png"
+             alt="The Today screen with prediction switched off: a panel explaining that pills, implants, injections and hormonal IUDs stop ovulation, so Elara is not estimating a period, followed by the same care suggestions as usual.">
+        <figcaption>
+          Prediction switched off is a state, not an error. The phase, the
+          countdown and the fertile window go; the logged days, the symptoms,
+          your notes, the reminders and the suggestions stay.
+        </figcaption>
+      </figure>
+      <ul class="points">
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q1">
+            <title id="q1">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Three honest modes.</strong> Estimate the cycle, say she
+          uses hormonal contraception, or pause &mdash; for a pregnancy, a loss, after
+          a birth, or simply because she would rather not be given a date.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q2">
+            <title id="q2">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>No countdown through a loss.</strong> The first period after
+          a loss can take weeks. Elara will not call that a late period, and no
+          reminder will fire to say it is missing.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q3">
+            <title id="q3">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#7DB8A5" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#577A6F" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>Nothing is deleted.</strong> Switching a mode off keeps
+          every recorded day, and prediction starts again whenever it is useful.</span>
+        </li>
+      </ul>
+    </section>
+
     <section aria-labelledby="look">
       <h2 id="look">A look</h2>
       <div class="shots">
@@ -370,14 +455,31 @@ a:focus-visible,
 
     <section class="download" aria-labelledby="get">
       <h2 id="get" style="margin-bottom:0.75rem">Download</h2>
-      <span class="badge">Version {{LATEST_VERSION}}</span>
-      <a class="button" href="{{DOWNLOAD_URL}}">Download the APK</a>
+      <span class="badge">Version {{LATEST_VERSION}} &middot; Android 7.0+</span>
+      <div>
+        <a class="button" href="{{DOWNLOAD_URL}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12"></path>
+            <path d="m7 11 5 5 5-5"></path>
+            <path d="M4 20h16"></path>
+          </svg>
+          Download for Android
+        </a>
+      </div>
       <p class="note">
-        Android 7.0 and newer, 64-bit phones &mdash; the arm64 build, which is the
-        small one. On a 32-bit device or an emulator, take the
-        <a href="{{DOWNLOAD_URL_UNIVERSAL}}">universal APK</a>.
-        Installed directly, so Play Protect asks you to confirm. Not on the Play
-        Store.
+        The 64-bit build, which is the small one. Android will ask you to
+        confirm the install &mdash; Elara is not on the Play Store.
+      </p>
+      <a class="button--quiet" href="{{DOWNLOAD_URL_UNIVERSAL}}">
+        Need the universal APK? (32-bit phones, emulators)
+      </a>
+      <p class="note">
+        Nothing is uploaded from this page or from the app: no accounts, no
+        analytics, no cookies. If the download is inconvenient, building from
+        <a href="https://github.com/mahimmazidul/elara-app">source</a> gives the
+        same APK.
       </p>
     </section>
   </main>

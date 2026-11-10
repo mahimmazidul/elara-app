@@ -1,0 +1,225 @@
+From 79368f4ab20533ec49731c57a7e01ccc2753860f Mon Sep 17 00:00:00 2001
+From: fix <fix@elara>
+Date: Tue, 10 Nov 2026 03:33:38 +0000
+Subject: [PATCH] fix(flowlytics): measure dispersion over every interval, not
+ the in-band subset
+
+The engine filtered completed cycle lengths to 15-50 days and then computed
+both the mean and the standard deviation from the filtered list. A cycle
+length is exactly the observation that makes a cycle irregular, so dropping
+it made an irregular history report the uncertainty of a regular one: a
+person with a 63-day interval was told she had a two-day window.
+
+- the plausibility band now guards location only;
+- dispersion is a sample standard deviation (n-1) over every completed
+  interval, measured around its own centre rather than around a rounded,
+  recency-weighted location;
+- when every recorded cycle falls outside the band, the band is inapplicable
+  and the observations are used for location, so a regularly 57-day cycle
+  predicts 57 days instead of the 28-day baseline;
+- the window is capped at 60 days, the span a calendar estimate can address,
+  instead of at 4 days, which no irregular history could ever exceed.
+
+Point estimates for in-band histories are unchanged. Confidence bands move by
+one step for three-cycle histories because Bessel's correction is now applied.
+
+Tests: test/engines/flowlytics_engine_test.dart
+---
+ lib/src/engines/flowlytics_engine.dart   | 68 +++++++++++++++++++-----
+ test/engines/flowlytics_engine_test.dart | 59 ++++++++++++++++----
+ 2 files changed, 104 insertions(+), 23 deletions(-)
+
+diff --git a/lib/src/engines/flowlytics_engine.dart b/lib/src/engines/flowlytics_engine.dart
+index 68161d3..8a5b55f 100644
+--- a/lib/src/engines/flowlytics_engine.dart
++++ b/lib/src/engines/flowlytics_engine.dart
+@@ -51,6 +51,19 @@ class FlowlyticsEngine implements CyclePredictionEngine {
+   final int baselineCycle;
+   final FlowSymptoms? symptoms;
+ 
++  /// The in-band range upstream Flowlytics used to keep one improbable entry
++  /// out of its mean. Applied to the mean only; see [predict].
++  static const int minimumPlausibleLength = 15;
++  static const int maximumPlausibleLength = 50;
++
++  /// The widest window this component will report.
++  ///
++  /// Not a statistical constant: it is the span over which a calendar estimate
++  /// carries any information at all. Beyond it the honest answer is that this
++  /// engine cannot place the next start, and the fusion layer should say so
++  /// rather than print a radius with no relationship to the data.
++  static const int maximumWindowDays = 60;
++
+   @override
+   String get name => 'Flowlytics';
+ 
+@@ -59,14 +72,29 @@ class FlowlyticsEngine implements CyclePredictionEngine {
+ 
+   @override
+   EngineOutput? predict(List<CycleRecord> history) {
+-    final lengths = completedCycleLengths(history)
+-        .where((length) => length >= 15 && length <= 50)
++    // Every completed interval is kept. Upstream Flowlytics used a 15-50 day
++    // band to keep one wild entry out of the mean, which is a reasonable guard
++    // for *location* and a catastrophic one for *dispersion*: dropping the
++    // observations that make a cycle irregular makes an irregular cycle look
++    // regular, and the uncertainty the engine reports then describes a history
++    // the user does not have. The band is applied to the mean only, below.
++    final allLengths = completedCycleLengths(history);
++    final plausible = allLengths
++        .where((length) =>
++            length >= minimumPlausibleLength &&
++            length <= maximumPlausibleLength)
+         .toList();
+     // Flowlytics uses today's date for an empty log. We have no clock input,
+     // so without a start date there is no anchored forecast to return.
+     if (history.isEmpty) return null;
+ 
+-    final recent = lengths.reversed.take(6).toList();
++    // The band is inapplicable when it excludes everything: a person whose
++    // recorded cycles are all longer than 50 days has shown that her normal
++    // cycle is longer than the band, and answering with the 28-day baseline
++    // would be a guess dressed as arithmetic. Use the observations instead.
++    final locations = plausible.isEmpty ? allLengths : plausible;
++
++    final recent = locations.reversed.take(6).toList();
+     var weightedSum = 0.0;
+     var totalWeight = 0.0;
+     for (var i = 0; i < recent.length; i++) {
+@@ -76,15 +104,20 @@ class FlowlyticsEngine implements CyclePredictionEngine {
+     }
+     final average =
+         recent.isEmpty ? baselineCycle : (weightedSum / totalWeight).round();
+-    final deviation = lengths.length < 2
+-        ? 1.5
+-        : math.sqrt(lengths.fold<double>(0, (sum, value) {
+-              final difference = value - average;
+-              return sum + difference * difference;
+-            }) /
+-            lengths.length);
+-    final windowDays = deviation.round().clamp(1, 4);
+-    final confidence = _confidence(deviation, lengths.length);
++
++    // Dispersion over every observation, around its own centre, with Bessel's
++    // correction. Two corrections to what this used to do:
++    //
++    //   * the spread is no longer measured against a recency-weighted, rounded
++    //     location, which understated it whenever the two disagreed;
++    //   * it is no longer measured only over the in-band subset.
++    //
++    // With one completed interval there is nothing to measure, so the upstream
++    // default stands.
++    final deviation =
++        allLengths.length < 2 ? 1.5 : _sampleStandardDeviation(allLengths);
++    final windowDays = deviation.ceil().clamp(1, maximumWindowDays);
++    final confidence = _confidence(deviation, allLengths.length);
+     final start = history.last.startDate;
+     var predictedDate = addCalendarDays(start, average);
+     var observedStart = false;
+@@ -132,6 +165,17 @@ class FlowlyticsEngine implements CyclePredictionEngine {
+ bool _hasAny(List<String> values, Set<String> choices) =>
+     values.any(choices.contains);
+ 
++/// Sample standard deviation (n-1), the unbiased estimate of a person's own
++/// cycle-to-cycle variability. Returns 0 for a constant history, which the
++/// caller floors to a one-day window.
++double _sampleStandardDeviation(List<int> values) {
++  final mean =
++      values.fold<double>(0, (sum, value) => sum + value) / values.length;
++  final sumSquares = values.fold<double>(
++      0, (sum, value) => sum + (value - mean) * (value - mean));
++  return math.sqrt(sumSquares / (values.length - 1));
++}
++
+ double _confidence(double deviation, int count) {
+   if (count < 3) return 0.40;
+   if (deviation < 1) return 0.95;
+diff --git a/test/engines/flowlytics_engine_test.dart b/test/engines/flowlytics_engine_test.dart
+index 782ffd3..8837ec7 100644
+--- a/test/engines/flowlytics_engine_test.dart
++++ b/test/engines/flowlytics_engine_test.dart
+@@ -13,21 +13,56 @@ import '../support.dart';
+ 
+ void main() {
+   group('Flowlytics enhanced predictor', () {
+-    test(
+-        'uses only the six most recent weights but all valid gaps for deviation',
+-        () {
++    test('weights the six most recent cycles for location and every gap for '
++        'dispersion', () {
+       final result =
+           FlowlyticsEngine().predict(historyFor([20, 24, 28, 32, 36, 40, 44]))!;
++      // Location: the six most recent intervals, recency-weighted.
+       expect(result.predictedLength, 36);
++      // Dispersion: all seven, as a sample standard deviation of 8.64 days.
++      // The window used to be clamped to four days, which made a history that
++      // varied by three weeks look like a two-day uncertainty.
++      expect(result.windowDays, 9);
+       expect(result.confidence, 0.30);
+-      expect(result.windowDays, 4);
+     });
+ 
+-    test('keeps 15 through 50 inclusive and ignores other intervals', () {
++    test('an interval outside the plausibility band widens the window instead '
++        'of disappearing from it', () {
+       final result = FlowlyticsEngine().predict(historyFor([14, 15, 50, 51]))!;
++      // The band still guards the *mean*: 15 and 50 only.
+       expect(result.predictedLength, 33);
+-      expect(result.confidence, 0.40);
+-      expect(result.windowDays, 4);
++      // But all four intervals are evidence of how variable this history is.
++      // Dropping them from the spread is what used to make an irregular cycle
++      // report a regular one.
++      expect(result.windowDays, 21);
++      expect(result.confidence, 0.30);
++    });
++
++    test('a history entirely outside the band predicts her cycle, not the '
++        'baseline', () {
++      // A person whose recorded cycles are all longer than the band has shown
++      // that the band does not describe her. Answering with the 28-day default
++      // was the documented long-cycle failure.
++      final result = FlowlyticsEngine().predict(historyFor([55, 58, 57]))!;
++      expect(result.predictedLength, 57);
++      expect(result.windowDays, 2);
++    });
++
++    test('one long interval is uncertainty, not a deleted observation', () {
++      final result =
++          FlowlyticsEngine().predict(historyFor([28, 28, 28, 63]))!;
++      // The mean stays on the three in-band cycles...
++      expect(result.predictedLength, 28);
++      // ...and the miss shows up where a user can act on it.
++      expect(result.windowDays, greaterThan(10));
++      expect(result.confidence, 0.30);
++    });
++
++    test('the window is capped at the span a calendar estimate can address',
++        () {
++      final result =
++          FlowlyticsEngine().predict(historyFor([16, 50, 19, 49, 17, 48]))!;
++      expect(result.windowDays, lessThanOrEqualTo(60));
+     });
+ 
+     test('uses baseline with one start; no clock-based empty-history forecast',
+@@ -48,11 +83,13 @@ void main() {
+     });
+ 
+     test('all upstream regularity confidence bands are represented', () {
++      // The bands are entered by a sample standard deviation (n-1), so a
++      // three-cycle history needs a spread under a day for the top band.
+       final cases = <(List<int>, double)>[
+-        ([27, 28, 29], .95),
+-        ([26, 28, 30], .85),
+-        ([24, 28, 32], .65),
+-        ([22, 28, 34], .45),
++        ([28, 28, 29], .95),
++        ([27, 28, 29], .85),
++        ([26, 28, 30], .65),
++        ([24, 28, 32], .45),
+         ([18, 28, 38], .30),
+       ];
+       for (final c in cases) {
+-- 
+2.47.3
+
