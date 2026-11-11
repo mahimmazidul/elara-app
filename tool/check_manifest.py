@@ -246,6 +246,35 @@ def check_cutout(problems: list[str]) -> None:
                 )
 
 
+def check_link_visibility(problems: list[str]) -> None:
+    """The manifest must declare the web-view intent it queries.
+
+    Android 11 stopped apps from asking the package manager about anything they
+    have not declared, and `canLaunchUrl` is exactly such a question. Without a
+    `<queries>` block naming the VIEW/https intent, every link in the app reported
+    "could not open" on phones with three browsers installed — the browser was
+    there, Elara was simply not allowed to know. It shipped like that once.
+    """
+    manifest = ROOT / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
+    if not manifest.exists():
+        problems.append("AndroidManifest.xml is missing")
+        return
+    text = manifest.read_text()
+    queries = re.search(r"<queries>.*?</queries>", text, re.S)
+    if queries is None:
+        problems.append(
+            "AndroidManifest.xml has no <queries> block, so every link in the "
+            "app will fail to open on Android 11+"
+        )
+        return
+    for scheme in ("https", "http"):
+        if f'android:scheme="{scheme}"' not in queries.group(0):
+            problems.append(
+                f"AndroidManifest.xml <queries> does not declare a VIEW intent "
+                f"for {scheme}, so links of that kind cannot be opened"
+            )
+
+
 def main() -> None:
     problems: list[str] = []
     check_conflict_markers(problems)
@@ -253,12 +282,14 @@ def main() -> None:
     check_privacy_controls(problems)
     check_cutout(problems)
     check_launch_colour(problems)
+    check_link_visibility(problems)
 
     if problems:
         fail(problems)
 
     print(
-        "Manifest, XML, privacy controls, cutout mode and launch colour: clean."
+        "Manifest, XML, privacy controls, cutout mode, launch colour and link "
+        "visibility: clean."
     )
 
 

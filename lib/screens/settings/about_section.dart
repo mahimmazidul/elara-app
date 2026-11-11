@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app_info.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/update_provider.dart';
 import '../../services/update_service.dart';
 import '../../theme/elara_theme.dart';
+import '../../utils/open_link.dart';
 import '../../widgets/icons.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/primitives.dart';
@@ -112,7 +112,9 @@ class AboutSection extends StatelessWidget {
   }
 
   Future<void> _checkForUpdates(
-      BuildContext context, UpdateProvider updates) async {
+    BuildContext context,
+    UpdateProvider updates,
+  ) async {
     await updates.check();
     if (!context.mounted) return;
     await showModalBottomSheet<void>(
@@ -157,11 +159,7 @@ class _AboutRow extends StatelessWidget {
 /// phone, and it tells someone nothing they did not already know from the word
 /// above it. The row says what it opens and the arrow says it leaves the app.
 class _LinkRow extends StatelessWidget {
-  const _LinkRow({
-    required this.label,
-    required this.icon,
-    required this.url,
-  });
+  const _LinkRow({required this.label, required this.icon, required this.url});
 
   final String label;
   final IconData icon;
@@ -172,7 +170,7 @@ class _LinkRow extends StatelessWidget {
     final tokens = context.elara;
     final type = context.type;
     return ElaraPressable(
-      onTap: () => _launchUrl(context, url),
+      onTap: () => openLink(context, url),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: ElaraSpacing.xs),
         child: Row(
@@ -191,17 +189,6 @@ class _LinkRow extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static Future<void> _launchUrl(BuildContext context, String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open $url.')),
-      );
-    }
   }
 }
 
@@ -234,7 +221,7 @@ class _LimitationsPanel extends StatelessWidget {
           ),
           const SizedBox(height: ElaraSpacing.sm),
           Text(
-            'No accounts, no analytics, no uploads. Nothing leaves this phone.',
+            'Everything it records stays on this phone.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
         ],
@@ -279,8 +266,10 @@ class _UpdateRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Check for updates',
-                      style: type.label(tokens.textSecondaryStrong)),
+                  Text(
+                    'Check for updates',
+                    style: type.label(tokens.textSecondaryStrong),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     summary,
@@ -348,7 +337,11 @@ class _UpdateResultSheet extends StatelessWidget {
     );
   }
 
-  List<Widget> _body(BuildContext context, ElaraTokens tokens, ElaraTypography type) {
+  List<Widget> _body(
+    BuildContext context,
+    ElaraTokens tokens,
+    ElaraTypography type,
+  ) {
     final release = updates.release;
     final apk = release?.arm64Apk;
 
@@ -356,16 +349,16 @@ class _UpdateResultSheet extends StatelessWidget {
       case UpdateStatus.available:
         return [
           if ((release?.notes ?? '').trim().isNotEmpty)
-            Text(
-              release!.notes.trim(),
-              style: type.body(tokens.textPrimary),
-            ),
+            Text(release!.notes.trim(), style: type.body(tokens.textPrimary)),
           if (apk != null) ...[
             const SizedBox(height: ElaraSpacing.md),
             Row(
               children: [
-                Icon(ElaraIcons.download,
-                    size: 18, color: tokens.textSecondaryStrong),
+                Icon(
+                  ElaraIcons.download,
+                  size: 18,
+                  color: tokens.textSecondaryStrong,
+                ),
                 const SizedBox(width: ElaraSpacing.sm),
                 Expanded(
                   child: Text(
@@ -391,7 +384,7 @@ class _UpdateResultSheet extends StatelessWidget {
                 child: FilledButton(
                   onPressed: apk == null
                       ? null
-                      : () => _LinkRow._launchUrl(context, apk.downloadUrl),
+                      : () => openLink(context, apk.downloadUrl),
                   child: const Text('Download APK'),
                 ),
               ),
@@ -425,8 +418,7 @@ class _UpdateResultSheet extends StatelessWidget {
           // she has no connection is a small lie that costs her trust in every
           // other sentence on the screen.
           Text(
-            updates.message ??
-                'The update check did not produce an answer.',
+            updates.message ?? 'The update check did not produce an answer.',
             style: type.body(tokens.textPrimary),
           ),
           const SizedBox(height: ElaraSpacing.sm),

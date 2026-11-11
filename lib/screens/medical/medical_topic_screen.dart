@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 
 import '../../data/medical_content.dart';
 import '../../theme/elara_theme.dart';
+import '../../utils/open_link.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/icons.dart';
 import '../../widgets/elara_route.dart';
@@ -69,9 +68,15 @@ class MedicalTopicScreen extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('•  ', style: type.body(tokens.textSecondaryStrong)),
+                            Text(
+                              '•  ',
+                              style: type.body(tokens.textSecondaryStrong),
+                            ),
                             Expanded(
-                              child: Text(bullet, style: type.body(tokens.textPrimary)),
+                              child: Text(
+                                bullet,
+                                style: type.body(tokens.textPrimary),
+                              ),
                             ),
                           ],
                         ),
@@ -81,7 +86,10 @@ class MedicalTopicScreen extends StatelessWidget {
 
                 // The most useful part of the page, so it is never last and
                 // never folded away.
-                ElaraOverline('When to see a clinician', color: tokens.dangerText),
+                ElaraOverline(
+                  'When to see a clinician',
+                  color: tokens.dangerText,
+                ),
                 const SizedBox(height: ElaraSpacing.xs),
                 for (final flag in topic.whenToSeekHelp)
                   Padding(
@@ -102,7 +110,10 @@ class MedicalTopicScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: ElaraSpacing.sm),
                         Expanded(
-                          child: Text(flag, style: type.body(tokens.textPrimary)),
+                          child: Text(
+                            flag,
+                            style: type.body(tokens.textPrimary),
+                          ),
                         ),
                       ],
                     ),
@@ -120,8 +131,7 @@ class MedicalTopicScreen extends StatelessWidget {
                   style: type.caption(tokens.textSecondaryStrong),
                 ),
                 const SizedBox(height: ElaraSpacing.sm),
-                for (final source in topic.sources)
-                  _SourceRow(source: source),
+                for (final source in topic.sources) _SourceRow(source: source),
 
                 const SizedBox(height: ElaraSpacing.lg),
                 Text(
@@ -164,12 +174,7 @@ class _UrgentBlock extends StatelessWidget {
         children: [
           Icon(ElaraIcons.warning, size: 18, color: tokens.dangerText),
           const SizedBox(width: ElaraSpacing.sm),
-          Expanded(
-            child: Text(
-              text,
-              style: type.body(tokens.textPrimary),
-            ),
-          ),
+          Expanded(child: Text(text, style: type.body(tokens.textPrimary))),
         ],
       ),
     );
@@ -202,28 +207,7 @@ class _SourceRow extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(ElaraRadii.chip),
-      onTap: () async {
-        final uri = Uri.parse(source.url);
-        final opened = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (!context.mounted) return;
-        // No browser, no handlers, a locked-down device: the address still goes
-        // somewhere the reader can use it, and the message says so rather than
-        // pretending the tap worked.
-        if (!opened) {
-          await Clipboard.setData(ClipboardData(text: source.url));
-          if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'No browser would open it, so the address is on your clipboard.',
-              ),
-            ),
-          );
-        }
-      },
+      onTap: () => openLink(context, source.url),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: ElaraSpacing.xs),
         child: Row(
@@ -233,7 +217,10 @@ class _SourceRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(source.label, style: type.label(tokens.textSecondaryStrong)),
+                  Text(
+                    source.label,
+                    style: type.label(tokens.textSecondaryStrong),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     'Opens ${_site(source.url)}',
@@ -242,7 +229,11 @@ class _SourceRow extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(ElaraIcons.disclosure, size: 16, color: tokens.textSecondaryStrong),
+            Icon(
+              ElaraIcons.disclosure,
+              size: 16,
+              color: tokens.textSecondaryStrong,
+            ),
           ],
         ),
       ),

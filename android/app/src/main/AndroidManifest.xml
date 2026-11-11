@@ -29,6 +29,24 @@
          quietly re-enable them. The supported backup path is the in-app
          encrypted export, which the user chooses to run, protects with her own
          passphrase, and hands to a share target she picks. -->
+    <!-- Which other apps this one is allowed to see.
+         Android 11 stopped apps from querying the package manager for anything
+         they had not declared, and `canLaunchUrl` is a query. Without this block
+         every https link in the app reported "could not open" on a phone that
+         would have opened it perfectly well — the browser was there, the app was
+         simply not allowed to know. A VIEW intent for http and https is the
+         narrowest declaration that fixes it: it says "I may ask a browser to open
+         a web page" and says nothing about anything else on the phone. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
+    </queries>
     <application
         android:label="Elara"
         android:name="${applicationName}"
