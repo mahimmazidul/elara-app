@@ -384,8 +384,13 @@ class _Bar extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final tabCount = _RootScaffoldState._destinations.length;
 
+    // The bar paints to the bottom of the display, not just to the top of the
+    // gesture inset. Leaving that strip transparent was what let a row of the
+    // page show through beside the home indicator, and it is the one piece of
+    // chrome that has to be completely opaque to look finished.
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: tokens.bgPrimary,
         border: Border(top: BorderSide(color: tokens.divider)),
       ),
       child: Padding(
@@ -396,7 +401,7 @@ class _Bar extends StatelessWidget {
             NavigationBar(
               selectedIndex: index,
               onDestinationSelected: onSelected,
-              backgroundColor: tokens.bgCard,
+              backgroundColor: tokens.bgPrimary,
               surfaceTintColor: tokens.transparent,
               elevation: 0,
               indicatorColor: tokens.transparent,
