@@ -28,7 +28,7 @@ something a partner can do. The most useful line on the home screen is not the
 countdown. It is the one under a suggestion that says *"she told you this"*,
 because that is the difference between care and guessing.
 
-Everything stays on one phone. No account, no sync, no analytics.
+Everything stays on one phone, in the app's own storage.
 
 ## Screens
 
@@ -74,11 +74,10 @@ Everything stays on one phone. No account, no sync, no analytics.
 
 ## Privacy
 
-One cycle history on one phone, in the app's own sandbox. Android Auto Backup is
-disabled at the manifest level, so nothing reaches Google Drive. Export is a
-passphrase-encrypted file containing dates only — no location, no settings, no
-notes. One control withdraws consent and deletes everything. Detail:
-[`docs/PRIVACY_MODEL.md`](docs/PRIVACY_MODEL.md).
+One cycle history, on one phone, in the app's own sandbox. Auto Backup is off at
+the manifest level, so the history stays where it was written. Export is a
+passphrase-encrypted file containing the dates, and one control withdraws consent
+and deletes everything. Detail: [`docs/PRIVACY_MODEL.md`](docs/PRIVACY_MODEL.md).
 
 ## Install
 
@@ -90,7 +89,7 @@ Play Protect may ask once about installing from outside the store.
 
 ```bash
 flutter pub get
-flutter test                 # 533 tests, no device needed
+flutter test                 # the whole suite, no device needed
 flutter analyze
 flutter run
 ```
@@ -114,10 +113,9 @@ the screenshot suite. Prediction methodology and its calibration:
 
 ## Limits
 
-Elara is not a medical device. It estimates from recorded dates, measures no
-hormone, and is not a contraceptive. Guessing a fertile window from a calendar
-does not make sex safe on any particular day, and the app says so where it
-matters.
+Elara is not a medical device. It works from recorded dates alone — no hormone is
+measured — and it is not a contraceptive: a fertile window guessed from a
+calendar does not make any day safe, and the app says so where it matters.
 
 ## The name
 
@@ -131,11 +129,11 @@ The moon in the interface is a motif for that rhythm, not a claim about the myth
 
 ## Questions
 
-**Does anything leave my phone?**
-No. There is no account and no server to send it to. The history lives in the
-app's sandbox, Android Auto Backup is disabled in the manifest so it never
-reaches Google Drive, and the only network requests are a weather forecast for
-the coordinates you type in and an update check you have to switch on.
+**Where is my data kept?**
+On this phone, in the app's own storage. Elara makes two kinds of request: a
+weather forecast for the coordinates you type in, and an update check you switch
+on yourself. Auto Backup is off at the manifest level, so the history stays where
+it was written; moving it to another phone is the encrypted export you run.
 
 **How accurate is the estimate?**
 It depends entirely on the history. Three estimators run on your recorded period

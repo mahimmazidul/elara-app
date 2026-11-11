@@ -157,7 +157,7 @@ has ever been deleted.
 | Backup restore | replaces data, verified passphrase | Preserved | same |
 | Data deletion | typed confirmation; reset clears all five tables | Preserved | `consent_gate_test.dart` › deleting everything requires typing a word |
 | Privacy settings | `privacy_data_section.dart` | Preserved | `settings-privacy.png` |
-| Offline-first | no analytics, no accounts, on-device prediction | Preserved | no network client except Open-Meteo/OpenAQ |
+| Offline-first | on-device prediction, two request types | Preserved | no network client except Open-Meteo/OpenAQ |
 
 ## 7. Product and interface
 

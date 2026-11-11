@@ -14,7 +14,8 @@
 <meta property="og:image" content="icon.png">
 <!--
   One font import, one family, matching the app. Falls back to the system UI
-  font when offline; nothing else is fetched. No JS, no analytics, no cookies.
+  font when offline. The page is one file, and the only thing it fetches is the
+  font.
 -->
 <style>
 /* Hind Siliguri is the app's family: a Bengali-first face with a well-drawn
@@ -483,8 +484,8 @@ a:focus-visible,
             <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span><strong>Stays on the phone.</strong> No account, no sync, no analytics.
-          What is logged here does not leave it.</span>
+          <span><strong>Stays on the phone.</strong> The history is written to
+          the app&rsquo;s own storage and stays where it was written.</span>
         </li>
       </ul>
     </section>
@@ -582,12 +583,12 @@ a:focus-visible,
       <h2 id="faq">Questions</h2>
       <div class="faq">
         <details>
-          <summary>Does anything leave my phone?</summary>
-          <p>No. There is no account and no server to send it to. The cycle
-          history lives in the app&rsquo;s own sandbox, Android Auto Backup is
-          turned off in the manifest so it never reaches Google Drive, and the
-          only network requests are a weather forecast for the coordinates you
-          type in and an update check you have to switch on.</p>
+          <summary>Where is my data kept?</summary>
+          <p>On this phone, in the app&rsquo;s own storage. Elara makes two kinds
+          of request: a weather forecast for the coordinates you type in, and an
+          update check you switch on yourself. Auto Backup is off at the manifest
+          level, so the history stays where it was written; moving it to another
+          phone is the encrypted export you run, under your own passphrase.</p>
         </details>
         <details>
           <summary>How accurate is the estimate?</summary>
@@ -651,8 +652,8 @@ a:focus-visible,
         Need the universal APK? (32-bit phones, emulators)
       </a>
       <p class="note">
-        Nothing is uploaded from this page or from the app: no accounts, no
-        analytics, no cookies. If the download is inconvenient, building from
+        The download comes straight from the releases page, and this page is one
+        file with no tracker in it. If it is inconvenient, building from
         <a href="https://github.com/mahimmazidul/elara-app">source</a> gives the
         same APK.
       </p>
@@ -661,7 +662,8 @@ a:focus-visible,
 
   <footer>
     <p><a href="https://github.com/mahimmazidul/elara-app">Source on GitHub</a></p>
-    <p>Free software under the GNU AGPL-3.0. No trackers, no cookies, no accounts.</p>
+    <p>Free software under the GNU AGPL-3.0. Built by
+    <a href="https://github.com/mahimmazidul">Md. Mazidul Islam Mahim</a>.</p>
   </footer>
 
 </div>

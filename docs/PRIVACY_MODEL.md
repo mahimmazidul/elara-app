@@ -19,10 +19,10 @@ Everything is in one SQLite file in the app's private directory
 | `settings` | Theme, coordinates, notification and privacy switches | Location-adjacent |
 | `climate_cache` | Weather readings for the stored coordinates | Low |
 
-No account, no identifier, no analytics, no crash reporting. The app makes two
-kinds of request: weather (Open-Meteo/OpenAQ, coordinates only) and, if the user
-switches it on, a public GitHub Releases lookup that carries no query and no
-identifying headers.
+The app makes two kinds of request: weather (Open-Meteo/OpenAQ, coordinates only)
+and, if the user switches it on, a public GitHub Releases lookup that carries no
+query and no identifying headers. There is nothing else in the network stack to
+send.
 
 ## 2. Protections that exist
 
