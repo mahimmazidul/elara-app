@@ -31,7 +31,8 @@ class CycleLengthChart extends StatelessWidget {
       return const EmptyState(
         icon: ElaraIcons.trend,
         title: 'Not enough cycles yet',
-        message: 'Two completed cycles are needed before a trend means '
+        message:
+            'Two completed cycles are needed before a trend means '
             'anything.',
       );
     }
@@ -60,8 +61,12 @@ class CycleLengthChart extends StatelessWidget {
           Row(
             children: [
               const Expanded(child: ElaraOverline('Cycle length history')),
-              NumberText('${shown.length}', size: 13,
-                  color: tokens.textSecondaryStrong, suffix: ' cycles'),
+              NumberText(
+                '${shown.length}',
+                size: 13,
+                color: tokens.textSecondaryStrong,
+                suffix: ' cycles',
+              ),
             ],
           ),
           const SizedBox(height: ElaraSpacing.lg),
@@ -78,17 +83,17 @@ class CycleLengthChart extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: 5,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: tokens.divider,
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (_) =>
+                      FlLine(color: tokens.divider, strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -96,8 +101,11 @@ class CycleLengthChart extends StatelessWidget {
                       interval: 5,
                       getTitlesWidget: (value, meta) => Text(
                         value.toInt().toString(),
-                        style: type.number(tokens.textSecondaryStrong,
-                            size: 11, weight: FontWeight.w400),
+                        style: type.number(
+                          tokens.textSecondaryStrong,
+                          size: 11,
+                          weight: FontWeight.w400,
+                        ),
                       ),
                     ),
                   ),
@@ -119,8 +127,11 @@ class CycleLengthChart extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             '${index + 1}',
-                            style: type.number(tokens.textSecondaryStrong,
-                                size: 11, weight: FontWeight.w400),
+                            style: type.number(
+                              tokens.textSecondaryStrong,
+                              size: 11,
+                              weight: FontWeight.w400,
+                            ),
                           ),
                         );
                       },
@@ -137,8 +148,11 @@ class CycleLengthChart extends StatelessWidget {
                       label: HorizontalLineLabel(
                         show: true,
                         alignment: Alignment.topRight,
-                        style: type.number(tokens.textSecondaryStrong,
-                            size: 10, weight: FontWeight.w400),
+                        style: type.number(
+                          tokens.textSecondaryStrong,
+                          size: 10,
+                          weight: FontWeight.w400,
+                        ),
                         labelResolver: (_) => 'avg ${mean.toStringAsFixed(1)}',
                       ),
                     ),
@@ -166,10 +180,10 @@ class CycleLengthChart extends StatelessWidget {
                       show: true,
                       getDotPainter: (spot, percent, bar, index) =>
                           FlDotCirclePainter(
-                        radius: 3.5,
-                        color: tokens.phaseFill('luteal'),
-                        strokeWidth: 0,
-                      ),
+                            radius: 3.5,
+                            color: tokens.phaseFill('luteal'),
+                            strokeWidth: 0,
+                          ),
                     ),
                     belowBarData: BarAreaData(show: false),
                   ),
@@ -232,8 +246,7 @@ class MeanSdChart extends StatelessWidget {
           Row(
             children: [
               const Expanded(child: ElaraOverline('Average length')),
-              NumberText(mean.toStringAsFixed(1), size: 16,
-                  suffix: ' days'),
+              NumberText(mean.toStringAsFixed(1), size: 16, suffix: ' days'),
             ],
           ),
           const SizedBox(height: ElaraSpacing.lg),
@@ -249,19 +262,20 @@ class MeanSdChart extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: 2,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: tokens.divider,
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (_) =>
+                      FlLine(color: tokens.divider, strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -269,8 +283,11 @@ class MeanSdChart extends StatelessWidget {
                       interval: 2,
                       getTitlesWidget: (value, meta) => Text(
                         value.toInt().toString(),
-                        style: type.number(tokens.textSecondaryStrong,
-                            size: 11, weight: FontWeight.w400),
+                        style: type.number(
+                          tokens.textSecondaryStrong,
+                          size: 11,
+                          weight: FontWeight.w400,
+                        ),
                       ),
                     ),
                   ),
@@ -290,10 +307,7 @@ class MeanSdChart extends StatelessWidget {
                   // The bar: a thick vertical segment from the axis floor to the
                   // mean, using the phase-neutral accent.
                   LineChartBarData(
-                    spots: [
-                      FlSpot(0, minY),
-                      FlSpot(0, mean),
-                    ],
+                    spots: [FlSpot(0, minY), FlSpot(0, mean)],
                     isCurved: false,
                     color: tokens.accent,
                     barWidth: 14,
@@ -302,10 +316,7 @@ class MeanSdChart extends StatelessWidget {
                   ),
                   // The whisker: mean - SD up to mean + SD.
                   LineChartBarData(
-                    spots: [
-                      FlSpot(0, low),
-                      FlSpot(0, high),
-                    ],
+                    spots: [FlSpot(0, low), FlSpot(0, high)],
                     isCurved: false,
                     color: tokens.textPrimary,
                     barWidth: 1.5,
@@ -313,10 +324,10 @@ class MeanSdChart extends StatelessWidget {
                       show: true,
                       getDotPainter: (spot, percent, bar, index) =>
                           FlDotCirclePainter(
-                        radius: 2,
-                        color: tokens.textPrimary,
-                        strokeWidth: 0,
-                      ),
+                            radius: 2,
+                            color: tokens.textPrimary,
+                            strokeWidth: 0,
+                          ),
                     ),
                     belowBarData: BarAreaData(show: false),
                   ),
@@ -378,11 +389,7 @@ class MeanSdChart extends StatelessWidget {
 /// screens agree. The 38 °C line marks where elara-core begins to raise the
 /// environmental severity.
 class HeatIndexChart extends StatelessWidget {
-  const HeatIndexChart({
-    super.key,
-    required this.points,
-    required this.bands,
-  });
+  const HeatIndexChart({super.key, required this.points, required this.bands});
 
   /// One entry per day that has a cached reading, oldest first.
   final List<({DateTime date, double heatIndex})> points;
@@ -401,7 +408,8 @@ class HeatIndexChart extends StatelessWidget {
       return const EmptyState(
         icon: ElaraIcons.heat,
         title: 'No climate history yet',
-        message: 'Heat index is recorded as the app is used each day. '
+        message:
+            'Heat index is recorded as the app is used each day. '
             'Come back after a few days.',
       );
     }
@@ -424,99 +432,118 @@ class HeatIndexChart extends StatelessWidget {
           Row(
             children: [
               const Expanded(child: ElaraOverline('Heat index, recent days')),
-              NumberText('${points.length}', size: 13,
-                  color: tokens.textSecondaryStrong, suffix: ' days'),
+              NumberText(
+                '${points.length}',
+                size: 13,
+                color: tokens.textSecondaryStrong,
+                suffix: ' days',
+              ),
             ],
           ),
           const SizedBox(height: ElaraSpacing.lg),
-          SizedBox(
-            height: 190,
-            child: LineChart(
-              LineChartData(
-                minX: 0,
-                maxX: (points.length - 1).toDouble(),
-                minY: minY,
-                maxY: maxY,
-                clipData: const FlClipData.all(),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 5,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color: tokens.divider,
-                    strokeWidth: 1,
+          // The plot is inset by half a slot at each end and clipped by the
+          // card's own rounded corner. Without the inset, day one and the last
+          // day sat exactly on the plot's edge, so the line and the band wash
+          // were drawn half outside the box and the left edge read as a chart
+          // that had escaped its card.
+          ClipRRect(
+            borderRadius: BorderRadius.circular(ElaraRadii.card - 4),
+            child: SizedBox(
+              height: 190,
+              child: LineChart(
+                LineChartData(
+                  minX: -0.5,
+                  maxX: points.length - 0.5,
+                  minY: minY,
+                  maxY: maxY,
+                  clipData: const FlClipData.all(),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 5,
+                    getDrawingHorizontalLine: (_) =>
+                        FlLine(color: tokens.divider, strokeWidth: 1),
                   ),
-                ),
-                borderData: FlBorderData(show: false),
-                rangeAnnotations: RangeAnnotations(
-                  verticalRangeAnnotations: [
-                    for (final band in bands)
-                      VerticalRangeAnnotation(
-                        x1: band.startIndex.toDouble() - 0.5,
-                        x2: band.endIndex.toDouble() + 0.5,
-                        color: tokens.phaseWash(band.phaseKey, opacity: 0.20),
-                      ),
-                  ],
-                ),
-                titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: 5,
-                      getTitlesWidget: (value, meta) => Text(
-                        value.toInt().toString(),
-                        style: type.number(tokens.textSecondaryStrong,
-                            size: 11, weight: FontWeight.w400),
-                      ),
-                    ),
-                  ),
-                ),
-                extraLinesData: ExtraLinesData(
-                  horizontalLines: [
-                    HorizontalLine(
-                      y: alertThreshold,
-                      color: tokens.warning,
-                      strokeWidth: 1,
-                      dashArray: const [4, 4],
-                      label: HorizontalLineLabel(
-                        show: true,
-                        alignment: Alignment.topLeft,
-                        style: type.number(tokens.warningText,
-                            size: 10, weight: FontWeight.w400),
-                        labelResolver: (_) => '38°C',
-                      ),
-                    ),
-                  ],
-                ),
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => tokens.textPrimary,
-                    getTooltipItems: (spots) => [
-                      for (final spot in spots)
-                        LineTooltipItem(
-                          '${spot.y.toStringAsFixed(1)}°C',
-                          type.number(tokens.bgCard, size: 12),
+                  borderData: FlBorderData(show: false),
+                  rangeAnnotations: RangeAnnotations(
+                    verticalRangeAnnotations: [
+                      for (final band in bands)
+                        VerticalRangeAnnotation(
+                          x1: band.startIndex.toDouble() - 0.5,
+                          x2: band.endIndex.toDouble() + 0.5,
+                          color: tokens.phaseWash(band.phaseKey, opacity: 0.20),
                         ),
                     ],
                   ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: false,
-                    color: tokens.phaseFill('ovulatory'),
-                    barWidth: 2,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(show: false),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: 5,
+                        getTitlesWidget: (value, meta) => Text(
+                          value.toInt().toString(),
+                          style: type.number(
+                            tokens.textSecondaryStrong,
+                            size: 11,
+                            weight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ],
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(
+                        y: alertThreshold,
+                        color: tokens.warning,
+                        strokeWidth: 1,
+                        dashArray: const [4, 4],
+                        label: HorizontalLineLabel(
+                          show: true,
+                          alignment: Alignment.topLeft,
+                          style: type.number(
+                            tokens.warningText,
+                            size: 10,
+                            weight: FontWeight.w400,
+                          ),
+                          labelResolver: (_) => '38°C',
+                        ),
+                      ),
+                    ],
+                  ),
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => tokens.textPrimary,
+                      getTooltipItems: (spots) => [
+                        for (final spot in spots)
+                          LineTooltipItem(
+                            '${spot.y.toStringAsFixed(1)}°C',
+                            type.number(tokens.bgCard, size: 12),
+                          ),
+                      ],
+                    ),
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: false,
+                      color: tokens.phaseFill('ovulatory'),
+                      barWidth: 2,
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

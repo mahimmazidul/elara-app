@@ -65,10 +65,11 @@ class PreferencesScreen extends StatelessWidget {
             children: [
               Text(
                 'She fills this in herself, and only if she wants to. Each '
-                'answer can be kept private: unshared answers stay out of the '
-                'suggestions. Everything is stored on this phone, so whoever '
-                'holds it can open this screen — Elara cannot hide it from '
-                'them.',
+                'answer can be kept private, and unshared answers stay out of '
+                'the suggestions. Everything is stored on this phone, so '
+                'whoever holds the phone can open this screen. Elara keeps it '
+                'out of sight and says so here rather than pretending '
+                'otherwise.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
               const SizedBox(height: ElaraSpacing.md),
@@ -111,8 +112,9 @@ class PreferencesScreen extends StatelessWidget {
               if (prefs.observations.isEmpty)
                 _Empty(
                   message:
-                      'Nothing recorded yet. Foods, comforts, gestures, '
-                      'things to avoid — anything you have noticed.',
+                      'Nothing recorded yet. Foods she likes, comforts that '
+                      'help, small gestures, things to avoid. Anything you '
+                      'have noticed.',
                 )
               else
                 for (final preference in prefs.observations) ...[

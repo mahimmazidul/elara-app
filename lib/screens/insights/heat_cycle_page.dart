@@ -92,11 +92,11 @@ class _HeatCyclePageState extends State<HeatCyclePage> {
                 ),
                 const SizedBox(height: ElaraSpacing.xs),
                 Text(
-                  'The line is the heat index — temperature and humidity '
-                  'together, which is what the body actually deals with. In '
-                  'Dhaka it runs far above the air temperature for much of the '
-                  'year, and a hot, humid week reduces how well anyone '
-                  'tolerates exertion, cramps included.',
+                  'The line is the heat index, which combines temperature '
+                  'with humidity to describe what the body actually deals '
+                  'with. For much of the year it runs far above the air '
+                  'temperature in Dhaka. A hot, humid week makes exertion '
+                  'harder for anybody, and cramps are exertion too.',
                   style: type.body(tokens.textSecondaryStrong),
                 ),
                 if (points.isEmpty) ...[

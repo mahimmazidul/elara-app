@@ -38,15 +38,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   void _shiftMonth(int delta) {
     setState(() {
-      _visibleMonth =
-          DateTime(_visibleMonth.year, _visibleMonth.month + delta);
+      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + delta);
     });
   }
 
+  /// Records a period start, on the day it happened rather than the day you
+  /// remembered.
+  ///
+  /// This used to write today's date and nothing else, so a start that began
+  /// three days ago could not be entered at all. The alternative was to log it
+  /// today and be wrong by three days, and every estimate afterwards would
+  /// carry that error. A picker with today already selected costs one tap in
+  /// the common case and fixes the case that matters.
   Future<void> _logPeriodStart() async {
     final cycles = context.read<CycleProvider>();
     final today = dateOnly(DateTime.now());
-    final stored = await cycles.addCycle(startDate: today);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: DateTime(today.year - 2, today.month, today.day),
+      lastDate: today,
+      helpText: 'Which day did it start?',
+    );
+    if (picked == null || !mounted) return;
+
+    final start = dateOnly(picked);
+    final stored = await cycles.addCycle(startDate: start);
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -54,7 +71,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         content: Text(
           stored == null
               ? (cycles.lastError ?? 'Could not log the period start.')
-              : 'Logged ${_formatShortDate(today)} as a period start.',
+              : 'Logged ${_formatShortDate(start)} as a period start.',
         ),
       ),
     );
@@ -88,21 +105,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    final cells = timeline?.monthGrid(_visibleMonth) ??
-        _unphasedGrid(_visibleMonth);
+    final cells =
+        timeline?.monthGrid(_visibleMonth) ?? _unphasedGrid(_visibleMonth);
 
     return Column(
       children: [
         Padding(
-          padding: ElaraSpacing.pageInsets(context).copyWith(bottom: ElaraSpacing.sm),
+          padding: ElaraSpacing.pageInsets(
+            context,
+          ).copyWith(bottom: ElaraSpacing.sm),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Calendar',
-                        style: type.headline(tokens.textPrimary, size: 28)),
+                    Text(
+                      'Calendar',
+                      style: type.headline(tokens.textPrimary, size: 28),
+                    ),
                     const SizedBox(height: ElaraSpacing.xxs),
                     Text(
                       timeline == null
@@ -132,8 +153,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         // Month navigation.
         Padding(
-          padding: ElaraSpacing.pageInsets(context)
-              .copyWith(top: 0, bottom: 0),
+          padding: ElaraSpacing.pageInsets(context).copyWith(top: 0, bottom: 0),
           child: Row(
             children: [
               IconButton(
@@ -197,13 +217,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
     for (var d = 1; d <= daysInMonth; d++) {
       final date = DateTime(month.year, month.month, d);
-      cells.add(PhaseDay(
-        date: date,
-        phase: core.CyclePhase.unknown,
-        cycleDay: 0,
-        cycleIndex: 0,
-        isRecorded: true,
-      ));
+      cells.add(
+        PhaseDay(
+          date: date,
+          phase: core.CyclePhase.unknown,
+          cycleDay: 0,
+          cycleIndex: 0,
+          isRecorded: true,
+        ),
+      );
     }
     while (cells.length % 7 != 0) {
       cells.add(null);
@@ -349,9 +371,7 @@ class _DayCell extends StatelessWidget {
                 child: Text(
                   '${day.date.day}',
                   style: type.number(
-                    hasPhase
-                        ? tokens.phaseText(phaseKey)
-                        : tokens.textPrimary,
+                    hasPhase ? tokens.phaseText(phaseKey) : tokens.textPrimary,
                     size: 14,
                     weight: FontWeight.w500,
                   ),
@@ -452,8 +472,18 @@ class _Legend extends StatelessWidget {
 }
 
 const List<String> _monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 String _formatMonthYear(DateTime month) =>

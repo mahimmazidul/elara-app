@@ -142,7 +142,10 @@ void main() {
     final source = File(
       'lib/screens/today/quiet_today.dart',
     ).readAsStringSync();
-    expect(source, contains('not from a predicted phase'));
+    expect(
+      source,
+      contains('Where a phase would normally decide what to'),
+    );
   });
 
   /// Copy that advertises the absence of things the app never had.
@@ -194,6 +197,34 @@ void main() {
       isEmpty,
       reason:
           'State where the data lives; do not list what is missing:\n'
+          '${violations.join('\n')}',
+    );
+  });
+
+  test('screen copy does not lean on the em dash', () {
+    // An em dash used as a hinge is the tell of a sentence written to sound
+    // considered rather than to be read: "the line is the heat index — a
+    // combination of temperature and humidity — and…". Every one of those can
+    // be two sentences, and two sentences are what a person would say out
+    // loud. The rule is enforced in lib/screens, where the app talks to the
+    // reader; citations in the health data keep theirs, because "NHS — Period
+    // pain" is a title, not a sentence.
+    final violations = <String>[];
+    for (final entity in Directory('lib/screens').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final lines = entity.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        if (line.trimLeft().startsWith('//')) continue;
+        if (line.contains('\u2014') || line.contains('—')) {
+          violations.add('${entity.path}:${i + 1}: ${line.trim()}');
+        }
+      }
+    }
+    expect(
+      violations,
+      isEmpty,
+      reason: 'Split the sentence instead of hinging it on a dash:\n'
           '${violations.join('\n')}',
     );
   });

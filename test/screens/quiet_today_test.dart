@@ -166,7 +166,7 @@ void main() {
     // The section survives; it is the *claims* that are gone, not the help.
     expect(find.text('Ways to help today'), findsOneWidget);
     // And it is explicit that the guidance is not phase-derived.
-    expect(find.textContaining('not from a predicted phase'), findsOneWidget);
+    expect(find.textContaining('Where a phase would normally decide'), findsOneWidget);
   });
 
   testWidgets('lays out at 320dp and 2.0x text scale', (tester) async {

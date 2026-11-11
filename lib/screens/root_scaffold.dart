@@ -47,7 +47,6 @@ class RootScaffold extends StatefulWidget {
 class _RootScaffoldState extends State<RootScaffold>
     with TickerProviderStateMixin {
   int _index = 0;
-  int _previousIndex = 0;
 
   /// Direction of the last tab change: +1 for right, -1 for left, 0 on first
   /// paint. Drives both the indicator fill stretch and the screen-slide
@@ -170,7 +169,6 @@ class _RootScaffoldState extends State<RootScaffold>
     if (value == _index) return;
 
     setState(() {
-      _previousIndex = _index;
       _direction = value > _index ? 1 : -1;
       _index = value;
     });
@@ -262,13 +260,7 @@ class _RootScaffoldState extends State<RootScaffold>
       ),
       bottomNavigationBar: isWide
           ? null
-          : _Bar(
-              index: _index,
-              previousIndex: _previousIndex,
-              controller: _navController,
-              direction: _direction,
-              onSelected: _selectTab,
-            ),
+          : _Bar(index: _index, onSelected: _selectTab),
     );
   }
 }
@@ -363,25 +355,15 @@ class _ScreenSlide extends StatelessWidget {
 /// direction of travel so the movement reads as a glide. Each icon scales
 /// briefly on press (tactile feedback, skipped under reduced motion).
 class _Bar extends StatelessWidget {
-  const _Bar({
-    required this.index,
-    required this.previousIndex,
-    required this.controller,
-    required this.direction,
-    required this.onSelected,
-  });
+  const _Bar({required this.index, required this.onSelected});
 
   final int index;
-  final int previousIndex;
-  final AnimationController controller;
-  final int direction;
   final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final width = MediaQuery.sizeOf(context).width;
     final tabCount = _RootScaffoldState._destinations.length;
 
     // The bar paints to the bottom of the display, not just to the top of the
@@ -421,24 +403,20 @@ class _Bar extends StatelessWidget {
                   ),
               ],
             ),
-
-            // Traveling fill beneath the NavigationBar: glides from the
-            // previous tab's position to the new one, stretching toward the
-            // direction of travel.
-            _TravelingFill(
-              index: index,
-              previousIndex: previousIndex,
-              controller: controller,
-              width: width,
-              tabCount: tabCount,
-              direction: direction,
-              tokens: tokens,
-            ),
           ],
         ),
       ),
     );
   }
+
+  /// The tab index a phase colour belongs to.
+  ///
+  /// This used to be a fixed rhyme: Today was honey, Calendar was sage, and so
+  /// on, whatever the app was actually showing. On a luteal day that put a
+  /// honey pill under "Today" while the hero panel above it was violet, which
+  /// is exactly the kind of contradiction a reader cannot name but always
+  /// notices. The bar now takes its colour from the theme, so the accent under
+  /// the selected tab is the phase the whole screen is dressed in.
 
   static TextStyle? _labelStyle(ElaraTokens tokens, Set<WidgetState> states) {
     final selected = states.contains(WidgetState.selected);
@@ -447,7 +425,7 @@ class _Bar extends StatelessWidget {
       fontWeight: FontWeight.w400,
       fontSize: 12,
       height: 1.3,
-      color: selected ? tokens.accentText : tokens.textSecondaryStrong,
+      color: selected ? tokens.textPrimary : tokens.textSecondaryStrong,
     );
   }
 }
@@ -480,10 +458,15 @@ class _NavIconState extends State<_NavIcon> {
   @override
   Widget build(BuildContext context) {
     final reduced = ElaraMotion.reduceMotion(context);
-    final colour = widget.isSelected
-        ? widget.tokens.accentText
+    final selected = widget.isSelected;
+    // The selected destination wears a filled tile behind its icon, the way a
+    // system mail app does, because a tinted glyph alone is easy to miss on a
+    // page that is nearly the same colour as the bar. The fill is a wash of the
+    // theme accent, which is the day's phase, so the bar and the panel agree.
+    final colour = selected
+        ? widget.tokens.textPrimary
         : widget.tokens.textSecondaryStrong;
-    final iconData = widget.isSelected
+    final iconData = selected
         ? _RootScaffoldState._destinations[widget.i].selected
         : _RootScaffoldState._destinations[widget.i].icon;
 
@@ -492,84 +475,24 @@ class _NavIconState extends State<_NavIcon> {
       onTapUp: reduced ? null : (_) => _set(false),
       onTapCancel: reduced ? null : () => _set(false),
       child: AnimatedScale(
-        scale: reduced ? 1.0 : (_down || widget.isSelected ? 0.94 : 1.0),
+        scale: reduced ? 1.0 : (_down || selected ? 0.94 : 1.0),
         duration: ElaraMotion.press,
         curve: ElaraMotion.curve,
-        child: Icon(iconData, size: 22, color: colour),
+        child: AnimatedContainer(
+          duration: ElaraMotion.medium,
+          curve: ElaraMotion.curve,
+          width: 52,
+          height: 30,
+          decoration: BoxDecoration(
+            color: selected
+                ? widget.tokens.accent.withValues(alpha: 0.22)
+                : widget.tokens.transparent,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Icon(iconData, size: 22, color: colour),
+        ),
       ),
     );
-  }
-}
-
-/// The traveling fill: a rounded rect beneath the selected tab.
-///
-/// Its left edge glides from the previous tab's position to the current one.
-/// While animating, it stretches toward the direction of travel so the fill
-/// reads as gliding forward or back rather than teleporting.
-///
-/// Rebuilds on every tick of [controller] so the position and width animate
-/// smoothly rather than snapping between frames.
-class _TravelingFill extends StatelessWidget {
-  const _TravelingFill({
-    required this.index,
-    required this.previousIndex,
-    required this.controller,
-    required this.width,
-    required this.tabCount,
-    required this.direction,
-    required this.tokens,
-  });
-
-  final int index;
-  final int previousIndex;
-  final AnimationController controller;
-  final double width;
-  final int tabCount;
-  final int direction;
-  final ElaraTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    final phaseKey = _phaseKeyForTab(index);
-    final fill = tokens.phaseFill(phaseKey);
-
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        final t = CurvedAnimation(
-          parent: controller,
-          curve: ElaraMotion.curve,
-        ).value;
-
-        final geometry = NavFillGeometry.resolve(
-          index: index,
-          previousIndex: previousIndex,
-          tabCount: tabCount,
-          pageWidth: width,
-          t: t,
-        );
-
-        return Positioned(
-          left: geometry.left,
-          bottom: 4,
-          child: AnimatedContainer(
-            duration: ElaraMotion.medium,
-            curve: ElaraMotion.curve,
-            width: geometry.width,
-            height: 6,
-            decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  String _phaseKeyForTab(int i) {
-    const keys = ['ovulatory', 'follicular', 'luteal', 'menstrual'];
-    return keys[i % keys.length];
   }
 }
 

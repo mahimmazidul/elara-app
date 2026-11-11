@@ -51,6 +51,11 @@ class ElaraPalette {
     required this.track,
     required this.unknownPhase,
     required this.unknownPhaseText,
+    required this.heroMenstrual,
+    required this.heroFollicular,
+    required this.heroOvulatory,
+    required this.heroLuteal,
+    required this.onHero,
   });
 
   /// Page background.
@@ -110,6 +115,22 @@ class ElaraPalette {
   final Color unknownPhase;
   final Color unknownPhaseText;
 
+  // The hero fills: one saturated panel per phase, deep enough for cream ink.
+  //
+  // The four decorative fills above sit between 2.0:1 and 3.1:1 against the
+  // page. That is right for a 6 px ring, a dot and a 20% wash, and wrong for
+  // anything large: a 340 x 300 panel of #7FA894 is the colour of a hospital
+  // corridor, and the eye reads the whole screen as washed out. These are the
+  // same four dyes taken down to a value where they read as a colour rather
+  // than as a tint, each measured to clear 5.0:1 with cream ink on top.
+  final Color heroMenstrual;
+  final Color heroFollicular;
+  final Color heroOvulatory;
+  final Color heroLuteal;
+
+  /// Ink drawn on a hero fill. Only ever used with the four fills above.
+  final Color onHero;
+
   /// The light theme: warm paper, plum-black ink, honey where there is an
   /// accent.
   ///
@@ -159,6 +180,11 @@ class ElaraPalette {
     track: Color(0xFFEFE7DE),
     unknownPhase: Color(0xFF8C857F),
     unknownPhaseText: Color(0xFF5B544F),
+    heroMenstrual: Color(0xFFA63E52),
+    heroFollicular: Color(0xFF2E6F58),
+    heroOvulatory: Color(0xFF8F5A0E),
+    heroLuteal: Color(0xFF56447F),
+    onHero: Color(0xFFFFFBF4),
   );
 
   /// The dark theme: warm near-black, the same four dyes, brighter ink.
@@ -197,6 +223,16 @@ class ElaraPalette {
     track: Color(0xFF2A2320),
     unknownPhase: Color(0xFF8C857F),
     unknownPhaseText: Color(0xFFB3AAA3),
+    // The same four values as the light theme. Deepening them further, which
+    // was the first instinct for a dark page, took the honey down to an olive
+    // brown and the plum down to grey: at that lightness the hue stops reading
+    // and the panel looks like a rendering fault rather than a colour. The
+    // panel is the one lit object on a dark screen, and it should look lit.
+    heroMenstrual: Color(0xFFA63E52),
+    heroFollicular: Color(0xFF2E6F58),
+    heroOvulatory: Color(0xFF9A5F0C),
+    heroLuteal: Color(0xFF56447F),
+    onHero: Color(0xFFFFFBF4),
   );
 
   /// Returns a copy with the named values replaced.
@@ -244,6 +280,11 @@ class ElaraPalette {
       track: track,
       unknownPhase: unknownPhase,
       unknownPhaseText: unknownPhaseText,
+      heroMenstrual: heroMenstrual,
+      heroFollicular: heroFollicular,
+      heroOvulatory: heroOvulatory,
+      heroLuteal: heroLuteal,
+      onHero: onHero,
     );
   }
 }
@@ -337,6 +378,11 @@ class ElaraRadii {
   /// Glass panels. Generous enough that the sheen curves visibly rather than
   /// reading as a chamfer.
   static const double glass = 22;
+
+  /// The one saturated panel per screen. Larger than a card on purpose: a hero
+  /// that is nearly a card reads as a mistake, and a hero that is clearly a
+  /// different kind of object reads as deliberate.
+  static const double hero = 28;
 }
 
 /// The only shadow in the app: 0 1px 3px rgba(0,0,0,0.08).
@@ -663,6 +709,29 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
   Color phaseWash(String phaseKey, {double opacity = 0.22}) =>
       phaseFill(phaseKey).withValues(alpha: opacity);
 
+  /// The saturated fill for the one hero surface on a screen.
+  ///
+  /// Separate from [phaseFill] on purpose: this one carries a whole panel and
+  /// has to hold cream ink, so it is a deeper value, and an unclassified day
+  /// keeps the ordinary ink surface rather than inventing a colour for itself.
+  Color heroFill(String phaseKey) {
+    switch (phaseKey) {
+      case 'menstrual':
+        return palette.heroMenstrual;
+      case 'follicular':
+        return palette.heroFollicular;
+      case 'ovulatory':
+        return palette.heroOvulatory;
+      case 'luteal':
+        return palette.heroLuteal;
+      default:
+        return palette.textPrimary;
+    }
+  }
+
+  /// Ink for text on [heroFill].
+  Color get onHero => palette.onHero;
+
   @override
   ElaraTokens copyWith({
     ElaraPalette? palette,
@@ -714,6 +783,11 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
         track: mix(a.track, b.track),
         unknownPhase: mix(a.unknownPhase, b.unknownPhase),
         unknownPhaseText: mix(a.unknownPhaseText, b.unknownPhaseText),
+        heroMenstrual: mix(a.heroMenstrual, b.heroMenstrual),
+        heroFollicular: mix(a.heroFollicular, b.heroFollicular),
+        heroOvulatory: mix(a.heroOvulatory, b.heroOvulatory),
+        heroLuteal: mix(a.heroLuteal, b.heroLuteal),
+        onHero: mix(a.onHero, b.onHero),
       ),
     );
   }

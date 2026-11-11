@@ -29,6 +29,7 @@ import 'package:elara_app/providers/reminders_provider.dart';
 import 'package:elara_app/providers/update_provider.dart';
 import 'package:elara_app/providers/symptoms_provider.dart';
 import 'package:elara_app/screens/root_scaffold.dart';
+import 'package:elara_app/utils/phase_timeline.dart';
 import 'package:elara_app/services/backup_service.dart';
 import 'package:elara_app/services/climate_service.dart';
 import 'package:elara_app/services/notification_service.dart';
@@ -397,10 +398,23 @@ void main() {
         ],
         child: RepaintBoundary(
           key: _frameKey,
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: dark ? ElaraTheme.dark() : ElaraTheme.light(),
-            home: const RootScaffold(),
+          // The theme follows the phase, exactly as main.dart builds it. A
+          // capture that used the neutral theme drew a honey accent under a
+          // rose hero panel, and the screenshots on the website then showed a
+          // contradiction the app itself does not have.
+          child: Builder(
+            builder: (context) {
+              final phaseKey = phaseKeyOfResult(
+                context.watch<PredictionProvider>().result,
+              );
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: dark
+                    ? ElaraTheme.dark(phaseKey: phaseKey)
+                    : ElaraTheme.light(phaseKey: phaseKey),
+                home: const RootScaffold(),
+              );
+            },
           ),
         ),
       ),

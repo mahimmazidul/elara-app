@@ -55,7 +55,7 @@ void main() {
     expect(find.text('What you have noticed'), findsOneWidget);
     // The honest statement about same-device storage: the holder can read it.
     expect(
-      find.textContaining('whoever holds it can open this screen'),
+      find.textContaining('whoever holds the phone can open this screen'),
       findsOneWidget,
     );
   });

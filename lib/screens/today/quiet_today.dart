@@ -75,7 +75,8 @@ class QuietToday extends StatelessWidget {
               // moment this screen implies "because it is her luteal phase",
               // it is claiming a cycle it has just said it cannot see.
               'These come from what she has told you, what she has reported, '
-              'and the weather — not from a predicted phase.',
+              'and the weather. Where a phase would normally decide what to '
+              'say, the app skips that part here.',
               style: type.caption(tokens.textSecondaryStrong),
             ),
           ],
@@ -127,8 +128,11 @@ class _ModePanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(ElaraIcons.info,
-                  size: 18, color: tokens.textSecondaryStrong),
+              Icon(
+                ElaraIcons.info,
+                size: 18,
+                color: tokens.textSecondaryStrong,
+              ),
               const SizedBox(width: ElaraSpacing.sm),
               Expanded(
                 child: Text(
@@ -202,11 +206,11 @@ class _ModePanel extends StatelessWidget {
         title: 'Not predicting while you are on hormonal contraception',
         paragraphs: const [
           'Pills, implants, injections and most hormonal IUDs stop ovulation. '
-          'The bleeding they cause is not the end of a cycle, so a date worked '
-          'out from those days would be a guess about something that is not '
-          'happening.',
+              'The bleeding they cause is not the end of a cycle, so a date worked '
+              'out from those days would be a guess about something that is not '
+              'happening.',
           'Everything else still works. Log the days she bleeds, log how she '
-          'feels, keep your notes, keep the reminders.',
+              'feels, keep your notes, keep the reminders.',
         ],
       );
 
@@ -217,9 +221,9 @@ class _ModePanel extends StatelessWidget {
             title: 'Prediction paused',
             paragraphs: const [
               'A pregnancy is not a cycle, and counting days through one would '
-              'be nonsense dressed as arithmetic.',
+                  'be nonsense dressed as arithmetic.',
               'Her history is still here. Anything you log now is kept, and '
-              'prediction can start again whenever it is useful.',
+                  'prediction can start again whenever it is useful.',
             ],
           );
         case PauseReason.loss:
@@ -227,21 +231,21 @@ class _ModePanel extends StatelessWidget {
             title: 'Prediction paused',
             paragraphs: const [
               'Nothing here is counting days. Bleeding after a loss does not '
-              'follow the pattern of a cycle, and a countdown would be both '
-              'wrong and unkind.',
+                  'follow the pattern of a cycle, and a countdown would be both '
+                  'wrong and unkind.',
               'The first period after a loss can take weeks to arrive. That is '
-              'not a late period, so Elara will not call it one.',
+                  'not a late period, so Elara will not call it one.',
             ],
           );
         case PauseReason.postpartum:
           return (
             title: 'Prediction paused',
             paragraphs: const [
-              'After a birth, cycles take time to return — often months, and '
-              'later still while breastfeeding. There is no schedule to '
-              'estimate from until one exists again.',
+              'After a birth, cycles take time to return. Often months, and '
+                  'later still while breastfeeding. There is no schedule to '
+                  'estimate from until one exists again.',
               'Her history is kept. Log bleeding whenever it comes back, and '
-              'turn prediction on when it does.',
+                  'turn prediction on when it does.',
             ],
           );
         case PauseReason.other:
@@ -250,7 +254,7 @@ class _ModePanel extends StatelessWidget {
             title: 'Prediction paused',
             paragraphs: const [
               'Elara is not estimating a next period. You chose this, and it '
-              'can be undone at any time.',
+                  'can be undone at any time.',
               'Her history is kept, and logging still works.',
             ],
           );
@@ -259,8 +263,18 @@ class _ModePanel extends StatelessWidget {
 }
 
 const List<String> _months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 String _formatLongDate(DateTime date) =>

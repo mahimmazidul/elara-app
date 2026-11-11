@@ -47,9 +47,10 @@ class CalendarsPage extends StatelessWidget {
                 icon: ElaraIcons.moon,
                 label: 'Moon',
                 body:
-                    'The astronomical phase, from an ephemeris calculation — '
-                    'not the sighting-based lunar month. The fraction shown is '
-                    'the illuminated portion.',
+                    'The astronomical phase, worked out from an ephemeris. '
+                    'This is the geometric moon, while the lunar month in '
+                    'Bangladesh begins at sighting, so the two can be a day '
+                    'apart. The fraction shown is the illuminated portion.',
               ),
               const SizedBox(height: ElaraSpacing.md),
               const _Entry(

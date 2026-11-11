@@ -220,43 +220,70 @@ class _TodayContent extends StatelessWidget {
           ),
         ),
 
-        // ---- hero: the cycle dial, focal element of the screen.
+        // ---- hero: one saturated panel, holding the whole answer.
         //
-        // Where today sits in the cycle, as a ring: the sweep is the cycle, the
-        // gap is what is left of it, the dot is today, and the moon inside it
-        // is the cycle's moon rather than the sky's. With no phase the ring is
-        // neutral and has no sweep at all, rather than sitting at 0%.
-        const SizedBox(height: ElaraSpacing.xl),
-        Center(
-          child: PhaseDial(
-            label: phaseLabel,
-            phaseKey: phaseKey,
-            cycleDay: result.phase?.cycleDay,
-            cycleLength: result.cycleLength,
-            fill: tokens.phaseFill(phaseKey),
-          ),
-        ),
-
-        // The chip that used to sit here repeated the dial's own label one line
-        // above it. The thing worth keeping from it was not the phase name but
-        // the word "estimate", so that is what stays — once, under the dial.
-        const SizedBox(height: ElaraSpacing.sm),
-        Text(
-          'Estimated phase, from recorded history',
-          textAlign: TextAlign.center,
-          style: type.caption(tokens.textSecondaryStrong, size: 12),
-        ),
-
-        // ---- compact countdown: two facts on one line, no box around them
-        const SizedBox(height: ElaraSpacing.xl),
-        _Countdown(
-          daysUntil: daysUntil,
-          isLate: isLate,
-          nextPeriodDate: result.nextPeriodDate,
-          windowDays: result.windowDays,
+        // Everything above this line is the same paper colour, and everything
+        // below it is too, which is the right system for reading and the wrong
+        // one for finding. With nothing saturated anywhere the eye has no
+        // anchor and the screen reads as a form rather than as a page with a
+        // subject. This panel is the anchor: filled with the phase's deep
+        // colour, carrying cream ink, holding the three things the screen is
+        // about, which are where today sits in the cycle, when the next period
+        // is expected, and how sure that is.
+        //
+        // The fill is a value down from the decorative phase colour. At the
+        // decorative tone (#7FA894 and friends) a block this size reads as a
+        // wash instead of a colour, and white text on it goes grey.
+        const SizedBox(height: ElaraSpacing.lg),
+        ElaraHeroCard(
           phaseKey: phaseKey,
-          unavailableReason: result.unavailableReason,
-          historyNotes: historyNotes,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ElaraOverline(
+                'Estimated phase',
+                color: tokens.onHero.withValues(alpha: 0.72),
+              ),
+              const SizedBox(height: ElaraSpacing.xxs),
+              Text(
+                'From the dates you have recorded',
+                style: type.caption(
+                  tokens.onHero.withValues(alpha: 0.72),
+                  size: 12,
+                ),
+              ),
+              const SizedBox(height: ElaraSpacing.md),
+              // Where today sits in the cycle, as a ring of one tick per day:
+              // the elapsed ticks carry the ink, the dot is today, and the moon
+              // inside is the cycle's moon rather than the sky's.
+              Center(
+                child: PhaseDial(
+                  label: phaseLabel,
+                  phaseKey: phaseKey,
+                  cycleDay: result.phase?.cycleDay,
+                  cycleLength: result.cycleLength,
+                  fill: tokens.phaseFill(phaseKey),
+                  onHero: true,
+                ),
+              ),
+              const SizedBox(height: ElaraSpacing.lg),
+              Container(
+                height: 1,
+                color: tokens.onHero.withValues(alpha: 0.18),
+              ),
+              const SizedBox(height: ElaraSpacing.lg),
+              _Countdown(
+                daysUntil: daysUntil,
+                isLate: isLate,
+                nextPeriodDate: result.nextPeriodDate,
+                windowDays: result.windowDays,
+                phaseKey: phaseKey,
+                unavailableReason: result.unavailableReason,
+                historyNotes: historyNotes,
+                onHero: true,
+              ),
+            ],
+          ),
         ),
 
         // ---- care: the point of the screen, given the most room.
@@ -346,6 +373,7 @@ class _Countdown extends StatelessWidget {
     required this.phaseKey,
     required this.unavailableReason,
     this.historyNotes = const [],
+    this.onHero = false,
   });
 
   final int daysUntil;
@@ -356,14 +384,22 @@ class _Countdown extends StatelessWidget {
   final String? unavailableReason;
   final List<HistoryNote> historyNotes;
 
+  /// Whether the countdown is drawn inside the hero panel.
+  final bool onHero;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final type = context.type;
 
-    final numberColour = isLate
-        ? tokens.warningText
-        : tokens.phaseText(phaseKey);
+    // On the panel the ink is the panel's ink: the phase's own text colour is
+    // tuned for a paper background and would either vanish or clash here.
+    final muted = onHero
+        ? tokens.onHero.withValues(alpha: 0.78)
+        : tokens.textSecondaryStrong;
+    final numberColour = onHero
+        ? tokens.onHero
+        : (isLate ? tokens.warningText : tokens.phaseText(phaseKey));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,6 +411,7 @@ class _Countdown extends StatelessWidget {
           children: [
             ElaraOverline(
               isLate ? 'Estimated start has passed' : 'Next period in',
+              color: muted,
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -397,7 +434,7 @@ class _Countdown extends StatelessWidget {
                   isLate
                       ? (daysUntil.abs() == 1 ? 'day late' : 'days late')
                       : (daysUntil == 1 ? 'day' : 'days'),
-                  style: type.label(tokens.textSecondaryStrong, size: 13),
+                  style: type.label(muted, size: 13),
                 ),
               ],
             ),
@@ -407,23 +444,26 @@ class _Countdown extends StatelessWidget {
         Text(
           'Estimated ${_formatShortDate(nextPeriodDate)} '
           '\u00b1 $windowDays ${windowDays == 1 ? 'day' : 'days'}',
-          style: type.caption(tokens.textSecondaryStrong),
+          style: type.caption(muted),
         ),
         if (unavailableReason != null) ...[
           const SizedBox(height: ElaraSpacing.xxs),
-          Text(
-            unavailableReason!,
-            style: type.caption(tokens.textSecondaryStrong),
-          ),
+          Text(unavailableReason!, style: type.caption(muted)),
         ],
         // Notes about the history behind the date, set apart with a hairline so
         // they read as a remark about the estimate rather than as part of it.
         if (historyNotes.isNotEmpty) ...[
           const SizedBox(height: ElaraSpacing.sm),
-          Container(height: 1, width: 40, color: tokens.divider),
+          Container(
+            height: 1,
+            width: 40,
+            color: onHero
+                ? tokens.onHero.withValues(alpha: 0.18)
+                : tokens.divider,
+          ),
           const SizedBox(height: ElaraSpacing.sm),
           for (final note in historyNotes) ...[
-            Text(note.message, style: type.caption(tokens.textSecondaryStrong)),
+            Text(note.message, style: type.caption(muted)),
             const SizedBox(height: ElaraSpacing.xs),
           ],
         ],

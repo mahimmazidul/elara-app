@@ -35,6 +35,7 @@ class PhaseDial extends StatelessWidget {
     this.cycleLength,
     this.phaseKey = 'unknown',
     this.diameter = 168,
+    this.onHero = false,
   });
 
   /// The phase name, as it should be read out: "Ovulatory", "Unclassified".
@@ -51,6 +52,16 @@ class PhaseDial extends StatelessWidget {
 
   /// A stable key for the phase, used to pick the moon and to settle the label.
   final String phaseKey;
+
+  /// Whether the dial is drawn on a saturated hero panel.
+  ///
+  /// On the panel the geometry stays the same and only the paint changes: the
+  /// track becomes the panel's own ink at low alpha and the sweep becomes solid
+  /// ink, because a dust-coloured arc on a deep panel disappears entirely and a
+  /// panel-tinted arc on the same panel is invisible. Nothing about the meaning
+  /// changes, which is the test for whether a colour is doing work: the ring is
+  /// still the cycle, the gap still the part of it that has not happened yet.
+  final bool onHero;
 
   /// The outer size at 1.0x text scale. The dial grows with the text setting up
   /// to the width of the page, so a large label is never clipped.
@@ -77,16 +88,28 @@ class PhaseDial extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _build(context, constraints),
+  );
+
+  Widget _build(BuildContext context, BoxConstraints constraints) {
     final tokens = context.elara;
     final type = context.type;
 
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final maxDiameter = MediaQuery.sizeOf(context).width - ElaraSpacing.lg * 2;
-    final size = (diameter * textScale.clamp(1.0, 1.6)).clamp(
-      diameter,
-      maxDiameter,
-    );
+
+    // The dial measures itself against the space it was given, not against the
+    // width of the display. It used to subtract the page margin from the screen
+    // width, which is right on a page and wrong inside a card: at a 2x text
+    // setting the dial grew past the card's inner width and the row overflowed
+    // by twelve pixels, which is the kind of bug a screenshot shows and a test
+    // catches only if somebody thought to set the text scale.
+    final available = constraints.maxWidth.isFinite
+        ? constraints.maxWidth
+        : MediaQuery.sizeOf(context).width - ElaraSpacing.lg * 2;
+    final size = (diameter * textScale.clamp(1.0, 1.6))
+        .clamp(math.min(diameter, available), available)
+        .toDouble();
 
     final day = cycleDay;
     final length = cycleLength;
@@ -121,10 +144,20 @@ class PhaseDial extends StatelessWidget {
                   builder: (context, value, _) => CustomPaint(
                     painter: _DialPainter(
                       progress: progress == null ? null : value,
-                      colour: fill,
-                      track: tokens.divider,
-                      surface: tokens.bgCard,
-                      ring: tokens.textSecondaryStrong,
+                      colour: onHero ? tokens.onHero : fill,
+                      track: onHero
+                          ? tokens.onHero.withValues(alpha: 0.22)
+                          : tokens.divider,
+                      surface: onHero
+                          ? tokens.heroFill(phaseKey)
+                          : tokens.bgCard,
+                      ring: onHero
+                          ? tokens.onHero.withValues(alpha: 0.9)
+                          : tokens.textSecondaryStrong,
+                      stroke: onHero ? 6 : 3.5,
+                      ticks: (day == null || length == null || length < 10)
+                          ? null
+                          : length.clamp(21, 40),
                     ),
                   ),
                 ),
@@ -140,8 +173,10 @@ class PhaseDial extends StatelessWidget {
                       // The phase colour, so the moon and the ring are the
                       // same object. At full phase the disc is solid, which is
                       // the correct drawing and the reason for the outline.
-                      lit: fill,
-                      shadow: fill.withValues(alpha: 0.16),
+                      lit: onHero ? tokens.onHero : fill,
+                      shadow: (onHero ? tokens.onHero : fill).withValues(
+                        alpha: 0.16,
+                      ),
                     ),
                     SizedBox(height: size * 0.03),
                     Text(
@@ -149,9 +184,12 @@ class PhaseDial extends StatelessWidget {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: type.subtitle(tokens.textPrimary, size: 17).copyWith(
-                        height: 1.15,
-                      ),
+                      style: type
+                          .subtitle(
+                            onHero ? tokens.onHero : tokens.textPrimary,
+                            size: 17,
+                          )
+                          .copyWith(height: 1.15),
                     ),
                     if (day != null) ...[
                       SizedBox(height: size * 0.02),
@@ -160,10 +198,17 @@ class PhaseDial extends StatelessWidget {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: type.caption(tokens.textSecondaryStrong)
+                        style: type
+                            .caption(
+                              onHero
+                                  ? tokens.onHero.withValues(alpha: 0.72)
+                                  : tokens.textSecondaryStrong,
+                            )
                             .copyWith(
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
                       ),
                     ],
                   ],
@@ -184,6 +229,8 @@ class _DialPainter extends CustomPainter {
     required this.track,
     required this.surface,
     required this.ring,
+    required this.stroke,
+    required this.ticks,
   });
 
   /// 0..1 around the ring, or null when there is nothing to sweep.
@@ -193,30 +240,80 @@ class _DialPainter extends CustomPainter {
   final Color track;
   final Color surface;
   final Color ring;
+  final double stroke;
+
+  /// One tick per day of the cycle, or null for a plain ring.
+  ///
+  /// A continuous arc of 72% says "mostly through" and nothing else. A tick per
+  /// day says *which day*, is countable at a glance, and gives the ring a
+  /// texture that reads as a made object rather than as a progress bar. The
+  /// count is clamped into 21..40 because a cycle outside that range is either
+  /// a mis-entry or a condition, and 60 hairlines on a 150 dp circle is a grey
+  /// smudge.
+  final int? ticks;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // The stroke sits fully inside the box: at 3.5 dp on a 168 dp dial, a
-    // centred stroke would shave its outer edge off at the bounding rect.
-    const stroke = 3.5;
+    // The stroke sits fully inside the box: a centred stroke would otherwise
+    // shave its outer edge off at the bounding rect. Widen with the same rule.
     final radius = size.shortestSide / 2 - stroke / 2 - 1;
     final centre = size.center(Offset.zero);
     final rect = Rect.fromCircle(center: centre, radius: radius);
 
-    canvas.drawCircle(
-      centre,
-      radius,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..color = track,
-    );
-
     final progress = this.progress;
+    final ticks = this.ticks;
+    if (ticks == null) {
+      canvas.drawCircle(
+        centre,
+        radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..color = track,
+      );
+    } else {
+      // The wheel: one tick per day, the elapsed ones carrying the ink. Nothing
+      // is drawn on the days that have not happened yet except their place,
+      // which is the point of counting them.
+      final reached = ((progress ?? 0) * ticks).round();
+      final tickLength = stroke * 2.2;
+      for (var i = 0; i < ticks; i++) {
+        final angle = -math.pi / 2 + (2 * math.pi * i) / ticks;
+        final done = i < reached;
+        final outer = Offset(
+          centre.dx + (radius + tickLength / 2) * math.cos(angle),
+          centre.dy + (radius + tickLength / 2) * math.sin(angle),
+        );
+        final inner = Offset(
+          centre.dx + (radius - tickLength / 2) * math.cos(angle),
+          centre.dy + (radius - tickLength / 2) * math.sin(angle),
+        );
+        canvas.drawLine(
+          inner,
+          outer,
+          Paint()
+            ..strokeCap = StrokeCap.round
+            ..strokeWidth = done ? stroke * 0.55 : stroke * 0.42
+            ..color = done ? colour : track,
+        );
+      }
+    }
+
     if (progress == null || progress <= 0) return;
 
     const start = -math.pi / 2;
     final sweep = 2 * math.pi * progress;
+
+    if (ticks != null) {
+      // On the wheel the marker is the only solid disc, so it does not need the
+      // ring around it that the arc version used.
+      final dot = Offset(
+        centre.dx + radius * math.cos(start + sweep),
+        centre.dy + radius * math.sin(start + sweep),
+      );
+      canvas.drawCircle(dot, stroke * 0.95, Paint()..color = colour);
+      return;
+    }
 
     canvas.drawArc(
       rect,
@@ -252,6 +349,8 @@ class _DialPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DialPainter old) =>
       old.progress != progress ||
+      old.stroke != stroke ||
+      old.ticks != ticks ||
       old.colour != colour ||
       old.track != track ||
       old.surface != surface ||

@@ -86,8 +86,8 @@ class WeatherPage extends StatelessWidget {
               ),
               const SizedBox(height: ElaraSpacing.sm),
               Text(
-                'Air quality is shown for the same reason — a high PM2.5 day is '
-                'not the day to suggest being outdoors.',
+                'Air quality is shown for the same reason. On a high PM2.5 '
+                'day, the suggestions stay indoors.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
             ],

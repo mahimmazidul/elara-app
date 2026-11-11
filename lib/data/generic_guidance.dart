@@ -141,8 +141,9 @@ class GenericGuidanceTable {
         title: 'Regular meals and less salt can soften the week before',
         body:
             'Bloating and breast tenderness are often made worse by long gaps '
-            'between meals and by salty food. Nothing is being treated here — '
-            'these are the changes most people notice.',
+            'between meals and by salty food. These are the changes most '
+            'people notice first, and they are worth trying before anything '
+            'else.',
         source: 'NHS',
         citation: 'NHS — PMS',
       ),

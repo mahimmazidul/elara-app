@@ -44,7 +44,8 @@ class CycleModeSection extends StatelessWidget {
         const Hairline(margin: 0),
         _ModeChoice(
           label: 'She uses hormonal contraception',
-          detail: 'Pills, implant, injection or a hormonal IUD. No phase, no '
+          detail:
+              'Pills, implant, injection or a hormonal IUD. No phase, no '
               'countdown, no fertile window. Bleeding and symptoms can still '
               'be logged.',
           selected: mode == CycleMode.hormonalContraception,
@@ -53,7 +54,8 @@ class CycleModeSection extends StatelessWidget {
         const Hairline(margin: 0),
         _ModeChoice(
           label: 'Pause prediction',
-          detail: 'For a pregnancy, a loss, after a birth, or simply because '
+          detail:
+              'For a pregnancy, a loss, after a birth, or simply because '
               'she would rather not be given a date.',
           selected: mode == CycleMode.paused,
           onTap: () => _set(context, CycleMode.paused),
@@ -61,8 +63,8 @@ class CycleModeSection extends StatelessWidget {
         if (mode == CycleMode.paused) ...[
           const SizedBox(height: ElaraSpacing.md),
           Text(
-            'If you want to say why — it only changes the wording on Today, and '
-            'it is never required.',
+            'Saying why is optional. It changes the wording on Today, and it '
+            'stays on this phone.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.xs),
@@ -74,8 +76,11 @@ class CycleModeSection extends StatelessWidget {
                 ChoiceChip(
                   label: Text(_reasonLabel(reason)),
                   selected: settings.pauseReason == reason,
-                  onSelected: (_) => _set(context, CycleMode.paused,
-                      reason: settings.pauseReason == reason ? null : reason),
+                  onSelected: (_) => _set(
+                    context,
+                    CycleMode.paused,
+                    reason: settings.pauseReason == reason ? null : reason,
+                  ),
                 ),
             ],
           ),
@@ -84,8 +89,11 @@ class CycleModeSection extends StatelessWidget {
           const SizedBox(height: ElaraSpacing.md),
           Row(
             children: [
-              Icon(ElaraIcons.info,
-                  size: 16, color: tokens.textSecondaryStrong),
+              Icon(
+                ElaraIcons.info,
+                size: 16,
+                color: tokens.textSecondaryStrong,
+              ),
               const SizedBox(width: ElaraSpacing.sm),
               Expanded(
                 child: Text(

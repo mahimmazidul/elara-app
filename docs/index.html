@@ -62,7 +62,16 @@ body {
      page is fluid below 420px: nothing here has a fixed width, so a 375px
      viewport cannot produce a horizontal scrollbar. */
   padding: 0 clamp(1rem, 5vw, 2rem) 3rem;
-  background: var(--bg);
+  /* The page carries the phase in its paper, not only in its pictures: a wash
+     of the day's colour blooms down from behind the mark and fades out before
+     the first paragraph, so the theme changes as a whole page rather than as a
+     swapped screenshot. It is a wash and never a fill — the ink has to stay
+     readable on it, and the measured contrast ratios belong to --bg. */
+  background:
+    radial-gradient(90% 34rem at 50% -8rem, var(--phase-wash), transparent 70%)
+      no-repeat,
+    var(--bg);
+  transition: background 600ms ease;
   color: var(--text);
   /* The app is set in Hind Siliguri. The website cannot load the bundled
      font file without shipping it a second time, so it names the family
@@ -228,8 +237,12 @@ figcaption {
   gap: 0.5rem;
   margin: 1rem auto 0;
   padding: 0.7rem 1.35rem;
-  background: var(--accent);
-  color: var(--accent-ink);
+  /* The phase's readable ink is dark enough to carry cream text on every one of
+     the four, which is why the call to action can take the day's colour and
+     still clear AA: measured, 5.2:1 at worst (follicular), 7.4:1 at best. */
+  background: var(--cycle-ink);
+  color: #FFFBF4;
+  transition: background 600ms ease;
   font-size: 0.9375rem;
   font-weight: 700;
   text-align: center;
@@ -329,11 +342,28 @@ a:focus-visible,
 :root {
   --cycle-accent: var(--follicular);
   --cycle-ink: var(--follicular-ink);
+  --phase-wash: rgba(127, 168, 148, 0.40);
 }
-:root[data-phase="menstrual"] { --cycle-accent: var(--menstrual); --cycle-ink: var(--menstrual-ink); }
-:root[data-phase="follicular"] { --cycle-accent: var(--follicular); --cycle-ink: var(--follicular-ink); }
-:root[data-phase="ovulatory"] { --cycle-accent: var(--ovulatory); --cycle-ink: var(--ovulatory-ink); }
-:root[data-phase="luteal"] { --cycle-accent: var(--luteal); --cycle-ink: var(--luteal-ink); }
+:root[data-phase="menstrual"] {
+  --cycle-accent: var(--menstrual);
+  --cycle-ink: var(--menstrual-ink);
+  --phase-wash: rgba(201, 140, 144, 0.42);
+}
+:root[data-phase="follicular"] {
+  --cycle-accent: var(--follicular);
+  --cycle-ink: var(--follicular-ink);
+  --phase-wash: rgba(127, 168, 148, 0.40);
+}
+:root[data-phase="ovulatory"] {
+  --cycle-accent: var(--ovulatory);
+  --cycle-ink: var(--ovulatory-ink);
+  --phase-wash: rgba(210, 164, 95, 0.48);
+}
+:root[data-phase="luteal"] {
+  --cycle-accent: var(--luteal);
+  --cycle-ink: var(--luteal-ink);
+  --phase-wash: rgba(147, 132, 182, 0.40);
+}
 
 .cycle-band {
   height: 4px;
@@ -354,6 +384,23 @@ a:focus-visible,
   text-align: center;
 }
 .cycle-line strong { color: var(--cycle-ink); font-weight: 600; }
+
+/* The phase the page is dressed in, marked in the strip, so the colour and the
+   word are tied together and the four-way reference reads as a key rather than
+   as decoration. */
+.phase-labels li[data-active] {
+  color: var(--cycle-ink);
+  font-weight: 600;
+}
+.phase-labels li[data-active]::after {
+  content: '';
+  display: block;
+  height: 2px;
+  margin: 0.15rem auto 0;
+  width: 60%;
+  border-radius: 2px;
+  background: var(--cycle-accent);
+}
 .hero-shot {
   border-left: 3px solid var(--cycle-accent);
   padding-left: 0.9rem;
@@ -404,9 +451,9 @@ a:focus-visible,
 
     <div class="cycle-band" aria-hidden="true"></div>
     <p class="cycle-line" id="cycle-line">
-      This page is on <strong>day 8</strong> of a 28-day cycle, so it is showing
-      the follicular screenshot. It is a calendar trick, not a reading of
-      anybody&rsquo;s body.
+      The date is <strong>day 8</strong> of a 28-day cycle, so this month the
+      page is dressed in the follicular colours and shows that screenshot.
+      Every colour you see comes from the calendar on the wall.
     </p>
 
     <div class="phases">
@@ -421,10 +468,10 @@ a:focus-visible,
         <rect x="303" y="0" width="97"  height="8" rx="4" fill="#9384B6"/>
       </svg>
       <ul class="phase-labels" aria-hidden="true">
-        <li>Menstrual</li>
-        <li>Follicular</li>
-        <li>Ovulatory</li>
-        <li>Luteal</li>
+        <li data-phase-key="menstrual">Menstrual</li>
+        <li data-phase-key="follicular">Follicular</li>
+        <li data-phase-key="ovulatory">Ovulatory</li>
+        <li data-phase-key="luteal">Luteal</li>
       </ul>
     </div>
 
@@ -567,7 +614,7 @@ a:focus-visible,
         <figure>
           <img src="screenshots/about.png"
                alt="The About block: the app name and build number, then plain label-and-value rows for version, licence, developer and prediction engine, with the start-up update check.">
-          <figcaption>About states what it is, who made it, and what it will not do.</figcaption>
+          <figcaption>About states what it is, who made it, and where the numbers stop.</figcaption>
         </figure>
       </div>
       <p class="note">
@@ -627,16 +674,19 @@ a:focus-visible,
         </details>
         <details>
           <summary>Can I get my data out?</summary>
-          <p>Yes, as one encrypted file under a passphrase you choose, containing
-          the dates and nothing else &mdash; no location, no notes, no settings.
-          Restore puts it back on the same or a new phone. There is also one
-          button that withdraws consent and deletes everything on this one.</p>
+          <p>Yes, as one encrypted file under a passphrase you choose. The file
+          holds the cycle dates; location, notes and settings stay where they
+          are. Restore puts it back on the same phone or a new one. There is
+          also one button that withdraws consent and deletes everything on this
+          phone.</p>
         </details>
         <details>
           <summary>Why is it not on the Play Store?</summary>
-          <p>Because it would need an account, a listing and a data-safety form
-          to say the same thing this page says: nothing is collected. The APK is
-          built from the same source, signed, and published on the releases page.</p>
+          <p>A store listing would mean a developer account, a review queue and
+          a data-safety form. The APK comes from GitHub instead: built from the
+          source you can read, signed, and published on the releases page. What
+          the page in front of you says about storage is exactly what the code
+          does.</p>
         </details>
       </div>
     </section>
@@ -652,8 +702,8 @@ a:focus-visible,
         Need the universal APK? (32-bit phones, emulators)
       </a>
       <p class="note">
-        The download comes straight from the releases page, and this page is one
-        file with no tracker in it. If it is inconvenient, building from
+        The download comes straight from the releases page, and this page is a
+        single file served by GitHub Pages. If it is inconvenient, building from
         <a href="https://github.com/mahimmazidul/elara-app">source</a> gives the
         same APK.
       </p>
@@ -705,9 +755,17 @@ a:focus-visible,
 
   var line = document.getElementById("cycle-line");
   if (line) {
-    line.innerHTML = "This page is on <strong>day " + day +
-      "</strong> of a 28-day cycle, so it is showing the " + phase.label +
-      " screenshot. It is a calendar trick, not a reading of anybody&rsquo;s body.";
+    line.innerHTML = "The date is <strong>day " + day +
+      "</strong> of a 28-day cycle, so this month the page is dressed in the " +
+      phase.label + " colours and shows that screenshot. Every colour you see " +
+      "comes from the calendar on the wall.";
+  }
+
+  var items = document.querySelectorAll(".phase-labels li");
+  for (var j = 0; j < items.length; j++) {
+    if (items[j].getAttribute("data-phase-key") === phase.key) {
+      items[j].setAttribute("data-active", "");
+    }
   }
 
   var shot = document.getElementById("today-shot");

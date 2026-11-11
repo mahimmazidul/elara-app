@@ -28,11 +28,7 @@ import '../../widgets/food_chip_row.dart';
 /// severity. Severity is not available per future day (no forecast is cached
 /// that far ahead), so today's conditions are used and the sheet says so.
 class DayDetailSheet extends StatelessWidget {
-  const DayDetailSheet({
-    super.key,
-    required this.day,
-    required this.severity,
-  });
+  const DayDetailSheet({super.key, required this.day, required this.severity});
 
   final PhaseDay day;
   final core.SeverityResult? severity;
@@ -69,89 +65,82 @@ class DayDetailSheet extends StatelessWidget {
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          ElaraSpacing.lg,
-          0,
-          ElaraSpacing.lg,
-          ElaraSpacing.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _formatDate(day.date),
-                        style: type.title(tokens.textPrimary, size: 20),
-                      ),
-                      const SizedBox(height: ElaraSpacing.xxs),
-                      Text(
-                        day.isRecorded ? 'Recorded cycle' : 'Projected',
-                        style: type.caption(tokens.textSecondaryStrong),
-                      ),
-                    ],
+          padding: const EdgeInsets.fromLTRB(
+            ElaraSpacing.lg,
+            0,
+            ElaraSpacing.lg,
+            ElaraSpacing.xl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatDate(day.date),
+                          style: type.title(tokens.textPrimary, size: 20),
+                        ),
+                        const SizedBox(height: ElaraSpacing.xxs),
+                        Text(
+                          day.isRecorded ? 'Recorded cycle' : 'Projected',
+                          style: type.caption(tokens.textSecondaryStrong),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: ElaraSpacing.md),
-            PhaseChip(
-              label: day.label,
-              phaseKey: phaseKey,
-              compact: true,
-            ),
-            const SizedBox(height: ElaraSpacing.lg),
-
-            // Only a recorded start can be corrected; a projected day has no
-            // row behind it and pretending otherwise would be a lie.
-            if (day.isRecorded) _CorrectionRow(date: day.date),
-
-            // ---- what was reported on this day, and what is planned for it
-            _SymptomSection(date: day.date),
-            const SizedBox(height: ElaraSpacing.lg),
-            _ReminderSection(date: day.date),
-            const SizedBox(height: ElaraSpacing.lg),
-
-            if (result == null)
-              Text(
-                'This day falls before the first recorded period, so Elara '
-                'cannot say which phase it was in.',
-                style: type.body(tokens.textSecondaryStrong),
-              )
-            else ...[
-              if (result.cards.isNotEmpty) ...[
-                const ElaraOverline('A place to start'),
-                const SizedBox(height: ElaraSpacing.sm),
-                Text(
-                  result.cards.first.title,
-                  style: type.subtitle(tokens.textPrimary, size: 15),
-                ),
-                const SizedBox(height: ElaraSpacing.xs),
-                Text(
-                  result.cards.first.body,
-                  style: type.body(tokens.textSecondaryStrong),
-                ),
-                const SizedBox(height: ElaraSpacing.lg),
-              ],
-              const ElaraOverline('Food'),
-              const SizedBox(height: ElaraSpacing.sm),
-              FoodChipRow(
-                foods: result.foodSuggestions,
-                phaseKey: phaseKey,
+                ],
               ),
               const SizedBox(height: ElaraSpacing.md),
-              Text(
-                'An invitation to ask, not a prediction about anyone\u2019s mood.',
-                style: type.caption(tokens.textSecondaryStrong),
-              ),
+              PhaseChip(label: day.label, phaseKey: phaseKey, compact: true),
+              const SizedBox(height: ElaraSpacing.lg),
+
+              // Only a recorded start can be corrected; a projected day has no
+              // row behind it and pretending otherwise would be a lie.
+              if (day.isRecorded) _CorrectionRow(date: day.date),
+
+              // ---- what was reported on this day, and what is planned for it
+              _SymptomSection(date: day.date),
+              const SizedBox(height: ElaraSpacing.lg),
+              _ReminderSection(date: day.date),
+              const SizedBox(height: ElaraSpacing.lg),
+
+              if (result == null)
+                Text(
+                  'This day falls before the first recorded period, so Elara '
+                  'cannot say which phase it was in.',
+                  style: type.body(tokens.textSecondaryStrong),
+                )
+              else ...[
+                if (result.cards.isNotEmpty) ...[
+                  const ElaraOverline('A place to start'),
+                  const SizedBox(height: ElaraSpacing.sm),
+                  Text(
+                    result.cards.first.title,
+                    style: type.subtitle(tokens.textPrimary, size: 15),
+                  ),
+                  const SizedBox(height: ElaraSpacing.xs),
+                  Text(
+                    result.cards.first.body,
+                    style: type.body(tokens.textSecondaryStrong),
+                  ),
+                  const SizedBox(height: ElaraSpacing.lg),
+                ],
+                const ElaraOverline('Food'),
+                const SizedBox(height: ElaraSpacing.sm),
+                FoodChipRow(foods: result.foodSuggestions, phaseKey: phaseKey),
+                const SizedBox(height: ElaraSpacing.md),
+                Text(
+                  'An invitation to ask, not a prediction about anyone\u2019s mood.',
+                  style: type.caption(tokens.textSecondaryStrong),
+                ),
+              ],
             ],
-          ],
-        ),
+          ),
         ),
       ),
     );
@@ -170,10 +159,7 @@ class DayDetailSheet extends StatelessWidget {
     if (phaseResult.phase == core.CyclePhase.unknown) return null;
 
     try {
-      return core.ActionEngine().recommend(
-        phase: phaseResult,
-        severity: sever,
-      );
+      return core.ActionEngine().recommend(phase: phaseResult, severity: sever);
     } catch (_) {
       return null;
     }
@@ -181,8 +167,18 @@ class DayDetailSheet extends StatelessWidget {
 
   static String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -209,9 +205,7 @@ class _SymptomSection extends StatelessWidget {
         const SizedBox(height: ElaraSpacing.xs),
         if (onDay.isEmpty)
           Text(
-            isFuture
-                ? 'Nothing yet — a future day has nothing to report.'
-                : 'Nothing recorded.',
+            isFuture ? 'This day has not happened yet.' : 'Nothing recorded.',
             style: type.body(tokens.textSecondaryStrong),
           )
         else
@@ -259,8 +253,8 @@ class _ReminderSection extends StatelessWidget {
         const SizedBox(height: ElaraSpacing.xs),
         if (onDay.isEmpty)
           Text(
-            'Nothing yet. Supplies, an errand, an evening she would enjoy — '
-            'anything worth remembering.',
+            'Nothing planned. Supplies, an errand, an evening she would '
+            'enjoy. Anything worth remembering.',
             style: type.body(tokens.textSecondaryStrong),
           )
         else
@@ -281,10 +275,8 @@ class _ReminderSection extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
-            onPressed: () => CareReminderEditor.show(
-              context,
-              initialDate: date,
-            ),
+            onPressed: () =>
+                CareReminderEditor.show(context, initialDate: date),
             icon: const Icon(ElaraIcons.plus, size: 16),
             label: const Text('Plan something'),
           ),
@@ -369,10 +361,7 @@ class _CorrectionRowState extends State<_CorrectionRow> {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'Remove',
-              style: context.type.subtitle(
-                context.elara.dangerText,
-                size: 14,
-              ),
+              style: context.type.subtitle(context.elara.dangerText, size: 14),
             ),
           ),
         ],
@@ -443,8 +432,18 @@ class _CorrectionRowState extends State<_CorrectionRow> {
 
 String _formatDate(DateTime date) {
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   return '${date.day} ${months[date.month - 1]} ${date.year}';
 }

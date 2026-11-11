@@ -206,11 +206,11 @@ class _Method extends StatelessWidget {
           Text('How it was made', style: type.subtitle(tokens.textPrimary)),
           const SizedBox(height: ElaraSpacing.xs),
           Text(
-            'Three estimators run against the same recorded history — a recent '
-            'average, a weighted average that favours newer cycles, and a '
-            'dispersion-aware one that widens when the cycles disagree — and '
-            'their answers are combined. The score is how closely they agreed, '
-            'not the chance of a period on any given day.',
+            'Three estimators read the same recorded history. One takes a '
+            'plain average. One leans on the newer cycles. One widens when the '
+            'cycles disagree with each other. Their answers are combined, and '
+            'the score is how closely the three agreed with one another. It '
+            'says nothing about the chance of a period on any given day.',
             style: type.body(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.md),
