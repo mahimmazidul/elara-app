@@ -114,18 +114,22 @@ void main() {
           ChangeNotifierProvider<SettingsProvider>.value(value: graph.settings),
           ChangeNotifierProvider<CycleProvider>.value(value: graph.cycles),
           ChangeNotifierProvider<PreferencesProvider>.value(
-              value: graph.preferences),
+            value: graph.preferences,
+          ),
           ChangeNotifierProvider<SymptomsProvider>.value(value: graph.symptoms),
           ChangeNotifierProvider<RemindersProvider>(
-              create: (_) => RemindersProvider(database: db)..load(),
+            create: (_) => RemindersProvider(database: db)..load(),
           ),
-          ChangeNotifierProvider<RemindersProvider>(create: (_) => RemindersProvider(database: db)..load()),
+          ChangeNotifierProvider<RemindersProvider>(
+            create: (_) => RemindersProvider(database: db)..load(),
+          ),
           ChangeNotifierProvider<UpdateProvider>(
             create: (_) => UpdateProvider(),
           ),
           ChangeNotifierProvider<ClimateProvider>.value(value: graph.climate),
           ChangeNotifierProvider<PredictionProvider>.value(
-              value: graph.prediction),
+            value: graph.prediction,
+          ),
         ],
         child: MaterialApp(
           theme: ElaraTheme.light(),
@@ -145,8 +149,9 @@ void main() {
   // ------------------------------------------------------------------ Today --
 
   group('Today screen', () {
-    testWidgets('renders without crashing when no cycle is recorded',
-        (tester) async {
+    testWidgets('renders without crashing when no cycle is recorded', (
+      tester,
+    ) async {
       final graph = await tester.runAsync(() => buildGraph(starts: const []));
       await pumpScreen(tester, graph!, const TodayScreen());
 
@@ -154,11 +159,15 @@ void main() {
       // With no history the screen offers the first step instead of inventing a
       // phase or a countdown.
       expect(find.text('Welcome to Elara'), findsOneWidget);
-      expect(find.textContaining('Everything stays on this phone'), findsOneWidget);
+      expect(
+        find.textContaining('Everything you record stays on this phone'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('renders without crashing with a single recorded cycle',
-        (tester) async {
+    testWidgets('renders without crashing with a single recorded cycle', (
+      tester,
+    ) async {
       final started = DateTime.now().subtract(const Duration(days: 9));
       final graph = await tester.runAsync(() => buildGraph(starts: [started]));
       await pumpScreen(tester, graph!, const TodayScreen());
@@ -170,7 +179,10 @@ void main() {
       // something real: either the phase dial, or the explicit "not enough
       // history" explanation. It never renders a blank frame.
       final showsPhase = find.byType(PhaseDial).evaluate().isNotEmpty;
-      final explains = find.text('Not enough history yet').evaluate().isNotEmpty;
+      final explains = find
+          .text('Not enough history yet')
+          .evaluate()
+          .isNotEmpty;
       expect(showsPhase || explains, isTrue);
     });
   });
@@ -182,12 +194,22 @@ void main() {
       // Two starts 28 days apart, the newer one five days back, so the visible
       // month spans a menstrual run and the follicular days after it.
       final now = DateTime.now();
-      final graph = await tester.runAsync(() => buildGraph(starts: [
-            DateTime(now.year, now.month, now.day)
-                .subtract(const Duration(days: 33)),
-            DateTime(now.year, now.month, now.day)
-                .subtract(const Duration(days: 5)),
-          ]));
+      final graph = await tester.runAsync(
+        () => buildGraph(
+          starts: [
+            DateTime(
+              now.year,
+              now.month,
+              now.day,
+            ).subtract(const Duration(days: 33)),
+            DateTime(
+              now.year,
+              now.month,
+              now.day,
+            ).subtract(const Duration(days: 5)),
+          ],
+        ),
+      );
       await pumpScreen(tester, graph!, const CalendarScreen());
 
       expect(tester.takeException(), isNull);
@@ -207,8 +229,9 @@ void main() {
       };
 
       final usedColors = <Color>{};
-      for (final container
-          in tester.widgetList<Container>(find.byType(Container))) {
+      for (final container in tester.widgetList<Container>(
+        find.byType(Container),
+      )) {
         final decoration = container.decoration;
         if (decoration is BoxDecoration && decoration.color != null) {
           usedColors.add(decoration.color!);
@@ -223,7 +246,8 @@ void main() {
       expect(
         phasesShown.length,
         greaterThanOrEqualTo(2),
-        reason: 'expected two or more phase colours in the grid, saw $phasesShown',
+        reason:
+            'expected two or more phase colours in the grid, saw $phasesShown',
       );
     });
 
@@ -239,8 +263,9 @@ void main() {
   // --------------------------------------------------------------- Insights --
 
   group('Insights screen', () {
-    testWidgets('the hub summarises before it makes you open anything',
-        (tester) async {
+    testWidgets('the hub summarises before it makes you open anything', (
+      tester,
+    ) async {
       final started = DateTime.now().subtract(const Duration(days: 12));
       final graph = await tester.runAsync(() => buildGraph(starts: [started]));
       await pumpScreen(tester, graph!, const InsightsScreen());
@@ -261,8 +286,9 @@ void main() {
       expect(find.text('Needs two completed cycles'), findsOneWidget);
     });
 
-    testWidgets('the cycle-length page shows the chart and its empty state',
-        (tester) async {
+    testWidgets('the cycle-length page shows the chart and its empty state', (
+      tester,
+    ) async {
       final started = DateTime.now().subtract(const Duration(days: 12));
       final graph = await tester.runAsync(() => buildGraph(starts: [started]));
       await pumpScreen(tester, graph!, const CycleLengthPage());
@@ -279,11 +305,15 @@ void main() {
 
     testWidgets('a row opens its page', (tester) async {
       final now = DateTime.now();
-      final graph = await tester.runAsync(() => buildGraph(starts: [
+      final graph = await tester.runAsync(
+        () => buildGraph(
+          starts: [
             now.subtract(const Duration(days: 59)),
             now.subtract(const Duration(days: 30)),
             now.subtract(const Duration(days: 2)),
-          ]));
+          ],
+        ),
+      );
       await pumpScreen(tester, graph!, const InsightsScreen());
 
       await tester.tap(find.text('Cycle length'));

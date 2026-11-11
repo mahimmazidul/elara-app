@@ -22,11 +22,8 @@ class RemindersScreen extends StatelessWidget {
   ///
   /// It takes a [BuildContext] because the transition depends on the
   /// platform's animation setting, which is read at push time.
-  static Route<void> route(BuildContext context) => elaraRoute<void>(
-        context,
-        const RemindersScreen(),
-        name: 'reminders',
-      );
+  static Route<void> route(BuildContext context) =>
+      elaraRoute<void>(context, const RemindersScreen(), name: 'reminders');
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +52,14 @@ class RemindersScreen extends StatelessWidget {
               maxWidth: ElaraSpacing.readableWidth,
             ),
             child: ListView(
-              padding: ElaraSpacing.pageInsets(context).copyWith(
-                bottom: ElaraSpacing.xxl,
-              ),
+              padding: ElaraSpacing.pageInsets(
+                context,
+              ).copyWith(bottom: ElaraSpacing.xxl),
               children: [
                 Text(
                   'Small, practical things: supplies before they run out, an '
-                  'errand, an evening she would enjoy. Nothing here is sent '
-                  'anywhere, and none of it is used to predict anything.',
+                  'errand, an evening she would enjoy. These are notes for a '
+                  'day, kept apart from anything the app estimates.',
                   style: type.caption(tokens.textSecondaryStrong),
                 ),
                 const SizedBox(height: ElaraSpacing.lg),
@@ -91,7 +88,10 @@ class RemindersScreen extends StatelessWidget {
                   const ElaraOverline('Past'),
                   const SizedBox(height: ElaraSpacing.xs),
                   for (final reminder in past)
-                    _ReminderRow(reminder: reminder, dateLabel: _pastLabel(reminder.date, today)),
+                    _ReminderRow(
+                      reminder: reminder,
+                      dateLabel: _pastLabel(reminder.date, today),
+                    ),
                   const SizedBox(height: ElaraSpacing.lg),
                 ],
 
@@ -124,8 +124,18 @@ class RemindersScreen extends StatelessWidget {
   }
 
   static const List<String> _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   static String _upcomingLabel(DateTime date, DateTime today) {

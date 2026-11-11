@@ -39,8 +39,8 @@ class NotificationsPage extends StatelessWidget {
     return ElaraSubPage(
       title: 'Notifications',
       subtitle:
-          'Scheduled on this device by the Android alarm manager. Nothing is '
-          'sent to a server.',
+          'Scheduled on this device by the Android alarm manager, and delivered '
+          'by the phone itself.',
       children: [
         ElaraGlass(
           padding: const EdgeInsets.symmetric(

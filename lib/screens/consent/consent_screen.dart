@@ -114,8 +114,8 @@ class _ConsentScreenState extends State<ConsentScreen> {
                   const _Point(
                     icon: ElaraIcons.privacy,
                     text:
-                        'Cycle dates stay in this app on this phone. There '
-                        'is no account and no server.',
+                        'Cycle dates stay in this app, on this phone, in '
+                        'storage only Elara can read.',
                   ),
                   const SizedBox(height: ElaraSpacing.sm),
                   _Point(

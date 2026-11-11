@@ -75,9 +75,9 @@ class _OnboardingCardState extends State<OnboardingCard> {
 
     if (stored == null) {
       final message = provider.lastError ?? 'Could not save that date.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
     // On success the Today tab rebuilds with real content; nothing to navigate.
   }
@@ -106,7 +106,7 @@ class _OnboardingCardState extends State<OnboardingCard> {
                   ),
                   const SizedBox(height: ElaraSpacing.sm),
                   Text(
-                    'Everything stays on this phone. No account, no cloud.',
+                    'Everything you record stays on this phone.',
                     style: type.body(tokens.textSecondaryStrong),
                   ),
                   const SizedBox(height: ElaraSpacing.xl),
@@ -196,8 +196,18 @@ class _OnboardingCardState extends State<OnboardingCard> {
 
   String _formatDate(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }

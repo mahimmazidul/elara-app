@@ -165,9 +165,8 @@ class SettingsScreen extends StatelessWidget {
 
         const SizedBox(height: ElaraSpacing.xl),
         Text(
-          'Elara keeps one cycle history on this phone. There is no account, no '
-          'sync and nothing to sign in to, so exporting a backup is the only way '
-          'data leaves it — under a passphrase you choose.',
+          'Elara keeps one cycle history on this phone. Exporting a backup is '
+          'how it moves to another phone, under a passphrase you choose.',
           style: type.caption(tokens.textSecondaryStrong),
         ),
       ],

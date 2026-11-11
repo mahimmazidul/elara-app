@@ -29,18 +29,12 @@ void main() {
       'safe day',
       'there is no safe day in a calendar estimate; only a lower chance',
     ),
-    (
-      'safe period',
-      'a period is not a contraceptive state',
-    ),
+    ('safe period', 'a period is not a contraceptive state'),
     (
       'cannot get pregnant',
       'the app cannot make a fertility claim of any kind',
     ),
-    (
-      "can't get pregnant",
-      'the app cannot make a fertility claim of any kind',
-    ),
+    ("can't get pregnant", 'the app cannot make a fertility claim of any kind'),
     (
       'will not get pregnant',
       'the app cannot make a fertility claim of any kind',
@@ -65,10 +59,7 @@ void main() {
       'diagnose',
       'Elara is not a medical device and does not diagnose anything',
     ),
-    (
-      'treatment for',
-      'the app offers general information, never treatment',
-    ),
+    ('treatment for', 'the app offers general information, never treatment'),
   ];
 
   /// Files that may legitimately discuss these words, and why.
@@ -77,7 +68,7 @@ void main() {
     // they are refusing to do.
     'lib/data/medical_content.dart':
         'health information, written with clinical sources and reviewed copy; '
-            'it describes conditions and when to see a doctor',
+        'it describes conditions and when to see a doctor',
   };
 
   /// Words that turn a forbidden phrase into a refusal to make it.
@@ -128,7 +119,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'These strings make a claim Elara cannot support:\n'
+      reason:
+          'These strings make a claim Elara cannot support:\n'
           '${violations.join('\n')}',
     );
   });
@@ -136,7 +128,9 @@ void main() {
   test('the Today screen still carries the standing disclaimer', () {
     // The sentence that keeps the whole screen honest, checked because it is
     // the kind of line that gets shortened away during a layout tidy-up.
-    final source = File('lib/screens/today/today_screen.dart').readAsStringSync();
+    final source = File(
+      'lib/screens/today/today_screen.dart',
+    ).readAsStringSync();
     expect(source, contains('estimates from recorded history, not a'));
     expect(source, contains('medical measurement'));
   });
@@ -145,17 +139,73 @@ void main() {
     // In a mode that is not predicting, the guidance must say where it comes
     // from. Without this sentence the screen implies a cycle state that the app
     // has just said it cannot see.
-    final source = File('lib/screens/today/quiet_today.dart').readAsStringSync();
+    final source = File(
+      'lib/screens/today/quiet_today.dart',
+    ).readAsStringSync();
     expect(source, contains('not from a predicted phase'));
+  });
+
+  /// Copy that advertises the absence of things the app never had.
+  ///
+  /// "No ads, no trackers, no analytics" reads as a boast on a page nobody
+  /// suspected of ads, and a screen that keeps saying what it is not starts to
+  /// sound like it is arguing with someone. The rule is that the app states
+  /// where the data lives, positively, and leaves the absences alone.
+  ///
+  /// Kept separate from [forbidden] because the remedy is different: a claim
+  /// there is a promise Elara cannot keep, and here it is a sentence that should
+  /// simply not be there.
+  const absenceBoasts = <String>[
+    'no ads',
+    'no trackers',
+    'no adverts',
+    'no analytics',
+    'no cookies',
+    'no sync',
+    'no telemetry',
+    'no accounts',
+    'no account',
+  ];
+
+  test('no screen boasts about the absence of things it never had', () {
+    final violations = <String>[];
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+
+      final lines = entity.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        if (line.trimLeft().startsWith('//')) continue;
+        final lower = line.toLowerCase();
+        for (final phrase in absenceBoasts) {
+          if (lower.contains(phrase)) {
+            violations.add(
+              '${entity.path}:${i + 1}: "$phrase"\n'
+              '    ${line.trim()}',
+            );
+          }
+        }
+      }
+    }
+
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'State where the data lives; do not list what is missing:\n'
+          '${violations.join('\n')}',
+    );
   });
 
   test('the consent gate still states the three things it promises', () {
     // Not a substitute for reading the screen: a proxy for the three props a
     // copy pass can quietly remove — where the data lives, that it is hers, and
     // that it can be withdrawn.
-    final source =
-        File('lib/screens/consent/consent_screen.dart').readAsStringSync();
-    expect(source, contains('no account and no server'));
+    final source = File(
+      'lib/screens/consent/consent_screen.dart',
+    ).readAsStringSync();
+    expect(source, contains('stay in this app, on this phone'));
     expect(source, contains('shared decision'));
     expect(source, contains('withdraw this at any time'));
   });

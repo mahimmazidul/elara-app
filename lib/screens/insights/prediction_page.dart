@@ -32,7 +32,7 @@ class PredictionPage extends StatelessWidget {
       title: 'The estimate',
       subtitle:
           'Produced on this phone from recorded period starts and nothing '
-          'else. No hormone is measured and no account is involved.',
+          'else.',
       children: [
         if (result == null)
           ElaraGlass(
