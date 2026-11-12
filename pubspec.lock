@@ -101,8 +101,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "9d35ae70a7dd43e0a0a69f5338e1ba511c2e2b02"
-      resolved-ref: "9d35ae70a7dd43e0a0a69f5338e1ba511c2e2b02"
+      ref: "6441d482b1679899482743aa0882f84e981d02c0"
+      resolved-ref: "6441d482b1679899482743aa0882f84e981d02c0"
       url: "https://github.com/mahimmazidul/elara-core.git"
     source: git
     version: "0.1.0"

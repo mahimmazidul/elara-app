@@ -113,6 +113,15 @@ jobs:
       - name: Check the emulator scripts
         run: python3 tool/android_ui/check_scripts.py
 
+      # A pinned dependency commit resolves only while it is reachable from a
+      # branch on the remote. The release job found that out with "fatal: bad
+      # object" on a commit where this job was green, so the pin is checked
+      # against the remote rather than trusted.
+      - name: Check the pinned dependency commits are on their remotes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tool/check_pins.py
+
       # The Kotlin is small, but a mistake in it is not cheap to find: it
       # shows up in the APK build, after a full Flutter build and a Gradle
       # configuration, and the build is retried three times, so one mistake

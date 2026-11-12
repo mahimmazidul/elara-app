@@ -22,10 +22,16 @@ dependencies:
   # To move it: change the SHA in a pull request, run the tests, and say in the
   # description which engine behaviour changed. `tool/check_engine_pin.py`
   # fails the build if this file and the resolved lock disagree.
+  # Pinned to a commit on elara-core's main, not to the SHA that happened to be
+  # checked out when this line was written. The previous pin was left behind by a
+  # rewrite of that branch: still resolvable from GitHub's object cache, so the
+  # test shards and the APK build passed, and gone by the time the release job
+  # asked for it - "fatal: bad object", on a commit where CI was green.
+  # tool/check_pins.py asks the remote on every run.
   elara_core:
     git:
       url: https://github.com/mahimmazidul/elara-core.git
-      ref: 9d35ae70a7dd43e0a0a69f5338e1ba511c2e2b02
+      ref: 6441d482b1679899482743aa0882f84e981d02c0
 
   # State management
   provider: ^6.1.5+1
