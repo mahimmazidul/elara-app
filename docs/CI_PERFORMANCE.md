@@ -202,6 +202,7 @@ that the cache-less, de-duplicated build already achieved.
 | `artifact/app-debug.apk` did not exist | emulator booted, then install failed | `tool/android_ui/find_apk.sh` looks in both places |
 | `$ACTIVITY` undefined in `navigation.sh` | all three emulator jobs died | `tool/android_ui/check_scripts.py` checks every variable |
 | screenshot workflow push non-fast-forward | run failed after doing all work | both screenshot workflows retry the push against the new head |
+| the emulator step died with exit 255, mid-run, with the logcat unwritten | a failed run whose own evidence did not explain it | the script names its failing line, reconnects adb, and writes its log and the live logcat into the artifact |
 | --- | --- | --- |
 | Gradle distribution CDN returned 504 | a whole failed 5-minute run | a three-attempt retry in the build step, with the delay growing |
 | the sqlite3 native library was truncated on download | another whole failed run | `sqflite_common_ffi` pinned to `>=2.3.0 <2.4.0` in `446b4f9` |
@@ -210,10 +211,15 @@ that the cache-less, de-duplicated build already achieved.
 | `artifact/app-debug.apk` did not exist in the job that builds in place | the emulator booted, then the install failed | `tool/android_ui/find_apk.sh` looks in both places |
 | `$ACTIVITY` was used in `navigation.sh` without being defined | all three emulator jobs died at their last step | `tool/android_ui/check_scripts.py` checks every variable is assigned, and runs in CI |
 | the screenshot workflow's push was a non-fast-forward | the run failed after doing all its work | both screenshot workflows retry the push against the new head |
+| `capture_screens.sh` aborted with exit 255 and no line number | a failed run that could not be diagnosed from outside the repository | the script has an ERR trap that names its line, `adb_run` reconnects instead of dying, stdout is teed into `evidence/capture-script.log`, and the logcat is streamed from the launch rather than dumped at the end |
+| `capture_screens.sh` tapped "Open preferences" and "Open health information" | four releases of captures that were silently missing 06 and 09 | `tool/android_ui/check_scripts.py` checks that every label a script taps is a string in `lib/` |
+| the About and Privacy blocks scrolled for a word that is on a page they never opened | 10-about and 11-privacy have never existed | the About row is tapped before the Developer row is looked for, and both pages are backed out of |
 
 The emulator-script check is the one that generalises. The other failures
 were each specific to one line of one script; the check catches the whole
-class.
+class. Its label check is the same idea applied to the app's own strings: a
+tap on a word no widget renders cannot succeed, and that is now a lint error
+rather than a line in a log that a green run still scrolls past.
 
 ---
 

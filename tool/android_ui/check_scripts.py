@@ -38,6 +38,11 @@ PROVIDED_BY_SHELL = {
     # The shell provides it: it is the path of the script being run, and it
     # is how a script finds its own directory.
     "BASH_SOURCE",
+    # Set by bash at the point of a failure, and read by the ERR trap in
+    # capture_screens.sh so a failed run names its line and its command instead
+    # of reporting a bare exit code.
+    "BASH_COMMAND",
+    "LINENO",
     "PWD",
     "OLDPWD",
     "ANDROID_HOME",
@@ -134,6 +139,54 @@ def check_no_hardcoded_apk(path: pathlib.Path) -> list[str]:
     return problems
 
 
+# Labels the app does not own, and where they come from instead.
+#
+# "OK" is the confirmation button on the date picker, which is Material's, so
+# the string is in Flutter's localisations rather than in lib/.
+LABELS_FROM_THE_FRAMEWORK = {
+    "OK",
+}
+
+
+def check_labels_exist(path: pathlib.Path) -> list[str]:
+    """Every label a script taps has to be a string the app actually renders.
+
+    This is the check that was missing. `capture_screens.sh` spent four
+    releases tapping "Open preferences" and "Open health information", and no
+    widget in the app ever rendered either phrase - they were an assumption
+    about a semantics label that was never added. Both taps failed on every
+    run, the script reported "not found" and carried on, and two documented
+    screens have never had device evidence.
+
+    A tap target that no source file contains cannot work, so this is checked
+    against lib/ rather than discovered on a runner twenty minutes into an
+    emulator boot.
+    """
+    text = path.read_text(encoding="utf-8")
+
+    labels = set(re.findall(r'tap_label\s+"([^"$]+)"', text))
+    labels |= set(re.findall(r'shows\s+"([^"$]+)"', text))
+    # The "Label:06-preferences:Expected title" rows of the section loop.
+    for first, third in re.findall(
+        r'^\s*"([^"$:]+):[0-9]{2}-[a-z-]+:([^"$]+)"', text, re.M
+    ):
+        labels.add(first)
+        labels.add(third)
+
+    lib = HERE.parent.parent / "lib"
+    sources = [source.read_text(encoding="utf-8") for source in lib.rglob("*.dart")]
+
+    problems = []
+    for label in sorted(labels - LABELS_FROM_THE_FRAMEWORK):
+        quoted = (f"'{label}'", f'"{label}"')
+        if not any(q in source for source in sources for q in quoted):
+            problems.append(
+                f"{path.name}: taps or expects {label!r}, which no widget in lib/ "
+                "renders; a tap on it cannot succeed"
+            )
+    return problems
+
+
 def main() -> int:
     scripts = sorted(HERE.glob("*.sh"))
     if not scripts:
@@ -146,6 +199,7 @@ def main() -> int:
         problems += check_variables(script)
         problems += check_no_hardcoded_apk(script)
         problems += check_executable(script)
+        problems += check_labels_exist(script)
 
     if problems:
         print("The emulator scripts have problems:\n")
@@ -155,7 +209,7 @@ def main() -> int:
 
     print(
         f"Checked {len(scripts)} emulator script(s): "
-        "syntax, variables, APK path, exec bit."
+        "syntax, variables, APK path, exec bit, labels."
     )
     return 0
 

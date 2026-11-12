@@ -44,6 +44,54 @@ mkdir -p "$CAPTURES"
 
 UI_DUMP="$EVIDENCE/ui-capture.xml"
 
+# Everything this script prints also lands in the evidence artifact.
+#
+# This is the fix for the failure that made this rewrite necessary. The job
+# exited with "The process '/usr/bin/sh' failed with exit code 255", the
+# evidence artifact was a quarter of its usual size, and there was no way to see
+# which line died or why: the script's own output lived only in a job log that
+# needs an account to read, and the logcat was not written until the very last
+# line of the script, which an abort never reaches.
+#
+# Now: stdout goes to the Actions log *and* to a file that ships with the
+# screenshots, and a failure names its line.
+CAPTURE_LOG="$EVIDENCE/capture-script.log"
+: > "$CAPTURE_LOG"
+exec > >(tee -a "$CAPTURE_LOG") 2>&1
+
+on_error() {
+  local status=$?
+  echo "::error::capture_screens.sh stopped at line $1 with exit $status, while running: $2" >&2
+  echo "The script log and the logcat up to this point are in the evidence artifact." >&2
+  exit "$status"
+}
+trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
+
+# Every adb call goes through here.
+#
+# Exit code 255 is adb's way of saying the device connection is gone, and with
+# `set -e` a single one of those aborted the whole capture at whatever line it
+# happened to hit. The device is a nested virtual machine on a shared runner;
+# losing it for a second is a normal event, reconnecting is the fix, and only
+# losing it four times in a row is a failure worth failing on.
+adb_run() {
+  local attempt
+  for attempt in 1 2 3 4; do
+    if adb "$@"; then
+      return 0
+    fi
+    # On stderr, so the message survives a caller that is capturing stdout -
+    # `shoot` redirects this function's output into a PNG, and a note written to
+    # stdout would end up inside the image.
+    echo "  adb $1 failed (attempt $attempt); reconnecting to the device" >&2
+    adb reconnect >/dev/null 2>&1 || true
+    timeout 30 adb wait-for-device >/dev/null 2>&1 || true
+    sleep $((attempt * 2))
+  done
+  echo "::error::adb could not run: adb $*" >&2
+  return 1
+}
+
 dump_ui() {
   adb shell uiautomator dump /sdcard/ui-capture.xml >/dev/null 2>&1 || return 1
   adb pull /sdcard/ui-capture.xml "$UI_DUMP" >/dev/null 2>&1 || return 1
@@ -112,7 +160,7 @@ tap_label() {
     return 1
   fi
   # shellcheck disable=SC2086
-  adb shell input tap $coords
+  adb_run shell input tap $coords
   sleep "$wait"
   echo "  tapped: $label"
   return 0
@@ -125,12 +173,17 @@ tap_label() {
 # app drawer, which is how an earlier run ended up photographing Google
 # Calendar's launcher page instead of the app's own screen.
 scroll_down() {
-  adb shell input swipe 160 450 160 200 400
+  # A swipe of 700 physical pixels, centred horizontally, starting and ending
+  # well inside the screen. The previous values (160,450 to 160,200) were a
+  # 250-pixel nudge across the top sixth of a 2340-pixel display: enough to
+  # disturb the scroll position, nowhere near enough to reach the bottom of the
+  # Settings hub. That is why the About and Privacy captures have never existed.
+  adb_run shell input swipe 540 1400 540 700 400
   sleep 1
 }
 
 scroll_up() {
-  adb shell input swipe 160 200 160 450 400
+  adb_run shell input swipe 540 700 540 1400 400
   sleep 1
 }
 
@@ -202,8 +255,75 @@ go_to_settings() {
 shoot() {
   local name="$1"
   ensure_foreground
-  adb exec-out screencap -p > "$CAPTURES/$name.png"
+  # `adb exec-out screencap` is where a dying connection surfaces as exit 255,
+  # and it used to abort the whole run on the spot. Through adb_run it
+  # reconnects and tries again.
+  # Written to a temporary name and renamed on success, because a retry after a
+  # dropped connection would otherwise append the second attempt's bytes to the
+  # first attempt's and leave a PNG that no viewer can open.
+  if ! adb_run exec-out screencap -p > "$CAPTURES/$name.png.tmp"; then
+    rm -f "$CAPTURES/$name.png.tmp"
+    echo "::error::Could not capture $name: the screen could not be read from the device"
+    exit 1
+  fi
+  if [ ! -s "$CAPTURES/$name.png.tmp" ]; then
+    rm -f "$CAPTURES/$name.png.tmp"
+    echo "::error::The capture for $name is empty"
+    exit 1
+  fi
+  mv "$CAPTURES/$name.png.tmp" "$CAPTURES/$name.png"
   echo "  captured: $name.png"
+}
+
+# Whether the app's process is alive right now.
+app_is_running() {
+  if adb shell pidof "$PACKAGE" >/dev/null 2>&1; then
+    return 0
+  fi
+  # `pidof` is toybox on newer images and absent on some older ones; the process
+  # list is the answer that does not depend on which.
+  adb shell "ps -A" 2>/dev/null | grep -q "$PACKAGE"
+}
+
+# Stops the run when the log says the app has died, hung, or is drawing
+# Flutter's error screen.
+#
+# The error screen matters as much as a crash and is much easier to miss: a
+# widget that throws leaves the process alive, leaves no "FATAL EXCEPTION" in
+# the log, and leaves a screen with no labels on it. To a script that finds its
+# way around by label, that is indistinguishable from a tap that landed in the
+# wrong place, so the script spends minutes tapping at nothing and then reports
+# a pile of missing captures rather than the exception that caused them. This
+# check names the exception instead.
+#
+# Overflows are reported and do not stop the run: a RenderFlex overflow is a
+# cosmetic defect the widget tests already sweep for, not a reason to throw
+# away every capture after it.
+check_app_health() {
+  local phase="$1"
+  local log="$EVIDENCE/logcat-capture.txt"
+  if [ -f "$log" ]; then
+    if grep -qE "FATAL EXCEPTION|ANR in $PACKAGE" "$log"; then
+      echo "::error::The app crashed or stopped responding during: $phase"
+      grep -E "FATAL EXCEPTION|ANR in $PACKAGE" -A 30 "$log" | tail -n 40 || true
+      exit 1
+    fi
+    local caught overflow
+    caught="$(grep -c "EXCEPTION CAUGHT BY" "$log" || true)"
+    overflow="$(grep -c "overflowed by" "$log" || true)"
+    if [ "${caught:-0}" -gt "${overflow:-0}" ]; then
+      echo "::error::The app is drawing an error screen during: $phase"
+      grep -E "EXCEPTION CAUGHT BY" -A 12 "$log" | tail -n 40 || true
+      exit 1
+    fi
+    if [ "${overflow:-0}" -gt 0 ]; then
+      echo "::warning::A widget overflowed during: $phase (see the logcat in the artifact)"
+    fi
+  fi
+  if ! app_is_running; then
+    echo "::error::$PACKAGE is not running during: $phase"
+    exit 1
+  fi
 }
 
 # Whether the screen currently shows $1.
@@ -227,8 +347,11 @@ echo "::group::Install the artifact"
 # built in place. find_apk.sh knows both places.
 apk="$(tool/android_ui/find_apk.sh)"
 echo "Installing $apk"
-adb install -r "$apk"
-adb shell pm list packages | grep "$PACKAGE"
+adb_run install -r "$apk"
+if ! adb shell pm list packages 2>/dev/null | grep -q "$PACKAGE"; then
+  echo "::error::$PACKAGE is not installed after a successful install command"
+  exit 1
+fi
 if adb shell pm grant "$PACKAGE" android.permission.POST_NOTIFICATIONS 2>&1; then
   echo "POST_NOTIFICATIONS granted"
 else
@@ -236,12 +359,23 @@ else
 fi
 echo "::endgroup::"
 
-adb logcat -c
+adb_run logcat -c || true
+
+# The log is written from here on, in the background.
+#
+# It used to be dumped at the very end of the script, so the one time the script
+# did not reach the end there was no log in the artifact at all: the run failed
+# and took its own evidence with it. A reader of the artifact could see that the
+# captures had stopped but not why.
+adb logcat -v time > "$EVIDENCE/logcat-capture.txt" 2>&1 &
+LOGCAT_PID=$!
+trap 'kill "${LOGCAT_PID:-}" >/dev/null 2>&1 || true' EXIT
 
 echo "::group::Launch"
-adb shell am start -W -n "$ACTIVITY" >/dev/null
+adb_run shell am start -W -n "$ACTIVITY" >/dev/null
 sleep 12
 shoot "00-first-launch"
+check_app_health "the first launch"
 echo "::endgroup::"
 
 echo "::group::Consent gate"
@@ -308,8 +442,10 @@ for entry in "Today:01-today-light" "Calendar:03-calendar-light" "Insights:04-in
   dump_ui || true
   if tap_label "$label" 3; then
     shoot "$name"
+    check_app_health "the $label tab"
   else
     echo "  the $label tab was not found"
+    check_app_health "the $label tab"
   fi
 done
 
@@ -321,11 +457,19 @@ echo "::group::Settings sections"
 # The expected text is what proves the tap opened the screen that was
 # intended. Without it, a tap that lands on the wrong control produces a
 # picture of something else under the right file name.
+# The label is the text on the row, which is what uiautomator can see.
+#
+# Two of these entries used to read "Open preferences" and "Open health
+# information". No widget in the app ever renders those words: they were an
+# assumption about a semantic label that was never added, so both taps failed
+# on every run since the settings hub was written, and 06-preferences and
+# 09-medical have never existed in docs/device-screenshots. The run reported
+# it and carried on, which is exactly why nobody noticed for four releases.
 for entry in \
-    "Open preferences:06-preferences:Preferences" \
+    "Preferences:06-preferences:Preferences" \
     "Symptoms:07-symptoms:Symptoms" \
     "Care reminders:08-reminders:Care reminders" \
-    "Open health information:09-medical:Health information"; do
+    "Health information:09-medical:Health information"; do
   label="${entry%%:*}"
   rest="${entry#*:}"
   name="${rest%%:*}"
@@ -335,7 +479,10 @@ for entry in \
   # The Settings screen is long. Look for the row on the visible part first,
   # then scroll down a page at a time - from the middle of the screen, so the
   # gesture is not read as a pull-up.
-  for attempt in 1 2 3 4 5; do
+  # Eight attempts, not five: with the longer swipe this is more than the height
+  # of the whole Settings hub, and the row nearest the bottom of it - the health
+  # information section - is the one that used to run out of budget.
+  for attempt in 1 2 3 4 5 6 7 8; do
     if tap_label "$label" 3; then
       found=1
       break
@@ -354,7 +501,7 @@ for entry in \
   else
     echo "  the '$label' section was not found"
   fi
-  adb shell input keyevent KEYCODE_BACK
+  adb_run shell input keyevent KEYCODE_BACK
   sleep 1
   ensure_foreground
 done
@@ -363,13 +510,15 @@ echo "::endgroup::"
 echo "::group::About block"
 go_to_settings
 found=0
-# The About block is the last thing on the Settings screen, below the Privacy
-# block, so it needs more scrolling than the sections above it. Six attempts
-# was not enough: the run captured the app drawer instead of the About block,
-# because the search gave up before it got there and the capture was of
-# whatever happened to be on screen.
+# Two taps, not one.
+#
+# This block used to scroll the Settings hub looking for the word "Developer",
+# which is not on the hub at all: it is a row on the page the "About" row opens.
+# So the search could never succeed, whatever the scroll budget, and 10-about
+# has never existed in docs/device-screenshots. The row is tapped first, and the
+# word is only looked for once the page behind it is open.
 for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
-  if tap_label "Developer" 2; then
+  if tap_label "About" 3; then
     found=1
     break
   fi
@@ -380,11 +529,18 @@ if [ "$found" = 1 ]; then
   dump_ui || true
   if shows "Developer"; then
     shoot "10-about"
+    check_app_health "the About page"
   else
-    echo "  the Developer row is not on screen, so the About block was not captured."
+    echo "  the About row was tapped but its page did not open, so nothing was captured."
   fi
+  # Back to the hub. The next block starts by looking for a tab, and a tab bar
+  # is not drawn on a pushed page, so a missing BACK here breaks the capture
+  # that follows it.
+  adb_run shell input keyevent KEYCODE_BACK
+  sleep 1
+  ensure_foreground
 else
-  echo "  the About block was not found"
+  echo "  the About row was not found"
 fi
 echo "::endgroup::"
 
@@ -407,9 +563,17 @@ if [ "$found" = 1 ]; then
   dump_ui || true
   if shows "Privacy and data"; then
     shoot "11-privacy"
+    check_app_health "the privacy page"
   else
     echo "  the Privacy section is not on screen, so it was not captured."
   fi
+  # The same BACK as the About block, and for the same reason: this page is now
+  # reached (it used to sit below the reach of a 250-pixel swipe), and the
+  # day-detail capture that follows starts by tapping the Calendar tab, which a
+  # pushed page does not draw.
+  adb_run shell input keyevent KEYCODE_BACK
+  sleep 1
+  ensure_foreground
 else
   echo "  the Privacy section was not found"
 fi
@@ -439,7 +603,7 @@ if [ "$day_found" = 1 ]; then
   else
     echo "  the day sheet did not open, so it was not captured."
   fi
-  adb shell input keyevent KEYCODE_BACK
+  adb_run shell input keyevent KEYCODE_BACK
   sleep 1
 else
   echo "  no calendar cell was reachable"
@@ -454,9 +618,13 @@ adb shell "cmd uimode night yes" >/dev/null 2>&1 || echo "  could not switch to 
 sleep 3
 adb shell am force-stop "$PACKAGE" || true
 sleep 1
-adb shell am start -W -n "$ACTIVITY" >/dev/null 2>&1 || true
+adb_run shell am start -W -n "$ACTIVITY" >/dev/null 2>&1 || true
 sleep 8
 ensure_foreground
+# Dark mode is a configuration change, a force-stop and a cold start on a
+# software renderer: the least forgiving thing this script does, and the point
+# at which a run that has been quietly failing stops being quiet.
+check_app_health "the relaunch into dark mode"
 
 dump_ui || true
 tap_label "Today" 3 || true
@@ -482,13 +650,31 @@ echo "::group::Notification icon"
 EVIDENCE_DIR="$EVIDENCE" tool/android_ui/notification_icon.sh || true
 echo "::endgroup::"
 
-adb logcat -d -v time > "$EVIDENCE/logcat-capture.txt" || true
+# Stop the live log before reading it, so the last lines are flushed.
+kill "${LOGCAT_PID:-}" >/dev/null 2>&1 || true
+sleep 1
+check_app_health "the end of the run"
 
-if grep -qE "FATAL EXCEPTION|ANR in $PACKAGE" "$EVIDENCE/logcat-capture.txt"; then
-  echo "::error::The app crashed or ANR'd while being captured."
-  grep -E "FATAL EXCEPTION" -A 30 "$EVIDENCE/logcat-capture.txt" || true
+# A run that produced most of the pictures used to be reported as a success.
+# The last green run before 2.2.0 committed twelve captures and had been
+# silently missing four of them for four releases, because a capture that never
+# happened was only ever a sentence in a log. Green now means the whole set.
+EXPECTED="00-first-launch 01-today-light 03-calendar-light 04-insights-light
+05-settings-light 06-preferences 07-symptoms 08-reminders 09-medical 10-about
+11-privacy 12-day-detail 13-today-dark 14-calendar-dark 15-insights-dark
+16-settings-dark"
+missing=""
+for name in $EXPECTED; do
+  if [ ! -s "$CAPTURES/$name.png" ]; then
+    missing="$missing $name"
+  fi
+done
+if [ -n "$missing" ]; then
+  echo "::error::The capture set is incomplete. Missing:$missing"
+  echo "A missing capture means a row was not found or a screen did not open."
+  echo "The script log above names the tap; the logcat in the artifact names the cause."
   exit 1
 fi
 
-echo "No crash or ANR in the capture log."
+echo "No crash, no error screen, and all 16 captures were produced."
 echo "Device captures written to $CAPTURES."
