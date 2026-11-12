@@ -44,6 +44,33 @@ mkdir -p "$CAPTURES"
 
 UI_DUMP="$EVIDENCE/ui-capture.xml"
 
+# The display, read from the device rather than assumed.
+#
+# An earlier version of this script scrolled with `input swipe 160 450 160 200`
+# and that worked, because the AVD is 320x640 and those points are on it. A
+# later version "improved" the swipe to 540 1400 -> 540 700, which is a good
+# swipe on a 1080x2340 phone and lies entirely outside this display: `input
+# swipe` with both points off-screen scrolls nothing at all. The run then
+# reported "the 'Health information' section was not found" eight times, because
+# the hub never moved and only the four rows above the fold were ever on screen.
+#
+# So the geometry is read from the device, and every coordinate below is a
+# fraction of it.
+SCREEN_W=320
+SCREEN_H=640
+
+read_geometry() {
+  local line dims
+  line="$(adb shell wm size 2>/dev/null | tr -d '\r' | tail -n 1)"
+  dims="${line##*: }"
+  case "$dims" in
+    [0-9]*x[0-9]*) SCREEN_W="${dims%%x*}"; SCREEN_H="${dims##*x}" ;;
+  esac
+  case "$SCREEN_W" in ''|*[!0-9]*) SCREEN_W=320 ;; esac
+  case "$SCREEN_H" in ''|*[!0-9]*) SCREEN_H=640 ;; esac
+  echo "Screen is ${SCREEN_W}x${SCREEN_H}"
+}
+
 # Everything this script prints also lands in the evidence artifact.
 #
 # This is the fix for the failure that made this rewrite necessary. The job
@@ -160,7 +187,39 @@ tap_label() {
     return 1
   fi
   # shellcheck disable=SC2086
+  echo "  tapping '$label' at ($coords)"
+  # shellcheck disable=SC2086
   adb_run shell input tap $coords
+  sleep "$wait"
+  echo "  tapped: $label"
+  return 0
+}
+
+# Taps a row on a long scrolling screen, unless it is sitting under the tab bar.
+#
+# The Settings hub is taller than the display, so its last rows scroll down to
+# within a few pixels of the bottom - where the tab bar is drawn over them. A
+# tap on the centre of such a row lands on the tab bar instead: the app switches
+# tab, and the step that follows looks for a page that was never opened and
+# reports the section missing. Treating a row that low as "not found yet" makes
+# the search scroll once more, and the next attempt finds it higher up.
+tap_row() {
+  local label="$1"
+  local wait="${2:-3}"
+  local coords x y limit
+  if ! coords="$(find_bounds "$label")"; then
+    echo "  not found: $label"
+    return 1
+  fi
+  x="${coords%% *}"
+  y="${coords##* }"
+  limit=$(( SCREEN_H * 85 / 100 ))
+  if [ "$y" -gt "$limit" ]; then
+    echo "  '$label' is under the tab bar at y=$y; scrolling it up before tapping"
+    return 1
+  fi
+  echo "  tapping '$label' at ($x,$y)"
+  adb_run shell input tap "$x" "$y"
   sleep "$wait"
   echo "  tapped: $label"
   return 0
@@ -173,17 +232,18 @@ tap_label() {
 # app drawer, which is how an earlier run ended up photographing Google
 # Calendar's launcher page instead of the app's own screen.
 scroll_down() {
-  # A swipe of 700 physical pixels, centred horizontally, starting and ending
-  # well inside the screen. The previous values (160,450 to 160,200) were a
-  # 250-pixel nudge across the top sixth of a 2340-pixel display: enough to
-  # disturb the scroll position, nowhere near enough to reach the bottom of the
-  # Settings hub. That is why the About and Privacy captures have never existed.
-  adb_run shell input swipe 540 1400 540 700 400
+  # Half the height, from 65% down to 35%, both points well inside the display
+  # whatever its size.
+  adb_run shell input swipe \
+    $((SCREEN_W / 2)) $((SCREEN_H * 65 / 100)) \
+    $((SCREEN_W / 2)) $((SCREEN_H * 35 / 100)) 400
   sleep 1
 }
 
 scroll_up() {
-  adb_run shell input swipe 540 700 540 1400 400
+  adb_run shell input swipe \
+    $((SCREEN_W / 2)) $((SCREEN_H * 35 / 100)) \
+    $((SCREEN_W / 2)) $((SCREEN_H * 65 / 100)) 400
   sleep 1
 }
 
@@ -231,6 +291,58 @@ ensure_foreground() {
   return 0
 }
 
+# Whether the tab bar says this tab is the selected one.
+#
+# The bar reports itself honestly: each tab is a Button whose content-desc is
+# "Calendar\nTab 2 of 4" and whose `selected` attribute is true for the current
+# one. That is a real assertion about where the app is, which a label match is
+# not.
+tab_is_selected() {
+  # The bar counts from one: the fourth tab calls itself "Tab 4 of 4". The
+  # index passed in counts from zero, so it is converted here rather than at
+  # every call site.
+  local number=$(( $1 + 1 ))
+  dump_ui || return 1
+  grep -qE "content-desc=\"[^\"]*Tab $number of [0-9]+\"[^>]*selected=\"true\"" "$UI_DUMP"
+}
+
+# Taps the centre of a tab, computed from the screen size.
+#
+# Tapping the label was how this used to move between tabs, and it is how
+# `03-calendar-light.png` came out as a byte-for-byte copy of
+# `04-insights-light.png`: the tap reported success, the app did not change
+# screen, and the next capture took the picture that was already there. The tab
+# bar is four equal columns at the foot of the display, so its centres are
+# arithmetic, and arithmetic does not miss.
+tap_tab() {
+  local index="$1"
+  local wait="${2:-3}"
+  local x=$(( SCREEN_W * (2 * index + 1) / 8 ))
+  local y=$(( SCREEN_H * 93 / 100 ))
+  echo "  tapping tab $index at ($x,$y)"
+  adb_run shell input tap "$x" "$y"
+  sleep "$wait"
+}
+
+# Switches to a tab and proves it, retrying once.
+goto_tab() {
+  local index="$1"
+  local label="$2"
+  tap_tab "$index" 3
+  if tab_is_selected "$index"; then
+    echo "  the $label tab is open"
+    return 0
+  fi
+  echo "  the $label tab did not open on the first tap; tapping it again"
+  tap_tab "$index" 4
+  if tab_is_selected "$index"; then
+    echo "  the $label tab is open"
+    return 0
+  fi
+  echo "  the $label tab could not be opened"
+  return 1
+}
+
 # Puts the app on the Settings tab and scrolls it back to the top.
 #
 # After a BACK press the app may be anywhere: on Today, on a sub-screen, or
@@ -239,8 +351,7 @@ ensure_foreground() {
 # known screen, so one missed tap cannot make every later capture fail.
 go_to_settings() {
   ensure_foreground
-  dump_ui || true
-  if ! tap_label "Settings" 2; then
+  if ! goto_tab 3 "Settings"; then
     echo "  (the Settings tab was not reachable)"
     return 1
   fi
@@ -372,6 +483,7 @@ LOGCAT_PID=$!
 trap 'kill "${LOGCAT_PID:-}" >/dev/null 2>&1 || true' EXIT
 
 echo "::group::Launch"
+read_geometry
 adb_run shell am start -W -n "$ACTIVITY" >/dev/null
 sleep 12
 shoot "00-first-launch"
@@ -436,17 +548,19 @@ fi
 echo "::endgroup::"
 
 echo "::group::Tabs, light"
-for entry in "Today:01-today-light" "Calendar:03-calendar-light" "Insights:04-insights-light" "Settings:05-settings-light"; do
-  label="${entry%%:*}"
-  name="${entry##*:}"
-  dump_ui || true
-  if tap_label "$label" 3; then
+# The index is the tab's position in the bar, which is also what its
+# content-desc calls itself: "Tab 1 of 4" is Today.
+for entry in "0:Today:01-today-light" "1:Calendar:03-calendar-light" "2:Insights:04-insights-light" "3:Settings:05-settings-light"; do
+  index="${entry%%:*}"
+  rest="${entry#*:}"
+  label="${rest%%:*}"
+  name="${rest##*:}"
+  if goto_tab "$index" "$label"; then
     shoot "$name"
-    check_app_health "the $label tab"
   else
-    echo "  the $label tab was not found"
-    check_app_health "the $label tab"
+    echo "  nothing captured for $name: the app was not on the $label tab"
   fi
+  check_app_health "the $label tab"
 done
 
 echo "::endgroup::"
@@ -474,7 +588,11 @@ for entry in \
   rest="${entry#*:}"
   name="${rest%%:*}"
   expected="${rest#*:}"
-  go_to_settings
+  # Best effort: if the Settings tab cannot be reached the section is reported
+  # as missing at the end, which is a finding. Returning non-zero from here
+  # under `set -e` would instead end the run and throw away every capture after
+  # it, which is not.
+  go_to_settings || true
   found=0
   # The Settings screen is long. Look for the row on the visible part first,
   # then scroll down a page at a time - from the middle of the screen, so the
@@ -483,7 +601,7 @@ for entry in \
   # of the whole Settings hub, and the row nearest the bottom of it - the health
   # information section - is the one that used to run out of budget.
   for attempt in 1 2 3 4 5 6 7 8; do
-    if tap_label "$label" 3; then
+    if tap_row "$label" 3; then
       found=1
       break
     fi
@@ -494,6 +612,13 @@ for entry in \
     dump_ui || true
     if shows "$expected"; then
       shoot "$name"
+      # Only leave the page that was actually opened. Pressing BACK on the hub
+      # itself leaves the *app*, and the run then spends the next section
+      # driving the launcher: that is the "(the app was not in the foreground;
+      # bringing it back)" line the last run printed, and the twelve failed
+      # searches that came after it.
+      adb_run shell input keyevent KEYCODE_BACK
+      sleep 1
     else
       echo "  the '$label' row was tapped but '$expected' is not on screen;"
       echo "  the tap landed somewhere else, so nothing was captured."
@@ -501,14 +626,11 @@ for entry in \
   else
     echo "  the '$label' section was not found"
   fi
-  adb_run shell input keyevent KEYCODE_BACK
-  sleep 1
-  ensure_foreground
 done
 echo "::endgroup::"
 
 echo "::group::About block"
-go_to_settings
+go_to_settings || true
 found=0
 # Two taps, not one.
 #
@@ -518,7 +640,7 @@ found=0
 # has never existed in docs/device-screenshots. The row is tapped first, and the
 # word is only looked for once the page behind it is open.
 for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
-  if tap_label "About" 3; then
+  if tap_row "About" 3; then
     found=1
     break
   fi
@@ -545,14 +667,14 @@ fi
 echo "::endgroup::"
 
 echo "::group::Privacy"
-go_to_settings
+go_to_settings || true
 found=0
 # The Privacy block sits above the About block, so it takes fewer scrolls than
 # the About block does - but the same generous budget costs nothing when the
 # row is found early, and it removes the guesswork from how far down the
 # screen a given section happens to be.
 for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
-  if tap_label "Privacy and data" 2; then
+  if tap_row "Privacy and data" 2; then
     found=1
     break
   fi
@@ -580,8 +702,7 @@ fi
 echo "::endgroup::"
 
 echo "::group::Day detail sheet"
-dump_ui || true
-tap_label "Calendar" 3 || true
+goto_tab 1 "Calendar" || true
 dump_ui || true
 # Any cell in the grid opens the day sheet. The cell's accessible name is its
 # day number, so "15" is the target: any date in the month works. If the
@@ -626,18 +747,21 @@ ensure_foreground
 # at which a run that has been quietly failing stops being quiet.
 check_app_health "the relaunch into dark mode"
 
-dump_ui || true
-tap_label "Today" 3 || true
-shoot "13-today-dark"
-dump_ui || true
-tap_label "Calendar" 3 || true
-shoot "14-calendar-dark"
-dump_ui || true
-tap_label "Insights" 3 || true
-shoot "15-insights-dark"
-dump_ui || true
-tap_label "Settings" 3 || true
-shoot "16-settings-dark"
+# The same four tabs as the light run, and the same verification. A dark
+# capture that is a copy of the one before it is worse than no capture: it says
+# the screen was checked when it was not.
+for entry in "0:Today:13-today-dark" "1:Calendar:14-calendar-dark" "2:Insights:15-insights-dark" "3:Settings:16-settings-dark"; do
+  index="${entry%%:*}"
+  rest="${entry#*:}"
+  label="${rest%%:*}"
+  name="${rest##*:}"
+  if goto_tab "$index" "$label"; then
+    shoot "$name"
+  else
+    echo "  nothing captured for $name: the app was not on the $label tab"
+  fi
+  check_app_health "the $label tab in dark mode"
+done
 
 adb shell "cmd uimode night no" >/dev/null 2>&1 || true
 sleep 3
