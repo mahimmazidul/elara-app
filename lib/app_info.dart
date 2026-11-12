@@ -8,7 +8,7 @@ class AppInfo {
   const AppInfo._();
 
   static const String name = 'Elara';
-  static const String version = '2.3.0+13';
+  static const String version = '2.3.1+14';
   static const String license = 'AGPL-3.0';
   static const String repositoryUrl =
       'https://github.com/mahimmazidul/elara-app';
