@@ -1,5 +1,21 @@
 # Why Elara's Today screen did not feel right, and what changed
 
+> **Updated in 2.2.1.** The diagnosis below was right and the fix was half of
+> it. It moved the hero to a deeper value and rebuilt Today around one object,
+> but it left the *ground* warm: a beige page (#F7F3EF), a dusty hero, and four
+> phase fills that sat between CIELAB C* 19 and C* 43 — sage barely coloured,
+> honey strongly coloured. The page was still carrying a tint of its own, so the
+> four dyes were being printed on coloured paper.
+>
+> 2.2.1 finishes the sentence: the page is a neutral (#F6F6F4, C* 1.0), the card
+> is white, the four dyes are solved to one weight (L* 62, C* 36 at each hue),
+> the honey accent is retired so the accent is the active phase's own dye, and
+> the four hero panels are solved to one lightness with cream ink at 4.9:1 or
+> better. Every number on this page that refers to the old palette is left as
+> written, because it is the record of what was measured at the time; the values
+> to change are in `lib/theme/elara_theme.dart` and the `:root` block of
+> `docs/index.html`.
+
 Written after the third "the colours feel like shit" report, on the theory that
 the third complaint about the same thing is not a taste problem — it is a
 diagnosis I keep failing to make. The reference was taka's home screen, which

@@ -232,7 +232,7 @@ class _TodayContent extends StatelessWidget {
         // is expected, and how sure that is.
         //
         // The fill is a value down from the decorative phase colour. At the
-        // decorative tone (#7FA894 and friends) a block this size reads as a
+        // decorative tone a block this size reads as a
         // wash instead of a colour, and white text on it goes grey.
         const SizedBox(height: ElaraSpacing.lg),
         ElaraHeroCard(

@@ -204,19 +204,25 @@ class _LimitationsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sentence case, because the previous lowercase fragment read as a
-          // truncated sentence and made the lowercase letter look like a
-          // typographic error rather than the start of a statement. It is a
-          // heading; it should look like one.
+          // Sentence case, because a lowercase fragment reads as a truncated
+          // sentence rather than as a heading.
+          //
+          // The heading used to be "Not a medical device" followed by three
+          // sentences about what the app is not. A reader who came here for
+          // reassurance about contraception got a list of denials; the same
+          // information now opens with what the estimate is, and puts the
+          // clinician in the second sentence where it is an instruction rather
+          // than a disclaimer.
           Text(
-            'Not a medical device',
+            'An estimate, and how far to trust it',
             style: type.subtitle(tokens.textPrimary),
           ),
           const SizedBox(height: ElaraSpacing.xs),
           Text(
-            'Elara estimates from recorded history. It is not a contraceptive, '
-            'does not measure hormones, and is not a substitute for '
-            'professional medical advice.',
+            'Elara reads the dates you record and estimates from them; every '
+            'window it shows carries the margin it was calculated with. For '
+            'contraception, or a change that worries you, it points you to a '
+            'clinician, on the screens where it matters.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.sm),

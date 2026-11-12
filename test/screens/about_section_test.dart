@@ -152,7 +152,7 @@ void main() {
 
     // The heading is a sentence, not a fragment: the fragment began with a
     // lowercase letter and read as truncated text rather than as a statement.
-    expect(find.text('Not a medical device'), findsOneWidget);
+    expect(find.text('An estimate, and how far to trust it'), findsOneWidget);
     // Where the data lives, said positively: the panel used to list the things
     // the app does not have, which is an argument with nobody.
     expect(find.textContaining('stays on this phone'), findsOneWidget);

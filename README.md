@@ -67,7 +67,7 @@ Everything stays on one phone, in the app's own storage.
   advice that does not depend on a forecast.
 - **Health information, kept apart.** Period pain, heavy bleeding, irregular
   periods, PMS, PMDD, PCOS, endometriosis and pain relief, from dated published
-  sources. Not personalised, and labelled as such.
+  sources. General guidance, labelled as general on every page.
 - **Bangladesh by default.** Heat index rather than air temperature, PM2.5, four
   local seasons, Hijri and nakshatra alongside the Gregorian date, reminder text
   that stays off a lock screen.
@@ -113,9 +113,10 @@ the screenshot suite. Prediction methodology and its calibration:
 
 ## Limits
 
-Elara is not a medical device. It works from recorded dates alone — no hormone is
-measured — and it is not a contraceptive: a fertile window guessed from a
-calendar does not make any day safe, and the app says so where it matters.
+Elara is a record and an estimate built from it. It works from the dates you
+log, which is the whole of its input, and where contraception or a diagnosis is
+the question it points you to a clinician: a fertile window guessed from a
+calendar makes no day safe, and the app says so where it matters.
 
 ## The name
 
@@ -139,9 +140,9 @@ it was written; moving it to another phone is the encrypted export you run.
 It depends entirely on the history. Three estimators run on your recorded period
 starts and the app shows the window they agree on — a steady history gives a day
 or two, an irregular one gives a week, and a history too short to say anything
-gets an explanation rather than an invented date. It is arithmetic on dates; no
-hormone is measured, which is why it is not a contraceptive. Method and
-calibration: [`docs/PREDICTION.md`](docs/PREDICTION.md).
+gets an explanation rather than an invented date. It is arithmetic on the dates
+you log, and where contraception is the question it points you to a clinician.
+Method and calibration: [`docs/PREDICTION.md`](docs/PREDICTION.md).
 
 **What if I am on the pill, pregnant, or have just given birth?**
 You tell it once and it stops forecasting, with the reason on the home screen.

@@ -94,8 +94,8 @@ class QuietToday extends StatelessWidget {
         LunarStrip(date: DateTime.now()),
         const SizedBox(height: ElaraSpacing.md),
         Text(
-          'Bleeding you log here is kept either way. Nothing is deleted when a '
-          'prediction is paused.',
+          'Bleeding you log here is kept either way, and it is still there '
+          'when a prediction resumes.',
           style: type.caption(tokens.textSecondaryStrong),
           textAlign: TextAlign.center,
         ),

@@ -6,7 +6,7 @@
 <title>Elara — cycle awareness for the person who cares</title>
 <meta name="description" content="Elara is an offline-first Android app that helps you remember, notice, prepare and care, around your partner's cycle.">
 <meta name="color-scheme" content="light">
-<meta name="theme-color" content="#F7F3EF">
+<meta name="theme-color" content="#F6F6F4">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:title" content="Elara">
@@ -28,25 +28,25 @@
      dyes as the only saturated colour on the page — the same four the app
      draws. If the app's palette changes, these are the values to change, and
      nothing else on this page should need to move. */
-  --bg: #F7F3EF;
-  --card: #FFFDFB;
+  --bg: #F6F6F4;
+  --card: #FFFFFF;
   --text: #241E1B;
-  --muted: #6B605A;
-  --muted-strong: #4F453F;
-  --accent: #D2A45F;
+  --muted: #66635E;
+  --muted-strong: #4F4B45;
+  --accent: #B88E56;
   --accent-ink: #241E1B;
-  --rule: #E6DDD4;
+  --rule: #E7E6E1;
 
-  --menstrual: #C98C90;
-  --follicular: #7FA894;
-  --ovulatory: #D2A45F;
-  --luteal: #9384B6;
+  --menstrual: #D57C8B;
+  --follicular: #4CA484;
+  --ovulatory: #B88E56;
+  --luteal: #A48AC7;
 
   /* The phase colours as readable ink, for the labels under the strip. */
-  --menstrual-ink: #96575C;
-  --follicular-ink: #43715F;
-  --ovulatory-ink: #7C5A20;
-  --luteal-ink: #5F5285;
+  --menstrual-ink: #B24D5E;
+  --follicular-ink: #347960;
+  --ovulatory-ink: #88663A;
+  --luteal-ink: #8555C3;
 
   --shadow: 0 1px 2px rgba(36, 30, 27, 0.06);
   --radius: 14px;
@@ -135,10 +135,10 @@ h1 {
   text-align: center;
 }
 
-.phase-labels li:nth-child(1) { color: #96575C; }
-.phase-labels li:nth-child(2) { color: #43715F; }
-.phase-labels li:nth-child(3) { color: #7C5A20; }
-.phase-labels li:nth-child(4) { color: #5F5285; }
+.phase-labels li:nth-child(1) { color: #B24D5E; }
+.phase-labels li:nth-child(2) { color: #347960; }
+.phase-labels li:nth-child(3) { color: #88663A; }
+.phase-labels li:nth-child(4) { color: #8555C3; }
 
 /* ---- Sections --------------------------------------------------------- */
 
@@ -306,7 +306,7 @@ footer {
 
 footer p { margin: 0.35rem 0 0; }
 
-a { color: #95694D; text-decoration: none; }
+a { color: #8A6A4F; text-decoration: none; }
 
 a:hover { text-decoration: underline; }
 
@@ -462,10 +462,10 @@ a:focus-visible,
            tree rather than read out as an unlabelled image. -->
       <svg viewBox="0 0 400 8" role="img" aria-labelledby="phases-title">
         <title id="phases-title">The four cycle phases: menstrual, follicular, ovulatory, luteal</title>
-        <rect x="0"   y="0" width="97"  height="8" rx="4" fill="#C98C90"/>
-        <rect x="101" y="0" width="97"  height="8" rx="4" fill="#7FA894"/>
-        <rect x="202" y="0" width="97"  height="8" rx="4" fill="#D2A45F"/>
-        <rect x="303" y="0" width="97"  height="8" rx="4" fill="#9384B6"/>
+        <rect x="0"   y="0" width="97"  height="8" rx="4" fill="#D57C8B"/>
+        <rect x="101" y="0" width="97"  height="8" rx="4" fill="#4CA484"/>
+        <rect x="202" y="0" width="97"  height="8" rx="4" fill="#B88E56"/>
+        <rect x="303" y="0" width="97"  height="8" rx="4" fill="#A48AC7"/>
       </svg>
       <ul class="phase-labels" aria-hidden="true">
         <li data-phase-key="menstrual">Menstrual</li>
@@ -497,8 +497,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t1">
             <title id="t1">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Remembers the dates.</strong> An estimate of the next period,
@@ -507,8 +507,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t2">
             <title id="t2">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Suggests something kind.</strong> A few ideas for the day, in
@@ -517,8 +517,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t3">
             <title id="t3">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Reads the weather, not her mood.</strong> Heat and air quality
@@ -527,8 +527,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t4">
             <title id="t4">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Stays on the phone.</strong> The history is written to
@@ -559,8 +559,8 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q1">
             <title id="q1">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span><strong>Three honest modes.</strong> Estimate the cycle, say she
@@ -570,23 +570,24 @@ a:focus-visible,
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q2">
             <title id="q2">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span><strong>No countdown through a loss.</strong> The first period after
-          a loss can take weeks. Elara will not call that a late period, and no
-          reminder will fire to say it is missing.</span>
+          <span><strong>A countdown that stops through a loss.</strong> The first
+          period after a loss can take weeks, so Elara holds the countdown and the
+          reminders quiet until they are useful again.</span>
         </li>
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="q3">
             <title id="q3">Included</title>
-            <circle cx="10" cy="10" r="9" fill="none" stroke="#7FA894" stroke-width="1.5"/>
-            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#43715F" stroke-width="1.8"
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
                   stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span><strong>Nothing is deleted.</strong> Switching a mode off keeps
-          every recorded day, and prediction starts again whenever it is useful.</span>
+          <span><strong>Every recorded day stays.</strong> Switching a mode off
+          keeps everything you logged, and prediction picks up again whenever it is
+          useful.</span>
         </li>
       </ul>
     </section>
@@ -619,7 +620,7 @@ a:focus-visible,
       </div>
       <p class="note">
         Every image above is a real render of the running app over a fixed
-        fictional dataset &mdash; no mockups and no edited screenshots. The
+        fictional dataset, published exactly as the render wrote it. The
         screenshots captured from the compiled APK on an emulator, with the
         Android system bars in frame, are in the repository under
         <code>docs/device-screenshots/</code>.
@@ -643,8 +644,8 @@ a:focus-visible,
           recorded period starts and the app shows the window they agree on: a
           steady history gives a window of a day or two, an irregular one gives a
           week, and if the history is too short to say anything the app says that
-          instead of inventing a date. It is arithmetic on dates &mdash; no
-          hormone is measured, which is why it is not a contraceptive.</p>
+          instead of inventing a date. It is arithmetic on the dates you log, and
+          where contraception is the question it points you to a clinician.</p>
         </details>
         <details>
           <summary>What if I am on the pill, or pregnant, or have just given

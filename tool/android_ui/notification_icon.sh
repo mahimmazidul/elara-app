@@ -107,7 +107,12 @@ dump="$(adb shell dumpsys notification --noredact 2>/dev/null || true)"
 if echo "$dump" | grep -q "Notification icon check"; then
   echo "  the notification is present in the status bar"
 else
-  echo "  ::error::no Elara notification is in the status bar."
+  # A warning, not an error: the caller runs this at the end of the
+  # capture with `|| true`, so nothing downstream fails on it. An
+  # ::error:: annotation that no step acts on paints a green run red and
+  # teaches everyone to ignore red, which is how a real failure gets
+  # missed later.
+  echo "  ::warning::no Elara notification is in the status bar."
   echo "  The capture below would prove nothing, so it is not taken."
   echo "NOTIFICATION_ICON_CHECK=not-found" > "$EVIDENCE/notification-icon-check.txt"
   exit 1

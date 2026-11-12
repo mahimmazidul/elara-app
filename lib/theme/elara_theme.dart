@@ -67,10 +67,11 @@ class ElaraPalette {
   /// Primary copy. 12.27:1 on [bgPrimary], 12.50:1 on [bgCard] (light).
   final Color textPrimary;
 
-  /// Secondary copy, as specified (#8B7D7B). Measures 3.69:1 on [bgPrimary],
-  /// which is below AA for small text — so it is reserved for text at 16px+ or
-  /// medium weight, and for non-essential labels. Use [textSecondaryStrong]
-  /// for small captions. Dark mode's value clears AA directly (5.42:1).
+  /// Secondary copy. 5.5:1 on [bgPrimary], 6.0:1 on [bgCard] (light); 6.5:1 on
+  /// the dark card. The palette before this one had it at 3.7:1, which is below
+  /// AA, and the workaround was to reserve it for text at 16px+ or medium
+  /// weight. That caveat is gone: the value is dark enough for small text, so
+  /// captions may use it.
   final Color textSecondary;
 
   /// Small-text-safe secondary copy. 4.54:1 on [bgPrimary], 4.62:1 on [bgCard].
@@ -115,14 +116,15 @@ class ElaraPalette {
   final Color unknownPhase;
   final Color unknownPhaseText;
 
-  // The hero fills: one saturated panel per phase, deep enough for cream ink.
+  // The hero fills: one panel per phase, deep enough for cream ink.
   //
-  // The four decorative fills above sit between 2.0:1 and 3.1:1 against the
-  // page. That is right for a 6 px ring, a dot and a 20% wash, and wrong for
-  // anything large: a 340 x 300 panel of #7FA894 is the colour of a hospital
-  // corridor, and the eye reads the whole screen as washed out. These are the
-  // same four dyes taken down to a value where they read as a colour rather
-  // than as a tint, each measured to clear 5.0:1 with cream ink on top.
+  // The four decorative fills above are for a 6 px ring, a dot and a 20% wash;
+  // a 340 x 300 panel of one of them is the colour of a hospital corridor. So
+  // the panel takes the same hue at a value where it reads as a colour rather
+  // than as a tint. All four are solved to the same lightness (L* 45.5) so that
+  // no phase's panel is heavier than another's, and each clears 4.9:1 with
+  // cream ink on top. Before this, the menstrual panel was the darkest and
+  // largest thing on the screen and read as dried blood rather than as a phase.
   final Color heroMenstrual;
   final Color heroFollicular;
   final Color heroOvulatory;
@@ -131,107 +133,126 @@ class ElaraPalette {
   /// Ink drawn on a hero fill. Only ever used with the four fills above.
   final Color onHero;
 
-  /// The light theme: warm paper, plum-black ink, honey where there is an
-  /// accent.
+  /// The light theme: paper, ink, and four dyes of equal weight.
   ///
-  /// The previous palette was cool slate-blue with white cards. It was legible
-  /// and it read as a clinical dashboard — a grid of blue-grey panels, which is
-  /// the same visual language as a hospital records system and the opposite of
-  /// what this app is for. This one is built from paper and ink: a warm
-  /// off-white page (#F7F3EF), a card that is barely lighter than it (#FFFDFB)
-  /// so surfaces separate by tone rather than by shadow, and near-black warm
-  /// ink (#241E1B) for text.
+  /// The palette before this one was warm all the way through - a beige page
+  /// (#F7F3EF), a card barely lighter than it, a dusty rose hero and a honey
+  /// accent - on the theory that warmth would read as calm. It read as a sepia
+  /// photograph instead, and the reason is measurable rather than a matter of
+  /// taste: every element carried a similar amount of colour, so nothing was
+  /// quiet and nothing could be loud. Sampled from a running capture, the four
+  /// phase fills sat between CIELAB C* 19 and C* 43 - sage barely coloured,
+  /// honey strongly coloured - and the page itself carried C* 2.5 of warmth
+  /// under a hero of C* 46 in the same family. There was no resting point for
+  /// the eye and no step between the ground and the colour on it.
   ///
-  /// The four phase fills are the only saturated colour in the app, and each is
-  /// a natural dye rather than a screen primary: dusty rose for bleeding, sage
-  /// for the follicular days, honey for the ovulatory days, and a muted violet
-  /// for the luteal phase. Nothing is a pure red, green or blue, because a
-  /// cycle is not an alarm state.
+  /// This palette is built the other way round:
   ///
-  /// Contrast is measured, not assumed: primary ink clears 14:1, secondary
-  /// 6:1, every phase-text variant clears 4.9:1 on both the page and the card,
-  /// and the ink drawn on top of a phase fill clears 4.8:1 against the darkest
-  /// of the four. `test/theme/phase_theme_test.dart` asserts all of it.
+  ///  * the page is a true neutral (#F6F6F4, C* 1.0) and the card is white, so
+  ///    the surfaces separate by being lighter than the page rather than by
+  ///    carrying a tint of their own;
+  ///  * the four dyes are generated at one weight - each solved to L* 62 and
+  ///    C* 36 at its own hue - so the legend reads as a set of four instead of
+  ///    four unrelated colours. Yellow is still the most chromatic of them
+  ///    because that is what yellow does; what they now share is mass;
+  ///  * nothing else carries colour. The honey accent is gone: the accent is
+  ///    the active phase's own dye (see [ElaraTheme.paletteFor]), so the
+  ///    selected control and the phase agree instead of arguing. What remains
+  ///    in the neutral case is a sand (#E9E3D9) that reads as paper rather
+  ///    than as a fifth hue.
+  ///
+  /// Measured, not assumed: ink clears 15.2:1 on the page and 16.4:1 on the
+  /// card, secondary copy clears 5.5:1 and 6.0:1 (it did not before, and was
+  /// restricted to large text as a result), every phase-text variant clears
+  /// 4.7:1 on the page and 5.1:1 on the card, and dark ink on any of the four
+  /// fills clears 5.4:1. `test/theme/phase_theme_test.dart` asserts all of it.
   static const ElaraPalette light = ElaraPalette(
-    bgPrimary: Color(0xFFF7F3EF),
-    bgCard: Color(0xFFFFFDFB),
+    bgPrimary: Color(0xFFF6F6F4),
+    bgCard: Color(0xFFFFFFFF),
     textPrimary: Color(0xFF241E1B),
-    textSecondary: Color(0xFF6B605A),
-    textSecondaryStrong: Color(0xFF4F453F),
-    phaseMenstrual: Color(0xFFC98C90),
-    phaseFollicular: Color(0xFF7FA894),
-    phaseOvulatory: Color(0xFFD2A45F),
-    phaseLuteal: Color(0xFF9384B6),
-    phaseMenstrualText: Color(0xFF96575C),
-    phaseFollicularText: Color(0xFF43715F),
-    phaseOvulatoryText: Color(0xFF7C5A20),
-    phaseLutealText: Color(0xFF5F5285),
-    accent: Color(0xFFE7BE97),
-    accentText: Color(0xFF2C2320),
-    success: Color(0xFF6FA88C),
-    successText: Color(0xFF3B6B54),
-    warning: Color(0xFFC79A6E),
-    warningText: Color(0xFF77502A),
-    danger: Color(0xFFB0768A),
-    dangerText: Color(0xFF7C4356),
-    moonGlow: Color(0xFFF1EAE2),
+    textSecondary: Color(0xFF66635E),
+    textSecondaryStrong: Color(0xFF4F4B45),
+    phaseMenstrual: Color(0xFFD57C8B),
+    phaseFollicular: Color(0xFF4CA484),
+    phaseOvulatory: Color(0xFFB88E56),
+    phaseLuteal: Color(0xFFA48AC7),
+    phaseMenstrualText: Color(0xFFB24D5E),
+    phaseFollicularText: Color(0xFF347960),
+    phaseOvulatoryText: Color(0xFF88663A),
+    phaseLutealText: Color(0xFF8555C3),
+    accent: Color(0xFFE9E3D9),
+    accentText: Color(0xFF4F4B45),
+    success: Color(0xFF54A67D),
+    successText: Color(0xFF347957),
+    warning: Color(0xFFCB855D),
+    warningText: Color(0xFF966040),
+    danger: Color(0xFFD86F79),
+    dangerText: Color(0xFFB24D57),
+    moonGlow: Color(0xFFF1F0EB),
     onPhase: Color(0xFF241E1B),
-    divider: Color(0xFFE6DDD4),
-    track: Color(0xFFEFE7DE),
-    unknownPhase: Color(0xFF8C857F),
-    unknownPhaseText: Color(0xFF5B544F),
-    heroMenstrual: Color(0xFFA63E52),
-    heroFollicular: Color(0xFF2E6F58),
-    heroOvulatory: Color(0xFF8F5A0E),
-    heroLuteal: Color(0xFF56447F),
+    divider: Color(0xFFE7E6E1),
+    track: Color(0xFFF0EFEA),
+    unknownPhase: Color(0xFF8A8A85),
+    unknownPhaseText: Color(0xFF5B5B56),
+    heroMenstrual: Color(0xFFB34759),
+    heroFollicular: Color(0xFF047B50),
+    heroOvulatory: Color(0xFF93611F),
+    heroLuteal: Color(0xFF805FAB),
     onHero: Color(0xFFFFFBF4),
   );
 
-  /// The dark theme: warm near-black, the same four dyes, brighter ink.
+  /// The dark theme: the same four dyes on a warm near-black.
   ///
-  /// Not the light palette inverted. The page is a warm near-black (#14100F)
-  /// because a blue-black at night reads as a screen, and the card sits one
-  /// step above it (#1E1917) so surfaces separate without a shadow. The phase
-  /// fills are the same four hues as the light theme — a phase should not
-  /// change colour when the phone does — each with a lighter text variant,
-  /// because a fill that reads well as a block is too dark to read as a word.
+  /// Not the light palette inverted, and no longer darker versions of the four
+  /// dyes. The fills are the *same* values as the light theme - a phase should
+  /// not change colour when the phone does - and only the inks move, because a
+  /// fill that reads well as a block is too dark to read as a word.
+  ///
+  /// The page stays a warm near-black (#14100F) rather than a blue-black: at
+  /// night a cool black reads as a screen, and this app is read in bed. The
+  /// hero fills stay as they are in the light theme, for the reason the theme
+  /// before this one already found: deepening them for a dark page took the
+  /// honey down to an olive brown and the plum down to grey, and at that
+  /// lightness the hue stops reading at all.
+  ///
+  /// One thing changed for a real defect rather than a preference: the accent
+  /// used to be a dark brown (#6B4A34) while [onPhase] - the ink a filled
+  /// button paints its label in - stayed near-black, which is 2.1:1. A filled
+  /// button therefore had a label that did not meet AA in dark mode. The accent
+  /// is now the light end of the same warm neutral (#CFC8BC), which puts the
+  /// label at 9.9:1 and still looks like paper rather than like a colour.
   static const ElaraPalette dark = ElaraPalette(
     bgPrimary: Color(0xFF14100F),
     bgCard: Color(0xFF1E1917),
     textPrimary: Color(0xFFF3EDE8),
     textSecondary: Color(0xFFA89C94),
     textSecondaryStrong: Color(0xFFCDBFB5),
-    phaseMenstrual: Color(0xFFC98C90),
-    phaseFollicular: Color(0xFF7FA894),
-    phaseOvulatory: Color(0xFFD2A45F),
-    phaseLuteal: Color(0xFF9384B6),
-    phaseMenstrualText: Color(0xFFDCA9AC),
-    phaseFollicularText: Color(0xFF9DC7B4),
-    phaseOvulatoryText: Color(0xFFE5BF85),
-    phaseLutealText: Color(0xFFB4A7D1),
-    accent: Color(0xFF6B4A34),
+    phaseMenstrual: Color(0xFFD57C8B),
+    phaseFollicular: Color(0xFF4CA484),
+    phaseOvulatory: Color(0xFFB88E56),
+    phaseLuteal: Color(0xFFA48AC7),
+    phaseMenstrualText: Color(0xFFF2A6B3),
+    phaseFollicularText: Color(0xFF81CAB0),
+    phaseOvulatoryText: Color(0xFFDAB686),
+    phaseLutealText: Color(0xFFC8B1E7),
+    accent: Color(0xFFCFC8BC),
     accentText: Color(0xFFF3EDE8),
-    success: Color(0xFF6FA88C),
-    successText: Color(0xFF8CC2A6),
-    warning: Color(0xFFC79A6E),
-    warningText: Color(0xFFDCB187),
-    danger: Color(0xFFB0768A),
-    dangerText: Color(0xFFD59BAE),
+    success: Color(0xFF54A67D),
+    successText: Color(0xFF8CC7A9),
+    warning: Color(0xFFCB855D),
+    warningText: Color(0xFFE7B78D),
+    danger: Color(0xFFD86F79),
+    dangerText: Color(0xFFF0AAB0),
     moonGlow: Color(0xFF241E1B),
     onPhase: Color(0xFF241E1B),
-    divider: Color(0xFF322B28),
-    track: Color(0xFF2A2320),
+    divider: Color(0xFF322E2B),
+    track: Color(0xFF2A2622),
     unknownPhase: Color(0xFF8C857F),
     unknownPhaseText: Color(0xFFB3AAA3),
-    // The same four values as the light theme. Deepening them further, which
-    // was the first instinct for a dark page, took the honey down to an olive
-    // brown and the plum down to grey: at that lightness the hue stops reading
-    // and the panel looks like a rendering fault rather than a colour. The
-    // panel is the one lit object on a dark screen, and it should look lit.
-    heroMenstrual: Color(0xFFA63E52),
-    heroFollicular: Color(0xFF2E6F58),
-    heroOvulatory: Color(0xFF9A5F0C),
-    heroLuteal: Color(0xFF56447F),
+    heroMenstrual: Color(0xFFB34759),
+    heroFollicular: Color(0xFF047B50),
+    heroOvulatory: Color(0xFF93611F),
+    heroLuteal: Color(0xFF805FAB),
     onHero: Color(0xFFFFFBF4),
   );
 
