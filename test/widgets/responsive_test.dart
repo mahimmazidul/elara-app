@@ -158,7 +158,10 @@ void main() {
     testWidgets('a phone keeps the bottom bar and no rail', (tester) async {
       await pumpApp(tester, size: const Size(390, 844), starts: history);
 
-      expect(find.byType(NavigationBar), findsOneWidget);
+      // The bar is the app's own floating card, not a Material NavigationBar:
+      // it carries the raised centre action, which NavigationBar cannot express
+      // without a fifth destination that is not a destination.
+      expect(find.byType(ElaraNavBar), findsOneWidget);
       expect(find.byType(NavigationRail), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -167,7 +170,7 @@ void main() {
       await pumpApp(tester, size: const Size(1024, 768), starts: history);
 
       expect(find.byType(NavigationRail), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(ElaraNavBar), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -178,7 +181,7 @@ void main() {
         starts: history,
       );
       expect(find.byType(NavigationRail), findsNothing);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(ElaraNavBar), findsOneWidget);
     });
 
     testWidgets('at the breakpoint the rail appears', (tester) async {
@@ -198,7 +201,7 @@ void main() {
     /// Which tab the bar says is selected — the reader-visible result of a
     /// swipe, and the only thing worth asserting.
     int selected(WidgetTester tester) =>
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+        tester.widget<ElaraNavBar>(find.byType(ElaraNavBar)).selectedIndex;
 
     Future<void> swipe(WidgetTester tester, double dx) async {
       await tester.drag(
@@ -430,6 +433,76 @@ void main() {
         expect(tokens.phaseWash(phaseKey).a, greaterThan(0));
       }
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  // The bar carries a raised centre action. That is the one thing a Material
+  // NavigationBar could not express here: the app's primary verb, on every tab,
+  // instead of only behind a button in the calendar's header.
+  group('the centre action', () {
+    Finder inBar(Finder matching) =>
+        find.descendant(of: find.byType(ElaraNavBar), matching: matching);
+
+    testWidgets('floats clear of the edges instead of sitting on them', (
+      tester,
+    ) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      // The card, not the widget that spans the screen: a bar welded to the
+      // bottom edge would start at x = 0, end at x = 390 and end at y = 844.
+      // This one is inset at both sides and stops above the edge, so the page is
+      // visible all the way round it - which is the whole of what "floating"
+      // means, and the thing that would silently regress if someone put a
+      // NavigationBar back.
+      final card = tester.getRect(find.byKey(ElaraNavBar.cardKey));
+      expect(card.left, greaterThan(0));
+      expect(card.right, lessThan(390));
+      expect(card.bottom, lessThan(844));
+
+      // And the action rises above it, which is what makes it findable with a
+      // thumb without giving it a fifth column.
+      final action = tester.getRect(
+        find.descendant(
+          of: find.byType(ElaraNavBar),
+          matching: find.byIcon(Icons.add_rounded),
+        ),
+      );
+      expect(action.top, lessThan(card.top));
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('opens the log sheet from a tab with no logging control', (
+      tester,
+    ) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      // Today has no way of its own to record anything; that was the complaint.
+      await tester.tap(inBar(find.text('Today')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(inBar(find.byIcon(Icons.add_rounded)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('A period start'), findsOneWidget);
+      expect(find.text('A symptom'), findsOneWidget);
+    });
+
+    testWidgets('the period-start row opens the picker the calendar uses', (
+      tester,
+    ) async {
+      await pumpApp(tester, size: const Size(390, 844), starts: history);
+
+      await tester.tap(inBar(find.byIcon(Icons.add_rounded)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('A period start'));
+      await tester.pumpAndSettle();
+
+      // The same help text as the calendar's header button: one flow, two doors.
+      // A sheet that opened a second, subtly different date entry would pass a
+      // "the sheet opened" test and still be the bug this change was meant to
+      // remove.
+      expect(find.text('Which day did it start?'), findsOneWidget);
     });
   });
 }

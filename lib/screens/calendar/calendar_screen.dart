@@ -12,6 +12,7 @@ import '../../utils/phase_timeline.dart';
 import '../../widgets/phase_chip.dart';
 import '../../widgets/primitives.dart';
 import 'day_detail_sheet.dart';
+import 'period_start_flow.dart';
 import '../../widgets/icons.dart';
 
 /// Month calendar coloured by predicted phase.
@@ -42,47 +43,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
-  /// Records a period start, on the day it happened rather than the day you
-  /// remembered.
-  ///
-  /// This used to write today's date and nothing else, so a start that began
-  /// three days ago could not be entered at all. The alternative was to log it
-  /// today and be wrong by three days, and every estimate afterwards would
-  /// carry that error. A picker with today already selected costs one tap in
-  /// the common case and fixes the case that matters.
-  Future<void> _logPeriodStart() async {
-    final cycles = context.read<CycleProvider>();
-    final today = dateOnly(DateTime.now());
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: today,
-      firstDate: DateTime(today.year - 2, today.month, today.day),
-      lastDate: today,
-      helpText: 'Which day did it start?',
-    );
-    if (picked == null || !mounted) return;
-
-    final start = dateOnly(picked);
-    final stored = await cycles.addCycle(startDate: start);
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          stored == null
-              ? (cycles.lastError ?? 'Could not log the period start.')
-              : 'Logged ${_formatShortDate(start)} as a period start.',
-        ),
-      ),
-    );
-
-    if (stored != null) {
-      final prediction = context.read<PredictionProvider>();
-      // The provider graph also reacts to the revision bump; forcing here keeps
-      // the calendar in step even if that path is still mid-frame.
-      await prediction.refresh();
-    }
-  }
+  /// The header button. The flow itself lives in `period_start_flow.dart`,
+  /// because the shell's centre action offers the same thing from every tab.
+  Future<void> _logPeriodStart() => logPeriodStart(context);
 
   @override
   Widget build(BuildContext context) {
@@ -360,7 +323,7 @@ class _DayCell extends StatelessWidget {
     // is today, because colour is doing all of that work visually and is not
     // available to everyone.
     final semanticsLabel = [
-      _formatShortDate(day.date),
+      formatShortDate(day.date),
       hasPhase ? day.label : 'no phase',
       day.isRecorded ? 'recorded' : 'projected',
       if (isToday) 'today',
@@ -514,8 +477,6 @@ const List<String> _monthNames = [
 String _formatMonthYear(DateTime month) =>
     '${_monthNames[month.month - 1]} ${month.year}';
 
-String _formatShortDate(DateTime date) =>
-    '${date.day} ${_monthNames[date.month - 1].substring(0, 3)} ${date.year}';
 
 /// Height of one calendar cell.
 ///
