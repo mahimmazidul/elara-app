@@ -297,45 +297,66 @@ ensure_foreground() {
 # "Calendar\nTab 2 of 4" and whose `selected` attribute is true for the current
 # one. That is a real assertion about where the app is, which a label match is
 # not.
+# Is the tab called $1 the selected one?
+#
+# This used to grep for the "Tab 3 of 4" descriptor a Material NavigationBar puts
+# on each destination, with selected="true" beside it. The bar is now the app's
+# own floating card - four slots with a raised centre action, which a
+# NavigationBar cannot express - so that descriptor no longer exists, and this
+# check failed against a bar that was working perfectly: every Settings capture
+# reported "the Settings tab could not be opened" and the run lost eight images.
+#
+# What the app does publish is each slot's own accessibility node: the tab's
+# name, with selected="true" on the current one. That is the same fact read from
+# the shape the app actually has.
 tab_is_selected() {
-  # The bar counts from one: the fourth tab calls itself "Tab 4 of 4". The
-  # index passed in counts from zero, so it is converted here rather than at
-  # every call site.
-  local number=$(( $1 + 1 ))
+  local label="$1"
   dump_ui || return 1
-  grep -qE "content-desc=\"[^\"]*Tab $number of [0-9]+\"[^>]*selected=\"true\"" "$UI_DUMP"
+  grep -oE '<node [^>]*>' "$UI_DUMP" \
+    | grep -F "content-desc=\"$label\"" \
+    | grep -q 'selected="true"'
 }
 
-# Taps the centre of a tab, computed from the screen size.
+# Taps a tab by its own label. This is the way in; tap_tab below is the fallback.
 #
-# Tapping the label was how this used to move between tabs, and it is how
-# `03-calendar-light.png` came out as a byte-for-byte copy of
-# `04-insights-light.png`: the tap reported success, the app did not change
-# screen, and the next capture took the picture that was already there. The tab
-# bar is four equal columns at the foot of the display, so its centres are
-# arithmetic, and arithmetic does not miss.
+# It used to be the other way round. The bar was four equal full-width columns at
+# the very foot of the display, so its centres were arithmetic, and arithmetic
+# does not miss - which was true, and stopped being true when the bar began to
+# float clear of the edge with a raised action in the middle. The label is not
+# arithmetic, and it follows the layout.
+tap_tab_label() {
+  local label="$1"
+  local wait="${2:-3}"
+  tap_label "$label" "$wait"
+}
+
+# Last resort: the centre of the column the tab would occupy if the card spanned
+# the display. The card is inset by 8 at each side and the raised action takes 56
+# from the middle, which leaves four slots whose centres are close enough to
+# (2i+1)/8 of the width that a tap there still lands inside the right one. Its
+# vertical centre is 40 above the bottom edge: an 8-pixel gap plus half of a
+# 64-pixel card.
 tap_tab() {
   local index="$1"
   local wait="${2:-3}"
   local x=$(( SCREEN_W * (2 * index + 1) / 8 ))
-  local y=$(( SCREEN_H * 93 / 100 ))
-  echo "  tapping tab $index at ($x,$y)"
+  local y=$(( SCREEN_H - 40 ))
+  echo "  tapping tab $index at ($x,$y), by position"
   adb_run shell input tap "$x" "$y"
   sleep "$wait"
 }
 
-# Switches to a tab and proves it, retrying once.
+# Switches to a tab and proves it, retrying once, by label and then by position.
 goto_tab() {
-  local index="$1"
-  local label="$2"
-  tap_tab "$index" 3
-  if tab_is_selected "$index"; then
+  local label="$1"
+  local index="$2"
+  if tap_tab_label "$label" 3 && tab_is_selected "$label"; then
     echo "  the $label tab is open"
     return 0
   fi
-  echo "  the $label tab did not open on the first tap; tapping it again"
+  echo "  the $label tab did not open by its label; trying its position"
   tap_tab "$index" 4
-  if tab_is_selected "$index"; then
+  if tab_is_selected "$label"; then
     echo "  the $label tab is open"
     return 0
   fi
@@ -351,7 +372,7 @@ goto_tab() {
 # known screen, so one missed tap cannot make every later capture fail.
 go_to_settings() {
   ensure_foreground
-  if ! goto_tab 3 "Settings"; then
+  if ! goto_tab "Settings" 3; then
     echo "  (the Settings tab was not reachable)"
     return 1
   fi
@@ -548,14 +569,15 @@ fi
 echo "::endgroup::"
 
 echo "::group::Tabs, light"
-# The index is the tab's position in the bar, which is also what its
-# content-desc calls itself: "Tab 1 of 4" is Today.
+# Each entry is "position:label:file". The position is the tab's place in the
+# bar and the label is what the bar calls it; the tap goes by the label and the
+# position is only the fallback.
 for entry in "0:Today:01-today-light" "1:Calendar:03-calendar-light" "2:Insights:04-insights-light" "3:Settings:05-settings-light"; do
   index="${entry%%:*}"
   rest="${entry#*:}"
   label="${rest%%:*}"
   name="${rest##*:}"
-  if goto_tab "$index" "$label"; then
+  if goto_tab "$label" "$index"; then
     shoot "$name"
   else
     echo "  nothing captured for $name: the app was not on the $label tab"
@@ -702,7 +724,7 @@ fi
 echo "::endgroup::"
 
 echo "::group::Day detail sheet"
-goto_tab 1 "Calendar" || true
+goto_tab "Calendar" 1 || true
 dump_ui || true
 # Any cell in the grid opens the day sheet. The cell's accessible name is its
 # day number, so "15" is the target: any date in the month works. If the

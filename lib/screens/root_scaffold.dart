@@ -536,9 +536,16 @@ class _NavSlot extends StatelessWidget {
     final type = context.type;
     final label = _RootScaffoldState._destinations[i].label;
 
+    // One node per tab, named by the tab: button, name, selected state. The
+    // label is set here and the subtree excluded, so a screen reader says
+    // "Calendar, selected, button" once instead of reading the icon and the
+    // label as two separate things. It is also what the device capture asserts
+    // on, since the "Tab 2 of 4" descriptor a NavigationBar used to add is gone.
     return Semantics(
       button: true,
       selected: isSelected,
+      label: label,
+      excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
