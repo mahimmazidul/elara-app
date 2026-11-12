@@ -127,6 +127,50 @@ jobs:
           # app through its screens, taking a screencap of each.
           script: tool/android_ui/capture_screens.sh
 
+      # A job's log needs an account to read; its annotations do not.
+      #
+      # The 2.2.0 run failed with "The process '/usr/bin/sh' failed with exit
+      # code 255" and nothing else: the evidence artifact had a quarter of its
+      # usual contents, the logcat was written by a line the script never
+      # reached, and the log that would have explained it is behind a sign-in.
+      # The failure was reported, and it was undiagnosable from outside this
+      # repository, which is not a thing a workflow should be able to do.
+      #
+      # So a failed capture now publishes the tail of its own log and the
+      # logcat as annotations, and repeats it in the job summary.
+      - name: Report why the capture failed
+        if: failure()
+        run: |
+          set -uo pipefail
+          found=0
+          for file in evidence/capture-script.log evidence/logcat-capture.txt; do
+            if [ ! -f "$file" ]; then
+              continue
+            fi
+            found=1
+            echo "::group::The last 60 lines of $file"
+            tail -n 60 "$file"
+            echo "::endgroup::"
+            while IFS= read -r line; do
+              [ -n "$line" ] || continue
+              echo "::error file=$file::$line"
+            done < <(tail -n 20 "$file")
+          done
+
+          {
+            echo "## The device capture failed"
+            echo
+            if [ "$found" = 0 ]; then
+              echo "No script log or logcat reached the evidence directory, so the"
+              echo "run died before the harness could write anything. That points at"
+              echo "the emulator or at adb, not at the app."
+            else
+              echo '```'
+              tail -n 60 evidence/capture-script.log 2>/dev/null || true
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload the raw evidence
         if: always()
         uses: actions/upload-artifact@v4
