@@ -339,8 +339,18 @@ tap_tab_label() {
 tap_tab() {
   local index="$1"
   local wait="${2:-3}"
-  local x=$(( SCREEN_W * (2 * index + 1) / 8 ))
-  local y=$(( SCREEN_H - 40 ))
+  local x y
+  # A non-numeric index is a call site bug, not a device state. Without this the
+  # arithmetic treats the word as a variable name and `set -u` kills the run with
+  # "Today: unbound variable", twenty minutes into the emulator boot.
+  case "$index" in
+    ''|*[!0-9]*)
+      echo "::error::tap_tab was given a tab position of '$index', which is not a number"
+      return 1
+      ;;
+  esac
+  x=$(( SCREEN_W * (2 * index + 1) / 8 ))
+  y=$(( SCREEN_H - 40 ))
   echo "  tapping tab $index at ($x,$y), by position"
   adb_run shell input tap "$x" "$y"
   sleep "$wait"
@@ -777,7 +787,7 @@ for entry in "0:Today:13-today-dark" "1:Calendar:14-calendar-dark" "2:Insights:1
   rest="${entry#*:}"
   label="${rest%%:*}"
   name="${rest##*:}"
-  if goto_tab "$index" "$label"; then
+  if goto_tab "$label" "$index"; then
     shoot "$name"
   else
     echo "  nothing captured for $name: the app was not on the $label tab"
