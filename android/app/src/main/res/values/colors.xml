@@ -10,5 +10,5 @@
          the screen as well. The light value is ElaraPalette.light.bgPrimary
          and the dark one is ElaraPalette.dark.bgPrimary; tool/check_manifest.py
          reads both files and fails if they disagree. -->
-    <color name="elara_page_background">#F7F3EF</color>
+    <color name="elara_page_background">#F6F6F4</color>
 </resources>

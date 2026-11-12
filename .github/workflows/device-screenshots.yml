@@ -26,8 +26,18 @@ on:
   push:
     branches:
       - main
+    # These captures are evidence about the *look* of the compiled app, so the
+    # job runs when the look changes: the palette, the Android shell around it,
+    # or the harness that drives it. It used to run on every commit that touched
+    # lib/, which is a ten-minute emulator boot to re-shoot the same screens
+    # after a copy change in a sentence. Anything else can be asked for by hand:
+    # Actions -> Device screenshots -> Run workflow.
+    #
+    # The images on the landing page and in the README come from
+    # docs/screenshots/, which screenshots.yml regenerates on every push; these
+    # are evidence, not published artwork.
     paths:
-      - 'lib/**'
+      - 'lib/theme/**'
       - 'assets/**'
       - 'android/**'
       - 'pubspec.yaml'

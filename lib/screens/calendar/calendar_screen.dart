@@ -134,19 +134,44 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ],
                 ),
               ),
-              // Period start action, top right. Flexible so the label shrinks
-              // before it pushes the title off a narrow screen.
-              Flexible(
-                child: FilledButton.icon(
-                  onPressed: _logPeriodStart,
-                  icon: const Icon(ElaraIcons.plus, size: 18),
-                  label: const Text(
-                    'Period start',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              // Period start action, top right.
+              //
+              // A labelled button and the heading cannot share one row on a
+              // 320 dp screen. The Row gave the heading an Expanded share and
+              // the button what was left, which came to about 144 dp, so the
+              // label rendered as "+ Period s…" in the 320x640 device capture -
+              // ellipsised text in a primary action reads as a bug, not as a
+              // narrow layout. Below this width the button keeps its icon and
+              // drops its label; the icon carries an accessible name, so the
+              // words are still there for anyone not reading the screen.
+              if (MediaQuery.sizeOf(context).width < 380)
+                Tooltip(
+                  message: 'Period start',
+                  child: FilledButton(
+                    onPressed: _logPeriodStart,
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(44, 44),
+                    ),
+                    child: const Icon(
+                      ElaraIcons.plus,
+                      size: 20,
+                      semanticLabel: 'Period start',
+                    ),
+                  ),
+                )
+              else
+                Flexible(
+                  child: FilledButton.icon(
+                    onPressed: _logPeriodStart,
+                    icon: const Icon(ElaraIcons.plus, size: 18),
+                    label: const Text(
+                      'Period start',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

@@ -181,8 +181,9 @@ class _OnboardingCardState extends State<OnboardingCard> {
                   ),
                   const SizedBox(height: ElaraSpacing.md),
                   Text(
-                    'Elara is not a contraceptive and cannot confirm ovulation. '
-                    'Predictions are calendar estimates.',
+                    'Elara estimates from the dates you record: a fertile '
+                    'window is a window, and every estimate carries its margin. '
+                    'For contraception, talk to a clinician.',
                     style: type.caption(tokens.textSecondaryStrong),
                   ),
                 ],
