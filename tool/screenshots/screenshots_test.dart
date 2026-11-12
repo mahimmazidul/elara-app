@@ -795,8 +795,16 @@ void main() {
         'tool/fonts/comparison/${candidate.id}-bengali.png',
       );
 
-      // The nav label, not the heading the Settings screen itself shows.
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Settings'));
+      // The nav label, not the heading the Settings screen itself shows. The
+      // label now lives in the app's own floating bar rather than a Material
+      // NavigationDestination: the bar carries a raised centre action, which
+      // NavigationBar has no way to express, so this taps the label inside it.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(ElaraNavBar),
+          matching: find.text('Settings'),
+        ),
+      );
       await settle(tester);
       await captureTo(
         tester,
