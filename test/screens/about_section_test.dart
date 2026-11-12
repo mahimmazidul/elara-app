@@ -157,7 +157,7 @@ void main() {
     // the app does not have, which is an argument with nobody.
     expect(find.textContaining('stays on this phone'), findsOneWidget);
     expect(
-      find.textContaining('estimates from recorded history'),
+      find.textContaining('reads the dates you record and estimates'),
       findsOneWidget,
     );
   });
