@@ -122,6 +122,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 tool/check_pins.py
 
+      # One toolchain. The release job floated on stable and broke on a
+      # deprecation that this job reports as an info, on a commit where this job
+      # was green.
+      - name: Check every workflow builds with the Flutter this job tests with
+        run: python3 tool/check_workflows.py
+
       # The Kotlin is small, but a mistake in it is not cheap to find: it
       # shows up in the APK build, after a full Flutter build and a Gradle
       # configuration, and the build is retried three times, so one mistake

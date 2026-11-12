@@ -25,6 +25,19 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# One toolchain, declared once, here and in ci.yml. This workflow used to float on
+# `channel: stable`, so it compiled the release with whatever the newest Flutter
+# happened to be while the test jobs compiled the same code with 3.47.9. On
+# 12 November 2026 that difference broke the release and nothing else: 3.50
+# deprecated the import of package:flutter/material.dart, which is in every
+# file in lib/, and this job is the only one that turns that notice into a
+# failure, because it runs --fatal-infos. The tests passed on the version they
+# ran on and the release failed on the version it ran on, which is the least
+# useful way to find out about a deprecation.
+env:
+  FLUTTER_VERSION: 3.47.9
+
+
 jobs:
   version:
     name: Decide what to release
@@ -114,10 +127,10 @@ jobs:
           # since the previous tag.
           fetch-depth: 0
 
-      - name: Set up Flutter (stable)
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Resolve dependencies
