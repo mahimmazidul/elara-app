@@ -336,15 +336,18 @@ class ElaraSpacing {
   /// margin instead of stretching.
   static const double readableWidth = 560;
 
-  /// Height of the Material 3 [NavigationBar] at the bottom of a narrow window.
+  /// How much room the floating bottom bar takes out of a scrolling page.
   ///
-  /// Used to reserve space at the end of a scrolling page: the Scaffold body is
-  /// laid out above the bar, but the last row of content was still ending level
-  /// with the bar's top edge, so the final control on Settings sat half-hidden
-  /// behind it. `kBottomNavigationBarHeight` (56) is the pre-M3 value and is too
-  /// small for a labelled NavigationBar. At 2.0x text scale the bar's labels
-  /// need more room, so this is sized with headroom.
-  static const double navigationBarHeight = 90;
+  /// Used to reserve space at the end of a page: the Scaffold body is laid out
+  /// above the bar, but the last row of content was still ending level with the
+  /// bar's top edge, so the final control on Settings sat half-hidden behind it.
+  ///
+  /// The arithmetic is the card's minimum height (64) plus the gap under it
+  /// (8), which is 72 at 1.0x text. At 2.0x the label under each icon roughly
+  /// doubles, the card grows to about 78, and 78 + 8 is 86 - so this is 88. It
+  /// used to be 90 against a bar drawn 78 tall, which reserved twelve pixels
+  /// nobody could see; the number is now the drawn height plus two.
+  static const double navigationBarHeight = 88;
 
   /// Page padding that centres a [readableWidth] column on wide screens.
   ///

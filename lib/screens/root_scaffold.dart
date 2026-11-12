@@ -8,11 +8,13 @@ import '../providers/settings_provider.dart';
 import '../providers/update_provider.dart';
 import '../theme/elara_theme.dart';
 import '../theme/elara_motion.dart';
+import '../widgets/icons.dart';
 import '../widgets/primitives.dart';
 import '../widgets/status_bar_scrim.dart';
 import 'calendar/calendar_screen.dart';
 import 'insights/insights_screen.dart';
 import 'settings/settings_screen.dart';
+import 'today/log_sheet.dart';
 import 'today/today_screen.dart';
 
 /// The app shell.
@@ -25,6 +27,11 @@ import 'today/today_screen.dart';
 /// IndexedStack in both cases rather than swapping children, so each tab keeps
 /// its scroll position and the calendar keeps its visible month when the user
 /// moves away.
+///
+/// Phones get the floating bottom bar in [ElaraNavBar]: four tabs and a raised
+/// centre action that opens the log sheet, so recording something is one tap
+/// from anywhere. Wide windows keep the rail, which carries the same action as
+/// its leading item.
 ///
 /// Motion language (all skipped under reduced motion):
 ///   * Traveling bottom-nav indicator that glides between tabs.
@@ -250,7 +257,11 @@ class _RootScaffoldState extends State<RootScaffold>
           isWide
               ? Row(
                   children: [
-                    _Rail(index: _index, onSelected: _selectTab),
+                    _Rail(
+                      index: _index,
+                      onSelected: _selectTab,
+                      onLog: () => showLogSheet(context),
+                    ),
                     Expanded(child: content),
                   ],
                 )
@@ -260,7 +271,11 @@ class _RootScaffoldState extends State<RootScaffold>
       ),
       bottomNavigationBar: isWide
           ? null
-          : _Bar(index: _index, onSelected: _selectTab),
+          : ElaraNavBar(
+              selectedIndex: _index,
+              onSelected: _selectTab,
+              onLog: () => showLogSheet(context),
+            ),
     );
   }
 }
@@ -348,84 +363,205 @@ class _ScreenSlide extends StatelessWidget {
   }
 }
 
-/// Bottom navigation bar with a traveling indicator and directional fill.
+/// The bottom bar: a floating card, four tabs, and a raised centre action.
 ///
-/// Selected tab icon/label: phase colour. Unselected: secondary ink.
-/// A rounded-rect fill glides beneath the selected tab, stretching toward the
-/// direction of travel so the movement reads as a glide. Each icon scales
-/// briefly on press (tactile feedback, skipped under reduced motion).
-class _Bar extends StatelessWidget {
-  const _Bar({required this.index, required this.onSelected});
+/// It used to be a full-width [NavigationBar] welded to the bottom edge with a
+/// hairline across the top. Two things were wrong with that. It read as the
+/// floor the app was standing on rather than as a control surface, so Today -
+/// the screen the app is actually about - looked like it was inside a frame. And
+/// it could not record anything: the one thing this app exists for was two taps
+/// away, behind a button in the calendar header, on a tab you had to know to
+/// visit.
+///
+/// The reference was taka's home screen, where the bar floats clear of the bottom
+/// edge as a rounded card with the primary action raised at its centre. The idea
+/// worth taking is the separation, not the colour: the card is the page's own
+/// white, the action is ink rather than a fifth hue, and the phase colour stays
+/// where it means something - the hero panel and the selected tab's wash.
+class ElaraNavBar extends StatelessWidget {
+  const ElaraNavBar({
+    super.key,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.onLog,
+  });
 
-  final int index;
+  final int selectedIndex;
   final ValueChanged<int> onSelected;
+
+  /// Opens the log sheet: the centre action, offered from every tab.
+  final VoidCallback onLog;
+
+  /// Minimum height of the card.
+  ///
+  /// A minimum rather than a height: at 2.0x text the label under each icon is
+  /// taller than at 1.0x, and a fixed height clipped it in the text-scale sweep.
+  static const double barHeight = 64;
+
+  /// The raised action's diameter, and how far it rises above the card.
+  static const double addButtonSize = 56;
+  static const double addButtonRise = 20;
+
+  /// The floating card itself, for tests and for anything that needs to measure
+  /// what the reader sees. [ElaraNavBar] spans the width of the screen; the card
+  /// inside it is the object that floats.
+  static const Key cardKey = Key('elara-nav-card');
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final tabCount = _RootScaffoldState._destinations.length;
 
-    // The bar paints to the bottom of the display, not just to the top of the
-    // gesture inset. Leaving that strip transparent was what let a row of the
-    // page show through beside the home indicator, and it is the one piece of
-    // chrome that has to be completely opaque to look finished.
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.bgPrimary,
-        border: Border(top: BorderSide(color: tokens.divider)),
+    return Padding(
+      // Clear of the bottom edge, and inset at the sides, so the page shows all
+      // the way round the card. That is the whole difference between a bar that
+      // floats and a bar that sits.
+      // sm, not md, at the sides: at 320dp the four labels and the action have
+      // 304 pixels between them, and "Calendar" needs every one it can get.
+      padding: EdgeInsets.fromLTRB(
+        ElaraSpacing.sm,
+        addButtonRise,
+        ElaraSpacing.sm,
+        bottomInset + ElaraSpacing.sm,
       ),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: bottomInset),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: onSelected,
-              backgroundColor: tokens.bgPrimary,
-              surfaceTintColor: tokens.transparent,
-              elevation: 0,
-              indicatorColor: tokens.transparent,
-              height: ElaraSpacing.navigationBarHeight,
-              labelTextStyle: WidgetStateProperty.resolveWith(
-                (states) => _labelStyle(tokens, states),
-              ),
-              destinations: [
-                for (var i = 0; i < tabCount; i++)
-                  NavigationDestination(
-                    icon: _NavIcon(
-                      i: i,
-                      isSelected: i == index,
-                      tokens: tokens,
-                    ),
-                    label: _RootScaffoldState._destinations[i].label,
-                  ),
+      child: Stack(
+        // The action deliberately paints above the card's top edge.
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            key: cardKey,
+            constraints: const BoxConstraints(minHeight: barHeight),
+            decoration: BoxDecoration(
+              color: tokens.bgCard,
+              borderRadius: BorderRadius.circular(ElaraRadii.card + 10),
+              border: Border.all(color: tokens.divider),
+              boxShadow: Theme.of(context).brightness == Brightness.dark
+                  ? ElaraShadows.glassDark
+                  : ElaraShadows.glass,
+            ),
+            child: Row(
+              children: [
+                _slot(0),
+                _slot(1),
+                // The action's own column. A gap in the row rather than an
+                // overlay, so the two labels either side stay evenly spaced and
+                // no tab is half-covered by the button.
+                const SizedBox(width: addButtonSize),
+                _slot(2),
+                _slot(3),
               ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            top: -addButtonRise,
+            left: 0,
+            right: 0,
+            child: Center(child: _CentreAction(tokens: tokens, onTap: onLog)),
+          ),
+        ],
       ),
     );
   }
 
-  /// The tab index a phase colour belongs to.
-  ///
-  /// This used to be a fixed rhyme: Today was honey, Calendar was sage, and so
-  /// on, whatever the app was actually showing. On a luteal day that put a
-  /// honey pill under "Today" while the hero panel above it was violet, which
-  /// is exactly the kind of contradiction a reader cannot name but always
-  /// notices. The bar now takes its colour from the theme, so the accent under
-  /// the selected tab is the phase the whole screen is dressed in.
+  Widget _slot(int i) => Expanded(
+    child: _NavSlot(
+      i: i,
+      isSelected: i == selectedIndex,
+      onTap: () => onSelected(i),
+    ),
+  );
+}
 
-  static TextStyle? _labelStyle(ElaraTokens tokens, Set<WidgetState> states) {
-    final selected = states.contains(WidgetState.selected);
-    return TextStyle(
-      fontFamily: 'Hind Siliguri',
-      fontWeight: FontWeight.w400,
-      fontSize: 12,
-      height: 1.3,
-      color: selected ? tokens.textPrimary : tokens.textSecondaryStrong,
+/// The raised action at the centre of the bar.
+///
+/// Ink on the card's own white, rather than the day's phase colour: the bar
+/// already carries the phase in its selected tab, and a second loud hue two
+/// centimetres lower would compete with the hero panel for the eye. An ink disc
+/// also cannot fall out of contrast as the phase changes.
+class _CentreAction extends StatelessWidget {
+  const _CentreAction({
+    required this.tokens,
+    required this.onTap,
+    this.size = ElaraNavBar.addButtonSize,
+  });
+
+  final ElaraTokens tokens;
+  final VoidCallback onTap;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Log',
+      child: Tooltip(
+        message: 'Log',
+        child: Material(
+          color: tokens.textPrimary,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Icon(
+                ElaraIcons.plus,
+                size: size * 0.46,
+                color: tokens.bgCard,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One label-plus-icon in the bar.
+class _NavSlot extends StatelessWidget {
+  const _NavSlot({
+    required this.i,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final int i;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final type = context.type;
+    final label = _RootScaffoldState._destinations[i].label;
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _NavIcon(i: i, isSelected: isSelected, tokens: tokens),
+            const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(2, 0, 2, 6),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: type.caption(
+                  isSelected ? tokens.textPrimary : tokens.textSecondaryStrong,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -543,10 +679,15 @@ class NavFillGeometry {
 ///
 /// The rail's selected indicator uses the phase colour.
 class _Rail extends StatelessWidget {
-  const _Rail({required this.index, required this.onSelected});
+  const _Rail({
+    required this.index,
+    required this.onSelected,
+    required this.onLog,
+  });
 
   final int index;
   final ValueChanged<int> onSelected;
+  final VoidCallback onLog;
 
   @override
   Widget build(BuildContext context) {
@@ -561,6 +702,17 @@ class _Rail extends StatelessWidget {
         backgroundColor: tokens.bgCard,
         indicatorColor: tokens.transparent,
         labelType: NavigationRailLabelType.all,
+        // The same action the phone bar carries at its centre. Without it the
+        // one thing the app exists for would disappear on a tablet, which is
+        // where a long history is easiest to read and therefore most likely to be
+        // corrected.
+        leading: Padding(
+          padding: const EdgeInsets.only(
+            top: ElaraSpacing.md,
+            bottom: ElaraSpacing.lg,
+          ),
+          child: _CentreAction(tokens: tokens, onTap: onLog, size: 48),
+        ),
         destinations: [
           for (var i = 0; i < _RootScaffoldState._destinations.length; i++)
             NavigationRailDestination(
