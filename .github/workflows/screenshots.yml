@@ -26,6 +26,13 @@ concurrency:
   group: screenshots
   cancel-in-progress: true
 
+# One toolchain, declared once, here and in ci.yml. These images are pictures of the app the
+# tests ran against, so they are rendered on the toolchain the tests use.
+# Floating on stable meant the README could show a build no test job had run.
+env:
+  FLUTTER_VERSION: 3.47.9
+
+
 jobs:
   regenerate:
     name: Regenerate and commit
@@ -36,10 +43,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Set up Flutter (stable)
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Resolve dependencies
