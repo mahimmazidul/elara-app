@@ -413,7 +413,7 @@ go_to_settings() {
 # fine. Five alternations of "open the tab" and "close what is open" cannot loop
 # forever, and each one costs two seconds rather than a whole run.
 to_settings() {
-  for attempt in 1 2 3 4 5; do
+  for attempt in 1 2 3; do
     if go_to_settings; then
       return 0
     fi
@@ -421,7 +421,18 @@ to_settings() {
     sleep 2
     ensure_foreground
   done
-  return 1
+  # Last resort, and the only one that always works: a cold start. Whatever page
+  # was left open, a fresh launch draws the tab bar, and the record is on disk so
+  # nothing about the run's earlier captures changes. The alternative - more BACK
+  # presses - is what left three captures missing while each attempt looked
+  # identical in the log.
+  echo "  the tab bar is gone: relaunching the app"
+  adb_run shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
+  sleep 2
+  adb_run shell am start -W -n "$ACTIVITY" >/dev/null 2>&1 || true
+  sleep 5
+  ensure_foreground
+  go_to_settings
 }
 
 shoot() {
