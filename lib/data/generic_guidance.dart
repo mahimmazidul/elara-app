@@ -91,8 +91,8 @@ class GenericGuidanceTable {
         title: 'The lining begins to build again',
         body:
             'After bleeding, follicles develop and oestrogen rises. That '
-            'describes a broad body process; it does not tell you whether she '
-            'will feel energetic or want plans.',
+            'describes a broad body process, not a forecast of her energy, mood, '
+            'or plans.',
         source: 'Cleveland Clinic',
         citation: 'Cleveland Clinic · Menstrual cycle',
       ),
