@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/cycle_mode.dart';
@@ -45,9 +45,10 @@ class CycleModeSection extends StatelessWidget {
         _ModeChoice(
           label: 'She uses hormonal contraception',
           detail:
-              'Pills, implant, injection or a hormonal IUD. No phase, no '
-              'countdown, no fertile window. Bleeding and symptoms can still '
-              'be logged.',
+              'Pills, implant, injection or a hormonal IUD. While this is set '
+              'the calendar stays plain and the forecast waits. Bleeding and '
+              'symptoms are still recorded, and turning this off brings the '
+              'date back.',
           selected: mode == CycleMode.hormonalContraception,
           onTap: () => _set(context, CycleMode.hormonalContraception),
         ),

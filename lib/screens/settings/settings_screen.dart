@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/medical_content.dart';
@@ -12,6 +12,7 @@ import '../../widgets/icons.dart';
 import '../../widgets/primitives.dart';
 import '../medical/medical_screen.dart';
 import '../preferences/preferences_screen.dart';
+import '../care/partner_guide_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../symptoms/symptoms_screen.dart';
 import 'about_section.dart';
@@ -54,7 +55,7 @@ class SettingsScreen extends StatelessWidget {
         Text('Settings', style: type.headline(tokens.textPrimary, size: 28)),
         const SizedBox(height: ElaraSpacing.xs),
         Text(
-          'Everything Elara does, and nothing it does not.',
+          'Everything Elara does, in one place.',
           style: type.caption(tokens.textSecondaryStrong),
         ),
         const SizedBox(height: ElaraSpacing.lg),
@@ -85,6 +86,14 @@ class SettingsScreen extends StatelessWidget {
                   Navigator.of(context).push(SymptomsScreen.route(context)),
             ),
             ElaraListRow(
+              title: 'What helps, by phase',
+              subtitle: 'Do, skip, and food for each of the four phases',
+              icon: ElaraIcons.care,
+              onTap: () => Navigator.of(
+                context,
+              ).push(PartnerGuideScreen.route(context)),
+            ),
+            ElaraListRow(
               title: 'Care reminders',
               subtitle: reminders.summary,
               icon: ElaraIcons.notification,
@@ -110,9 +119,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             ElaraListRow(
               title: 'Location',
-              subtitle:
-                  '${settings.latitude.toStringAsFixed(3)}, '
-                  '${settings.longitude.toStringAsFixed(3)} · typed in',
+              subtitle: '${settings.locationSummary} · set on this phone',
               icon: ElaraIcons.weather,
               onTap: () =>
                   Navigator.of(context).push(LocationPage.route(context)),

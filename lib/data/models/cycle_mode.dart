@@ -47,9 +47,9 @@ enum CycleMode {
       case CycleMode.predicting:
         return 'Estimating the next period from recorded history';
       case CycleMode.hormonalContraception:
-        return 'No forecast: no ovulatory cycle to estimate';
+        return 'Forecast paused: hormonal contraception';
       case CycleMode.paused:
-        return 'Paused: no forecast, nothing removed';
+        return 'Forecast paused: history kept as it is';
     }
   }
 

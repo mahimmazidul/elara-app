@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The app's icon vocabulary, in one place.
 ///
@@ -76,6 +76,11 @@ class ElaraIcons {
   static const IconData disclosure = Icons.chevron_right_rounded;
 
   static const IconData github = Icons.code_rounded;
+
+  /// The author's accounts. Facebook has a glyph in the icon font; Telegram
+  /// does not, and a paper plane is what every chat app uses for it.
+  static const IconData facebook = Icons.facebook_rounded;
+  static const IconData telegram = Icons.send_rounded;
 
   // ---- symptoms ------------------------------------------------------------
 
