@@ -383,8 +383,18 @@ goto_tab() {
 go_to_settings() {
   ensure_foreground
   if ! goto_tab "Settings" 3; then
-    echo "  (the Settings tab was not reachable)"
-    return 1
+    # A pushed page draws no tab bar, so the tab cannot be found while one is
+    # open - and a BACK that arrived a beat too early leaves exactly that: the
+    # About page still up, and every capture after it looking for a tab that is
+    # not on screen. Close whatever is open and try once more before giving up.
+    echo "  no tab bar on screen: closing the open page and trying again"
+    adb_run shell input keyevent KEYCODE_BACK
+    sleep 2
+    ensure_foreground
+    if ! goto_tab "Settings" 3; then
+      echo "  (the Settings tab was not reachable)"
+      return 1
+    fi
   fi
   # Back to the top of the screen, so the search starts from the beginning.
   for attempt in 1 2 3 4 5 6; do
