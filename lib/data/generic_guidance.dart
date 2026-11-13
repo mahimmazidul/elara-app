@@ -1,24 +1,13 @@
 /// General guidance for a cycle phase, with its source.
 ///
-/// This is the layer the app shows when it has nothing personal to say, and
-/// underneath what it does say when it has. It is deliberately not personalised:
-/// it does not read her symptoms, her answers or her notes, so it cannot be
-/// wrong about her. It is the same text for everybody in that phase, written
-/// from published guidance, and each item names where it came from.
+/// This is the layer shown beneath the partner's personal care suggestions. It
+/// is not personalised: it does not read her preferences, symptoms, or notes.
+/// Health information names its publisher; practical advice drawn from online
+/// accounts is labelled as lived experience, not medical evidence.
 ///
-/// Two rules govern what may go in here.
-///
-/// **No claim that a phase determines a person.** "Iron-rich food helps replace
-/// what is lost during bleeding" is a statement about physiology. "You will feel
-/// tired in your luteal phase" is a statement about her, and the app has no
-/// business making it.
-///
-/// **Bangladesh is the default setting, not an afterthought.** The advice here
-/// assumes heat, humidity, rice-based meals, iron-deficiency anaemia at roughly
-/// a quarter of women of reproductive age, and pharmacies that sell single
-/// tablets without a leaflet. An NHS page on period pain does not mention any of
-/// that. Where a specifically local fact applies it is marked with its own
-/// source rather than folded into a Western one.
+/// The writing avoids a timetable for her mood, energy, appetite, or affection.
+/// A phase can describe a broad body process. It cannot tell the partner what
+/// she wants today.
 library;
 
 /// One piece of general advice.
@@ -54,22 +43,24 @@ class GenericGuidanceTable {
   /// Advice that holds regardless of where she is in the cycle.
   static const List<GenericGuidance> anyPhase = [
     GenericGuidance(
-      title: 'Iron-rich food, not iron supplements on assumption',
+      title: 'Ask first. Then follow her answer.',
       body:
-          'Lentils, chickpeas, dark leafy greens and small fish with bones are '
-          'the everyday sources here. Vitamin C from lemon or tomato in the same '
-          'meal helps the body take the iron up.',
-      source: 'WHO',
-      citation: 'WHO guideline on iron supplementation, 2016',
+          'Women describe very different kinds of care: a hot water bag, a '
+          'favourite snack, one less chore, or quiet. Offer one specific thing, '
+          'then take her answer at face value.',
+      source: 'Reddit',
+      citation:
+          'Reddit · r/AskWomenOver30 · “What do you wish your partner would '
+          'do during your period?” (July 2025)',
     ),
     GenericGuidance(
-      title: 'Fluids matter more than any food in this climate',
+      title: 'Warmth or gentle movement may ease cramps',
       body:
-          'Water, coconut water or oral rehydration solution through the day. '
-          'Thirst is a late signal in humid heat, and headache is often the '
-          'first sign it was not enough.',
-      source: 'WHO',
-      citation: 'WHO heat and health guidance',
+          'A warm shower or a wrapped hot water bag on the belly or lower back '
+          'may help. Some people prefer a walk or gentle stretch; ask what she '
+          'wants today.',
+      source: 'NHS',
+      citation: 'NHS · Period pain',
     ),
   ];
 
@@ -77,84 +68,84 @@ class GenericGuidanceTable {
   static const Map<String, List<GenericGuidance>> byPhase = {
     'menstrual': [
       GenericGuidance(
-        title: 'Heat on the lower abdomen is worth trying first',
+        title: 'Heat and gentle movement are options for cramps',
         body:
-            'A warm pack or a hot water bottle for twenty minutes at a time. It '
-            'is cheap, it has no interactions, and it helps some people enough '
-            'that they need less pain relief.',
-        source: 'NICE',
-        citation: 'NICE CKS — Dysmenorrhoea',
+            'A warm shower or a wrapped heat pad on the belly or lower back may '
+            'help. Some people prefer a walk or stretch; let her choose what '
+            'feels right today.',
+        source: 'NHS',
+        citation: 'NHS · Period pain',
       ),
       GenericGuidance(
-        title: 'Pain relief works better taken early',
+        title: 'Pain that stops her day deserves attention',
         body:
-            'Non-steroidal anti-inflammatories such as ibuprofen or mefenamic '
-            'acid work best started at the first sign of bleeding rather than '
-            'once the pain is established. Whether one suits her is a question '
-            'for a pharmacist.',
+            'Period pain is common, but pain that regularly disrupts work, '
+            'sleep, study, or ordinary activity is worth discussing with a '
+            'clinician.',
         source: 'NHS',
-        citation: 'NHS — Period pain',
+        citation: 'NHS · Period pain',
       ),
     ],
     'follicular': [
       GenericGuidance(
-        title: 'A good week for the things that need energy',
+        title: 'The lining begins to build again',
         body:
-            'The days after bleeding are usually the ones people find easiest '
-            'for exercise and appointments. Worth noticing whether that is true '
-            'for her, rather than assuming it.',
-        source: 'ACOG',
-        citation: 'ACOG — Your menstrual cycle',
+            'After bleeding, follicles develop and oestrogen rises. That '
+            'describes a broad body process; it does not tell you whether she '
+            'will feel energetic or want plans.',
+        source: 'Cleveland Clinic',
+        citation: 'Cleveland Clinic · Menstrual cycle',
       ),
       GenericGuidance(
-        title: 'Protein at the first meal',
+        title: 'Make plans with her, not from the phase',
         body:
-            'Egg, dal, fish or yoghurt rather than a plate of rice alone. It '
-            'holds hunger off longer through a working morning.',
-        source: 'BIRDEM',
-        citation: 'BIRDEM dietary guidance for Bangladeshi diets',
+            'A calendar cannot tell you what she has energy for. Ask what she '
+            'wants, and let her answer matter more than the phase label.',
+        source: 'Reddit',
+        citation:
+            'Reddit · r/AskWomenOver30 · “What do you wish your partner would '
+            'do during your period?” (July 2025)',
       ),
     ],
     'ovulatory': [
       GenericGuidance(
-        title: 'Mild one-sided pain mid-cycle is common',
+        title: 'A calendar cannot confirm ovulation',
         body:
-            'Some people feel a short twinge on one side around the middle of '
-            'the cycle. It usually passes in a day. Pain that is severe, or '
-            'comes with fever or vomiting, is a reason to be seen rather than '
-            'to wait.',
-        source: 'NICE',
-        citation: 'NICE CKS — Ovulation pain',
+            'This phase is estimated from recorded dates, not a hormone test. '
+            'Do not use a calendar estimate for contraception or as a cue about '
+            'sex.',
+        source: 'Elara',
+        citation: 'Elara · Forecast limits',
       ),
       GenericGuidance(
-        title: 'This is an estimate, not a measurement',
+        title: 'Some people notice a brief one-sided ache',
         body:
-            'The app is placing this phase with arithmetic from the last '
-            'recorded period start. It has not measured a hormone, and nothing '
-            'here should be used to decide whether sex can lead to pregnancy.',
-        source: 'Elara',
-        citation: 'See docs/PREDICTION.md',
+            'Mild mid-cycle pain can pass on its own. Severe pain, pain that '
+            'persists, or pain with fever or vomiting should not be brushed '
+            'aside.',
+        source: 'NICE',
+        citation: 'NICE CKS · Ovulation pain',
       ),
     ],
     'luteal': [
       GenericGuidance(
-        title: 'Regular meals and less salt can soften the week before',
+        title: 'PMS looks different from person to person',
         body:
-            'Bloating and breast tenderness are often made worse by long gaps '
-            'between meals and by salty food. These are the changes most '
-            'people notice first, and they are worth trying before anything '
-            'else.',
+            'Bloating, tender breasts, headache, tiredness, appetite changes, '
+            'or mood symptoms can happen before a period. The pattern and '
+            'severity vary, including from month to month.',
         source: 'NHS',
-        citation: 'NHS — PMS',
+        citation: 'NHS · Premenstrual syndrome',
       ),
       GenericGuidance(
-        title: 'Sleep is the first thing to protect',
+        title: 'Make room for the habits she finds useful',
         body:
-            'A consistent bedtime and less screen at night. If low mood lasts '
-            'most of the month rather than the days before bleeding, that is '
-            'worth raising with a clinician rather than managed with an app.',
-        source: 'NICE',
-        citation: 'NICE — PMDD recognition',
+            'Sleep, regular movement, balanced meals, and symptom notes are '
+            'among the options in NHS guidance. Ask what she wants to try; '
+            'repeated symptoms that affect daily life merit a clinician '
+            'conversation.',
+        source: 'NHS',
+        citation: 'NHS · Premenstrual syndrome',
       ),
     ],
   };
@@ -164,8 +155,8 @@ class GenericGuidanceTable {
   ///
   /// The phase list comes first because it is the more specific of the two, and
   /// because a reader who has opened Today in the luteal phase is asking about
-  /// the luteal phase. An unknown phase gets the general set alone — which is
-  /// the correct answer, not a gap.
+  /// the luteal phase. An unknown phase gets the general set alone, which is
+  /// the right answer rather than an invitation to guess.
   static List<GenericGuidance> forPhase(String? phaseKey) {
     final phase = byPhase[phaseKey] ?? const <GenericGuidance>[];
     return [...phase, ...anyPhase];

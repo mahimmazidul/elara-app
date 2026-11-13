@@ -302,6 +302,12 @@ void main() {
       expect(find.text('Consent'), findsOneWidget);
     }
 
+    testWidgets('the phase guide is on Today, not in Settings', (tester) async {
+      await pumpSettings(tester);
+
+      expect(find.text('What helps, by phase'), findsNothing);
+    });
+
     testWidgets('shows consent, privacy, backup and deletion', (tester) async {
       await pumpSettings(tester);
       await openPrivacy(tester);

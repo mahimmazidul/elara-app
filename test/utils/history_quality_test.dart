@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Saying out loud what the numbers already imply.
 ///
-/// The failure this prevents is a confident date on top of a history with a
-/// two-month hole in it. The app cannot know a period went unlogged, so it says
-/// what it can see — this gap is about twice her usual one — and leaves the
+/// The failure this prevents is a confident date on top of a history that
+/// might be incomplete or might show a real change in her pattern. The app
+/// cannot know which; it describes the gap in her own records and leaves the
 /// conclusion to her.
 void main() {
   DateTime day(int month, int day) => DateTime(2026, month, day);
@@ -38,17 +38,17 @@ void main() {
     expect(notes.single.message, contains('range rather than a day'));
   });
 
-  test('a gap of about twice her usual interval is called a gap', () {
+  test('a long gap is flagged without guessing why it happened', () {
     final notes = HistoryQuality.notesFor(
-      // The gap is the most recent interval: a period that was never logged.
+      // The latest interval is much longer than the earlier recorded ones.
       starts: starts([28, 29, 28, 59]),
       windowDays: 4,
     );
     expect(notes, hasLength(1));
     expect(notes.single.kind, HistoryNoteKind.recordingGap);
     expect(notes.single.message, contains('59 days'));
-    // It does not diagnose anything, and it does not delete the observation.
-    expect(notes.single.message, contains('went unrecorded'));
+    expect(notes.single.message, contains('may not have been recorded'));
+    expect(notes.single.message, contains('pattern may have changed'));
   });
 
   test('a genuinely long but steady cycle is left alone', () {

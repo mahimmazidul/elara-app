@@ -12,7 +12,6 @@ import '../../widgets/icons.dart';
 import '../../widgets/primitives.dart';
 import '../medical/medical_screen.dart';
 import '../preferences/preferences_screen.dart';
-import '../care/partner_guide_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../symptoms/symptoms_screen.dart';
 import 'about_section.dart';
@@ -33,8 +32,8 @@ import '../../widgets/sub_page.dart';
 ///
 /// It is now a list. Each row is one subject, carries the one line that tells
 /// you whether you need to open it, and opens a page holding only that subject.
-/// Nothing was removed: every control that lived here still exists, one tap
-/// deeper, on a page whose title says where it is.
+/// Settings controls stay one tap deeper. The partner guide is the exception:
+/// it belongs beside today's phase on Today, not in a settings list.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -84,14 +83,6 @@ class SettingsScreen extends StatelessWidget {
               icon: ElaraIcons.symptom,
               onTap: () =>
                   Navigator.of(context).push(SymptomsScreen.route(context)),
-            ),
-            ElaraListRow(
-              title: 'What helps, by phase',
-              subtitle: 'Do, skip, and food for each of the four phases',
-              icon: ElaraIcons.care,
-              onTap: () => Navigator.of(
-                context,
-              ).push(PartnerGuideScreen.route(context)),
             ),
             ElaraListRow(
               title: 'Care reminders',

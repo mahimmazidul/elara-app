@@ -6,13 +6,13 @@ import '../data/date_keys.dart';
 ///
 /// A number presented on its own reads as a measurement. These are the two
 /// occasions where the honest reading is different, and both are invisible in
-/// the date itself: a wide window, and a gap in the record.
+/// the date itself: a wide window, and a gap worth checking.
 enum HistoryNoteKind {
   /// The recorded intervals vary enough that a single date is not the story.
   spread,
 
-  /// The last recorded interval is about twice her usual one, which is the
-  /// signature of a period that was never logged rather than of a long cycle.
+  /// The latest interval is much longer than her recorded pattern. The note
+  /// raises the possibility of a missed entry without deciding that for her.
   recordingGap,
 }
 
@@ -27,9 +27,9 @@ class HistoryNote {
 /// user recorded.
 ///
 /// Deliberately **not** a second opinion on the prediction. It does not change
-/// the date, the window or the confidence; it says out loud what the numbers
-/// already imply, because a woman reading "in 3 days ± 2" has no way to know
-/// that the underlying history jumped from 28 days to 59.
+/// the date or the window. It describes the variation and the gap in the
+/// recorded dates without deciding whether a period was missed or her pattern
+/// changed.
 ///
 /// The one comparison made here is against her own history. Nothing is compared
 /// to a textbook 28-day cycle, because this app is used by women whose normal is
@@ -44,12 +44,11 @@ class HistoryQuality {
   /// A window at least this wide is stated rather than left to the reader.
   static const int wideWindowDays = 8;
 
-  /// How much longer than her own usual interval counts as a probable gap.
+  /// How much longer than her own usual interval raises a recording question.
   ///
-  /// Twice the median, not a clinical threshold: the claim being made is only
-  /// "this is about twice your usual interval", which is arithmetic on her own
-  /// data. A long cycle that is genuinely hers stays unremarked after the second
-  /// one is recorded, because the median moves with her.
+  /// Twice the median is not a clinical threshold. It only describes the
+  /// difference in the dates she recorded. A long cycle that is genuinely hers
+  /// stops being flagged once it becomes part of her recorded pattern.
   static const double gapRatio = 2.0;
 
   /// Finds the notes worth showing for this history.
@@ -85,16 +84,16 @@ class HistoryQuality {
       // The comparison is against the median of *all* her intervals, which
       // includes this one. That is what makes the note fade on its own: one
       // long interval among several stays an outlier, but two of them move the
-      // median, and the note stops the second time a long cycle is her pattern
-      // rather than an absence.
+      // median. The app can flag the difference; it cannot tell a missed entry
+      // from a genuine change in her cycle.
       final latest = intervals.last;
       final median = _median(intervals);
       if (median > 0 && latest >= median * gapRatio && latest >= 30) {
         notes.add(HistoryNote(
           HistoryNoteKind.recordingGap,
-          'The last gap was $latest days, about twice her usual $median. That '
-          'usually means a period went unrecorded rather than that the cycle '
-          'changed — worth checking before trusting the date above.',
+          'The last gap was $latest days, about twice her usual $median. A '
+          'period may not have been recorded, or her pattern may have changed. '
+          'Check the dates before relying on this estimate.',
         ));
       }
     }

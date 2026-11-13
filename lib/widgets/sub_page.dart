@@ -60,7 +60,7 @@ class ElaraSubPage extends StatelessWidget {
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(ElaraIcons.previous),
                     color: tokens.textPrimary,
-                    tooltip: 'Back to settings',
+                    tooltip: 'Back',
                   ),
                 ],
               ),

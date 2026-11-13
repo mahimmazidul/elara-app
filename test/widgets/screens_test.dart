@@ -163,6 +163,7 @@ void main() {
         find.textContaining('Everything you record stays on this phone'),
         findsOneWidget,
       );
+      expect(find.text('Read the phase guide'), findsOneWidget);
     });
 
     testWidgets('renders without crashing with a single recorded cycle', (
