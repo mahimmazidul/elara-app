@@ -404,6 +404,26 @@ go_to_settings() {
   return 0
 }
 
+# Settings, with the patience this run actually needs.
+#
+# `go_to_settings` recovers from an open page once. The About block leaves the
+# app in the least predictable state in the run - a page pushed from a hub that
+# was itself reached by a position tap - and one recovery attempt was not enough:
+# the phase guide went missing twice in a row while the block after it captured
+# fine. Five alternations of "open the tab" and "close what is open" cannot loop
+# forever, and each one costs two seconds rather than a whole run.
+to_settings() {
+  for attempt in 1 2 3 4 5; do
+    if go_to_settings; then
+      return 0
+    fi
+    adb_run shell input keyevent KEYCODE_BACK
+    sleep 2
+    ensure_foreground
+  done
+  return 1
+}
+
 shoot() {
   local name="$1"
   ensure_foreground
@@ -714,16 +734,17 @@ echo "::group::Phase guide"
 # of her. It is one row down in Settings, so it needs no scroll to reach - but
 # the row is looked up by its wording, and the wording is the point of the
 # screen, so a rename that empties this capture is a capture that says so.
-go_to_settings || true
 found=0
-for attempt in 1 2 3 4 5 6 7 8; do
-  if tap_row "What helps, by phase" 3; then
-    found=1
-    break
-  fi
-  scroll_down
-  dump_ui || true
-done
+if to_settings; then
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if tap_row "What helps, by phase" 3; then
+      found=1
+      break
+    fi
+    scroll_down
+    dump_ui || true
+  done
+fi
 if [ "$found" = 1 ]; then
   dump_ui || true
   if shows "In the kitchen"; then
@@ -743,16 +764,17 @@ echo "::endgroup::"
 echo "::group::Location"
 # The district picker. It replaced two typed decimals, so the capture is the
 # proof that a household outside Dhaka can now set a place in two taps.
-go_to_settings || true
 found=0
-for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  if tap_row "Location" 2; then
-    found=1
-    break
-  fi
-  scroll_down
-  dump_ui || true
-done
+if to_settings; then
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if tap_row "Location" 2; then
+      found=1
+      break
+    fi
+    scroll_down
+    dump_ui || true
+  done
+fi
 if [ "$found" = 1 ]; then
   dump_ui || true
   if shows "District"; then
