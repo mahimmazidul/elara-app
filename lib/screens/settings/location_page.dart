@@ -1,19 +1,25 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/bangladesh_districts.dart';
 import '../../providers/settings_keys.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/sub_page.dart';
 
-/// Location, as typed coordinates.
+/// Location: a division and a district, or coordinates typed by hand.
 ///
-/// The device's location is never read. Two numbers typed once are enough for a
-/// heat index and an air-quality reading, and asking for a location permission
-/// to draw a weather strip would be a poor trade for a cycle app with no
-/// account. Dhaka is the default because the app is written for Bangladesh and
-/// a first launch in Khulna should not need anyone to look up a latitude.
+/// The device's location is never read, and neither is the phone's IP. Two
+/// numbers are enough for a heat index and an air-quality reading, and asking
+/// for a location permission - or handing a household's address to a
+/// geolocation service - to draw a weather strip would be a poor trade for a
+/// cycle app with no account.
+///
+/// The picker came later than it should have. The first version asked for a
+/// latitude and a longitude and defaulted to Dhaka, which is fine if you live in
+/// Dhaka and a research task otherwise. The district list is offline, sixty-four
+/// entries long, and costs nothing to ship.
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
 
@@ -28,6 +34,8 @@ class LocationPage extends StatefulWidget {
 class _LocationPageState extends State<LocationPage> {
   late final TextEditingController _latController;
   late final TextEditingController _lonController;
+  late String _division;
+  District? _district;
   String? _error;
   bool _saving = false;
 
@@ -40,6 +48,53 @@ class _LocationPageState extends State<LocationPage> {
     );
     _lonController = TextEditingController(
       text: _trim(settings.longitude.toString()),
+    );
+
+    // Preselect the district the stored coordinate came from, so the page opens
+    // showing where the app thinks it is rather than two empty pickers.
+    final stored = _matchDistrict(settings.latitude, settings.longitude);
+    _district = stored;
+    _division = stored?.division ?? bangladeshDivisions.first;
+  }
+
+  /// The district whose coordinates are the stored ones, to two decimals.
+  ///
+  /// An exact match on the rounded value, not a nearest-neighbour search: the
+  /// table is written at two decimals, so anything the picker saved matches
+  /// exactly, and a coordinate typed by hand for somewhere else correctly finds
+  /// nothing.
+  static District? _matchDistrict(double latitude, double longitude) {
+    for (final district in bangladeshDistricts) {
+      if ((district.latitude - latitude).abs() < 0.005 &&
+          (district.longitude - longitude).abs() < 0.005) {
+        return district;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _chooseDistrict(District district) async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final settings = context.read<SettingsProvider>();
+    final ok = await settings.setLocation(
+      latitude: district.latitude,
+      longitude: district.longitude,
+      label: district.label,
+    );
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _district = ok ? district : _district;
+      _error = ok ? null : settings.lastError;
+    });
+    if (!ok) return;
+    _latController.text = _trim(district.latitude.toString());
+    _lonController.text = _trim(district.longitude.toString());
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Set to ${district.name}.')),
     );
   }
 
@@ -70,6 +125,8 @@ class _LocationPageState extends State<LocationPage> {
     });
 
     final settings = context.read<SettingsProvider>();
+    // No label: a typed coordinate is not a district, and the row should stop
+    // claiming it is.
     final ok = await settings.setLocation(latitude: lat, longitude: lon);
 
     if (!mounted) return;
@@ -88,15 +145,21 @@ class _LocationPageState extends State<LocationPage> {
 
   Future<void> _useDhaka() async {
     final settings = context.read<SettingsProvider>();
+    final d = districtsOf('Dhaka').firstWhere((d) => d.name == 'Dhaka');
     final ok = await settings.setLocation(
-      latitude: SettingsKeys.defaultLatitude,
-      longitude: SettingsKeys.defaultLongitude,
+      latitude: d.latitude,
+      longitude: d.longitude,
+      label: d.label,
     );
     if (!mounted) return;
     if (ok) {
-      _latController.text = _trim(SettingsKeys.defaultLatitude.toString());
-      _lonController.text = _trim(SettingsKeys.defaultLongitude.toString());
-      setState(() => _error = null);
+      _latController.text = _trim(d.latitude.toString());
+      _lonController.text = _trim(d.longitude.toString());
+      setState(() {
+        _error = null;
+        _district = d;
+        _division = d.division;
+      });
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Set to Dhaka.')));
     } else {
@@ -112,6 +175,30 @@ class _LocationPageState extends State<LocationPage> {
           'Used for heat index, air quality and the Bangladesh season. Stored '
           'on this phone; the device\'s own location is never read.',
       children: [
+        _DivisionField(
+          value: _division,
+          onChanged: _saving
+              ? null
+              : (value) => setState(() {
+                    _division = value;
+                    _district = null;
+                  }),
+        ),
+        const SizedBox(height: ElaraSpacing.sm),
+        _DistrictField(
+          division: _division,
+          value: _district,
+          enabled: !_saving,
+          onChanged: _chooseDistrict,
+        ),
+        const SizedBox(height: ElaraSpacing.md),
+        Text(
+          'Choosing a district saves it straight away. The two boxes below are '
+          'for anywhere outside Bangladesh, and typing there clears the '
+          'district name.',
+          style: context.type.caption(context.elara.textSecondaryStrong),
+        ),
+        const SizedBox(height: ElaraSpacing.md),
         Row(
           children: [
             Expanded(
@@ -164,9 +251,10 @@ class _LocationPageState extends State<LocationPage> {
         ),
         const SizedBox(height: ElaraSpacing.lg),
         Text(
-          'Khulna reads about 22.8456, 89.5403. Coordinates are stored as '
-          'numbers, so a wrong one gives a wrong heat index rather than an '
-          'error.',
+          'Coordinates are stored as numbers, so a wrong one gives a wrong heat '
+          'index rather than an error. The district list holds the '
+          'sixty-four district towns at two decimals, which is about a '
+          'kilometre - far finer than a heat index needs.',
           style: context.type.caption(context.elara.textSecondaryStrong),
         ),
       ],
@@ -222,4 +310,89 @@ class _CoordinateField extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The eight divisions.
+class _DivisionField extends StatelessWidget {
+  const _DivisionField({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: _fieldDecoration(context, 'Division'),
+      items: [
+        for (final division in bangladeshDivisions)
+          DropdownMenuItem(value: division, child: Text(division)),
+      ],
+      onChanged: onChanged == null
+          ? null
+          : (selected) {
+              if (selected != null) onChanged!(selected);
+            },
+    );
+  }
+}
+
+/// The districts of the chosen division. Choosing one saves immediately.
+class _DistrictField extends StatelessWidget {
+  const _DistrictField({
+    required this.division,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final String division;
+  final District? value;
+  final bool enabled;
+  final ValueChanged<District> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final districts = districtsOf(division);
+    final selected = districts.any((d) => d.name == value?.name) ? value : null;
+
+    return DropdownButtonFormField<District>(
+      initialValue: selected,
+      isExpanded: true,
+      decoration: _fieldDecoration(context, 'District'),
+      hint: const Text('Choose a district'),
+      items: [
+        for (final district in districts)
+          DropdownMenuItem(value: district, child: Text(district.name)),
+      ],
+      onChanged: enabled
+          ? (district) {
+              if (district != null) onChanged(district);
+            }
+          : null,
+    );
+  }
+}
+
+InputDecoration _fieldDecoration(BuildContext context, String label) {
+  final tokens = context.elara;
+  return InputDecoration(
+    labelText: label,
+    labelStyle: context.type.label(tokens.textSecondaryStrong),
+    filled: true,
+    fillColor: tokens.bgPrimary,
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: ElaraSpacing.md,
+      vertical: ElaraSpacing.md,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ElaraRadii.chip),
+      borderSide: BorderSide(color: tokens.divider),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(ElaraRadii.chip),
+      borderSide: BorderSide(color: tokens.divider),
+    ),
+  );
 }

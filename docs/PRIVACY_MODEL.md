@@ -38,7 +38,8 @@ send.
   questionnaire answer marked "not shared" is kept out of the suggestion pool,
   but that is a *product* rule, not access control, and the UI says so.
 - **Least-privilege footprint.** No contacts, no calendar, no location
-  permission request is used for tracking; coordinates are typed in by the user
+  permission request is used for tracking; the district is picked from an
+  offline list of the sixty-four district towns, or coordinates are typed in
   or defaulted.
 
 ## 3. What is not protected

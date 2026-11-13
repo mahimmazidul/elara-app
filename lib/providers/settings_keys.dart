@@ -8,6 +8,13 @@ class SettingsKeys {
 
   static const String latitude = 'latitude';
   static const String longitude = 'longitude';
+
+  /// The district the coordinates came from, e.g. "Khulna, Khulna".
+  ///
+  /// Stored beside the numbers rather than derived from them, because 22.82,
+  /// 89.55 is not a name and the Settings row should read like a place. Empty
+  /// when the coordinates were typed by hand for somewhere outside Bangladesh.
+  static const String locationLabel = 'location_label';
   static const String themeMode = 'theme_mode';
   static const String notificationEnabled = 'notification_enabled';
 

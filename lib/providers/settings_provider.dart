@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../data/database_helper.dart';
 import '../data/models/cycle_mode.dart';
@@ -66,6 +66,16 @@ class SettingsProvider extends ChangeNotifier {
         SettingsKeys.longitude,
         SettingsKeys.defaultLongitude,
       );
+
+  /// The place the coordinates stand for, empty when they were typed by hand.
+  String get locationLabel => _values[SettingsKeys.locationLabel] ?? '';
+
+  /// What to show for the location: the district name, or the numbers.
+  String get locationSummary {
+    final label = locationLabel;
+    if (label.isNotEmpty) return label;
+    return '${latitude.toStringAsFixed(3)}, ${longitude.toStringAsFixed(3)}';
+  }
 
   ThemeMode get themeMode {
     switch (_values[SettingsKeys.themeMode]) {
@@ -269,9 +279,14 @@ class SettingsProvider extends ChangeNotifier {
       setValue(SettingsKeys.notificationEnabled, enabled ? 'true' : 'false');
 
   /// Stores the coordinates used for weather and air-quality lookups.
+  /// Saves the coordinate, and the place it came from when there is one.
+  ///
+  /// [label] is what the district picker knows and a typed coordinate does not;
+  /// passing null clears it, so a manual entry stops claiming to be a district.
   Future<bool> setLocation({
     required double latitude,
     required double longitude,
+    String? label,
   }) async {
     if (!latitude.isFinite || !longitude.isFinite) {
       _lastError = 'Coordinates must be finite numbers.';
@@ -284,15 +299,13 @@ class SettingsProvider extends ChangeNotifier {
       return false;
     }
     try {
-      await _database.setSettings({
+      final write = <String, String>{
         SettingsKeys.latitude: latitude.toString(),
         SettingsKeys.longitude: longitude.toString(),
-      });
-      _values = {
-        ..._values,
-        SettingsKeys.latitude: latitude.toString(),
-        SettingsKeys.longitude: longitude.toString(),
+        SettingsKeys.locationLabel: label ?? '',
       };
+      await _database.setSettings(write);
+      _values = {..._values, ...write};
       _revision++;
       _lastError = null;
       notifyListeners();
