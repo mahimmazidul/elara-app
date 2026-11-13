@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
@@ -399,8 +399,8 @@ class ElaraNavBar extends StatelessWidget {
   static const double barHeight = 64;
 
   /// The raised action's diameter, and how far it rises above the card.
-  static const double addButtonSize = 56;
-  static const double addButtonRise = 20;
+  static const double addButtonSize = 60;
+  static const double addButtonRise = 22;
 
   /// The floating card itself, for tests and for anything that needs to measure
   /// what the reader sees. [ElaraNavBar] spans the width of the screen; the card
@@ -549,24 +549,32 @@ class _NavSlot extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _NavIcon(i: i, isSelected: isSelected, tokens: tokens),
-            const SizedBox(height: 2),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(2, 0, 2, 6),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: type.caption(
-                  isSelected ? tokens.textPrimary : tokens.textSecondaryStrong,
+        // The hit area is the whole slot, from the card's top edge to its
+        // bottom, not just the icon and its label. A thumb that lands in the
+        // padding above an icon was landing on nothing, which is what "it
+        // barely touches" means.
+        child: SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _NavIcon(i: i, isSelected: isSelected, tokens: tokens),
+              const SizedBox(height: 2),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 0, 2, 6),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: type.caption(
+                    isSelected ? tokens.textPrimary : tokens.textSecondaryStrong,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
