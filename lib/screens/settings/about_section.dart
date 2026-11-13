@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../app_info.dart';
@@ -74,22 +74,25 @@ class AboutSection extends StatelessWidget {
         ),
         const SizedBox(height: ElaraSpacing.sm),
         _LinkRow(
-          label: 'Prediction engine',
-          icon: ElaraIcons.github,
-          url: AppInfo.engineUrl,
-        ),
-        const SizedBox(height: ElaraSpacing.sm),
-        _LinkRow(
           label: 'Releases',
           icon: ElaraIcons.download,
           url: UpdateService.releasesPageUrl,
         ),
         const SizedBox(height: ElaraSpacing.md),
-        // Elara has no social-media presence: say so directly rather than
-        // fabricating profile links.
-        Text(
-          'Elara publishes no social accounts.',
-          style: type.caption(tokens.textSecondaryStrong),
+        // The author's own accounts, not invented ones. The paths are in
+        // AppInfo beside the repository URL, so a typo is one edit in one place
+        // rather than a broken link on a settings screen.
+        const SizedBox(height: ElaraSpacing.sm),
+        _LinkRow(
+          label: 'Facebook',
+          icon: ElaraIcons.facebook,
+          url: AppInfo.facebookUrl,
+        ),
+        const SizedBox(height: ElaraSpacing.sm),
+        _LinkRow(
+          label: 'Telegram',
+          icon: ElaraIcons.telegram,
+          url: AppInfo.telegramUrl,
         ),
         const SizedBox(height: ElaraSpacing.md),
         // Limitations and privacy claims, stated plainly.

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -722,7 +722,8 @@ class _RestoreDialogState extends State<_RestoreDialog> {
               const SizedBox(height: ElaraSpacing.sm),
               Text(
                 preview.existingCount == 0
-                    ? 'Nothing is stored on this phone, so nothing is lost.'
+                    ? 'This phone is empty, so the restore starts from a '
+                          'clean page.'
                     : 'Restoring replaces the ${preview.existingCount} '
                           '${preview.existingCount == 1 ? 'period' : 'periods'} '
                           'stored on this phone. They are not merged.',

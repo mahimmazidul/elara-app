@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/preference.dart';
@@ -76,7 +76,7 @@ class PreferencesScreen extends StatelessWidget {
               if (prefs.herAnswers.isEmpty)
                 _Empty(
                   message:
-                      'No answers yet. Hand her the phone, or open the '
+                      'Answers land here. Hand her the phone, or open the '
                       'questionnaire together.',
                 )
               else

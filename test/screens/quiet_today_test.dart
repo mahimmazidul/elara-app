@@ -8,7 +8,7 @@ import 'package:elara_app/providers/symptoms_provider.dart';
 import 'package:elara_app/screens/today/quiet_today.dart';
 import 'package:elara_app/services/climate_service.dart';
 import 'package:elara_app/theme/elara_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -106,7 +106,9 @@ void main() {
     await pumpQuiet(tester);
 
     expect(
-      find.text('Not predicting while you are on hormonal contraception'),
+      find.text(
+        'The forecast is paused while you are on hormonal contraception',
+      ),
       findsOneWidget,
     );
     // No cycle claim of any kind survives on the screen.

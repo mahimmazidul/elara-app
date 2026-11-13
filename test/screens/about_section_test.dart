@@ -7,7 +7,7 @@ import 'package:elara_app/providers/update_provider.dart';
 import 'package:elara_app/screens/settings/about_section.dart';
 import 'package:elara_app/services/update_service.dart';
 import 'package:elara_app/theme/elara_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -129,21 +129,32 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'states that no social accounts exist rather than inventing them',
-    (tester) async {
-      await pump(tester);
+  testWidgets('offers the author the reader can actually reach', (tester) async {
+    await pump(tester);
 
-      expect(
-        find.textContaining('publishes no social accounts'),
-        findsOneWidget,
-      );
-      // No fabricated profile links.
-      expect(find.textContaining('twitter.com'), findsNothing);
-      expect(find.textContaining('x.com'), findsNothing);
-      expect(find.textContaining('instagram.com'), findsNothing);
-    },
-  );
+    // The panel used to say "Elara publishes no social accounts", which was a
+    // denial in the place a link belongs, and by the time it was noticed it was
+    // also untrue. The rows now name the accounts the author keeps, and the URL
+    // is in AppInfo so it is written once.
+    expect(find.text('Facebook'), findsOneWidget);
+    expect(find.text('Telegram'), findsOneWidget);
+
+    // Still never a raw URL on screen, and still nothing invented: an account
+    // the author does not have would be worse than none.
+    expect(find.textContaining('facebook.com'), findsNothing);
+    expect(find.textContaining('t.me'), findsNothing);
+    expect(find.textContaining('twitter.com'), findsNothing);
+    expect(find.textContaining('instagram.com'), findsNothing);
+  });
+
+  testWidgets('the prediction engine is named, not linked', (tester) async {
+    await pump(tester);
+
+    // The engine is a dependency, and its repository is not something a reader
+    // of this panel can act on. It is stated as a fact beside the licence.
+    expect(find.text('elara-core'), findsOneWidget);
+    expect(find.text('Prediction engine'), findsOneWidget);
+  });
 
   testWidgets('the limitations panel carries the medical and privacy claims', (
     tester,

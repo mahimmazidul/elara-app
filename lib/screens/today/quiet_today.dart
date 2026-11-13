@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/models/cycle_mode.dart';
@@ -203,7 +203,7 @@ class _ModePanel extends StatelessWidget {
 
     case CycleMode.hormonalContraception:
       return (
-        title: 'Not predicting while you are on hormonal contraception',
+        title: 'The forecast is paused while you are on hormonal contraception',
         paragraphs: const [
           'Pills, implants, injections and most hormonal IUDs stop ovulation. '
               'The bleeding they cause is not the end of a cycle, so a date worked '

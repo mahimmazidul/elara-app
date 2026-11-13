@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/database_helper.dart';
@@ -160,7 +160,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     final prediction = context.watch<PredictionProvider>();
     final result = prediction.result;
     if (result == null) {
-      return 'No forecast right now · see why';
+      return 'Forecast paused · see why';
     }
     final percent = (result.confidence * 100).round();
     final window = result.windowDays;
