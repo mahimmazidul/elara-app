@@ -135,10 +135,10 @@ class MedicalTopicScreen extends StatelessWidget {
 
                 const SizedBox(height: ElaraSpacing.lg),
                 Text(
-                  'This page is general education and is not reviewed for your '
-                  'own history. If something here worries you, or does not '
-                  'match your experience, ask a clinician rather than relying '
-                  'on the app.',
+                  'This page is general education and is not reviewed against '
+                  'her own history. If something here worries you, or does not '
+                  'match what she has told you, ask a clinician rather than '
+                  'relying on the app.',
                   style: type.caption(tokens.textSecondaryStrong),
                 ),
                 const SizedBox(height: ElaraSpacing.xxl),

@@ -433,7 +433,7 @@ class _UpdateResultSheet extends StatelessWidget {
           const SizedBox(height: ElaraSpacing.sm),
           Text(
             'Elara works offline: every screen still works without a '
-            'connection, so this changes nothing about your cycle history.',
+            'connection, so this changes nothing she has recorded.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.lg),
