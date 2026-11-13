@@ -1,5 +1,5 @@
 import 'package:elara_app/theme/elara_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Phase-adaptive theming: the accent follows the cycle phase, the two surface

@@ -1,6 +1,6 @@
 import 'package:elara_app/theme/elara_theme.dart';
 import 'package:elara_app/widgets/phase_dial.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The dial replaced a filled disc that repeated the phase chip above it.

@@ -1,7 +1,7 @@
 name: elara_app
 description: An offline-first cycle companion with local predictions and gentle daily guidance.
 publish_to: "none"
-version: 2.3.1+14
+version: 2.4.0+15
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
@@ -10,6 +10,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Material, from the package Flutter moved it to in 3.50. `package:flutter/
+  # material.dart` is deprecated there: it is an info on 3.47 and it is the one
+  # thing that made the release job fail while the test job passed, because the
+  # release was the only job that turned infos into errors. The import path is
+  # the whole of the change - same widgets, same names - and the package
+  # supports the 3.47 toolchain the workflows are pinned to.
+  material_ui: ^1.11.0
 
   # Prediction engine: ensemble cycle forecasting, phase classification,
   # environmental severity and action suggestions. Pure Dart, fully offline.

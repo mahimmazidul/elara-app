@@ -1,7 +1,7 @@
 import 'package:elara_app/widgets/elara_route.dart';
 import 'package:elara_app/widgets/motion.dart';
 import 'package:elara_app/widgets/primitives.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The press feedback and the page transition.

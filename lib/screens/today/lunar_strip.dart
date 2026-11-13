@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../theme/elara_theme.dart';
 import '../../utils/hijri_date.dart';
