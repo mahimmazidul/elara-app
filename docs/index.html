@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Elara — cycle awareness for the person who cares</title>
 <meta name="description" content="Elara is an offline-first Android app that helps you remember, notice, prepare and care, around your partner's cycle.">
-<meta name="color-scheme" content="light">
-<meta name="theme-color" content="#F6F6F4">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F6F6F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14100F" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:title" content="Elara">
@@ -24,17 +25,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
 
 :root {
-  /* The app's palette, by name. Paper, ink and honey, with the four phase
-     dyes as the only saturated colour on the page — the same four the app
-     draws. If the app's palette changes, these are the values to change, and
-     nothing else on this page should need to move. */
+  color-scheme: light dark;
+
+  /* These are the app's surface and ink tokens: quiet paper, a clear card,
+     and phase colour only where it carries meaning. */
   --bg: #F6F6F4;
   --card: #FFFFFF;
   --text: #241E1B;
   --muted: #66635E;
   --muted-strong: #4F4B45;
-  --accent: #B88E56;
-  --accent-ink: #241E1B;
   --rule: #E7E6E1;
 
   --menstrual: #D57C8B;
@@ -42,14 +41,38 @@
   --ovulatory: #B88E56;
   --luteal: #A48AC7;
 
-  /* The phase colours as readable ink, for the labels under the strip. */
+  /* Readable phase inks, paired with the same fills used in the app. */
   --menstrual-ink: #B24D5E;
   --follicular-ink: #347960;
   --ovulatory-ink: #88663A;
   --luteal-ink: #8555C3;
 
+  --success: #4CA484;
+  --success-ink: #347960;
+  --on-phase: #241E1B;
   --shadow: 0 1px 2px rgba(36, 30, 27, 0.06);
   --radius: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14100F;
+    --card: #1E1917;
+    --text: #F3EDE8;
+    --muted: #A89C94;
+    --muted-strong: #CDBFB5;
+    --rule: #322E2B;
+
+    /* The phase fills stay the same in dark mode; only their text inks move. */
+    --menstrual-ink: #F2A6B3;
+    --follicular-ink: #81CAB0;
+    --ovulatory-ink: #DAB686;
+    --luteal-ink: #C8B1E7;
+
+    --success: #81CAB0;
+    --success-ink: #81CAB0;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  }
 }
 
 * { box-sizing: border-box; }
@@ -62,16 +85,10 @@ body {
      page is fluid below 420px: nothing here has a fixed width, so a 375px
      viewport cannot produce a horizontal scrollbar. */
   padding: 0 clamp(1rem, 5vw, 2rem) 3rem;
-  /* The page carries the phase in its paper, not only in its pictures: a wash
-     of the day's colour blooms down from behind the mark and fades out before
-     the first paragraph, so the theme changes as a whole page rather than as a
-     swapped screenshot. It is a wash and never a fill — the ink has to stay
-     readable on it, and the measured contrast ratios belong to --bg. */
-  background:
-    radial-gradient(90% 34rem at 50% -8rem, var(--phase-wash), transparent 70%)
-      no-repeat,
-    var(--bg);
-  transition: background 600ms ease;
+  /* The page and cards stay neutral; phase colour lives in the guide, labels
+     and a few deliberate accents, as it does in the app. */
+  background: var(--bg);
+  transition: background-color 180ms ease;
   color: var(--text);
   /* The app is set in Hind Siliguri. The website cannot load the bundled
      font file without shipping it a second time, so it names the family
@@ -135,10 +152,10 @@ h1 {
   text-align: center;
 }
 
-.phase-labels li:nth-child(1) { color: #B24D5E; }
-.phase-labels li:nth-child(2) { color: #347960; }
-.phase-labels li:nth-child(3) { color: #88663A; }
-.phase-labels li:nth-child(4) { color: #8555C3; }
+.phase-labels li:nth-child(1) { color: var(--menstrual-ink); }
+.phase-labels li:nth-child(2) { color: var(--follicular-ink); }
+.phase-labels li:nth-child(3) { color: var(--ovulatory-ink); }
+.phase-labels li:nth-child(4) { color: var(--luteal-ink); }
 
 /* ---- Sections --------------------------------------------------------- */
 
@@ -167,6 +184,8 @@ p { margin: 0 0 0.9rem; }
 .points li:last-child { border-bottom: 1px solid var(--rule); }
 
 .tick { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; margin-top: 0.2rem; }
+.tick circle { stroke: var(--success); }
+.tick path { stroke: var(--success-ink); }
 
 .points strong { font-weight: 500; }
 
@@ -237,12 +256,11 @@ figcaption {
   gap: 0.5rem;
   margin: 1rem auto 0;
   padding: 0.7rem 1.35rem;
-  /* The phase's readable ink is dark enough to carry cream text on every one of
-     the four, which is why the call to action can take the day's colour and
-     still clear AA: measured, 5.2:1 at worst (follicular), 7.4:1 at best. */
-  background: var(--cycle-ink);
-  color: #FFFBF4;
-  transition: background 600ms ease;
+  /* Match the app's active-phase fill and its dark on-phase ink; the four
+     pairings all clear AA for normal text. */
+  background: var(--cycle-accent);
+  color: var(--on-phase);
+  transition: background-color 180ms ease;
   font-size: 0.9375rem;
   font-weight: 700;
   text-align: center;
@@ -274,8 +292,8 @@ figcaption {
   display: inline-block;
   margin: 0.6rem auto 0;
   padding: 0.45rem 0.9rem;
-  background: transparent;
-  color: var(--muted);
+  background: var(--bg);
+  color: var(--cycle-ink);
   font-size: 0.8125rem;
   font-weight: 500;
   border: 1px solid var(--rule);
@@ -291,7 +309,7 @@ figcaption {
   font-size: 0.8125rem;
 }
 
-.note a { color: var(--accent-ink); }
+.note a { color: var(--cycle-ink); }
 
 /* ---- Footer ----------------------------------------------------------- */
 
@@ -306,7 +324,7 @@ footer {
 
 footer p { margin: 0.35rem 0 0; }
 
-a { color: #8A6A4F; text-decoration: none; }
+a { color: var(--cycle-ink); text-decoration: none; }
 
 a:hover { text-decoration: underline; }
 
@@ -326,55 +344,44 @@ a:focus-visible,
      from the resting state and returns only as feedback, so the button reads
      as part of the page rather than as a separate object floating on it. */
   .button:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10); }
-  .button { transition: opacity 120ms ease, box-shadow 120ms ease; }
+  .button { transition: background-color 180ms ease, opacity 120ms ease, box-shadow 120ms ease; }
 }
 
 /* ---- the cycle-driven theme -------------------------------------------
-   The page takes a phase from today's date — the 1st of the month is day 1 —
-   and moves its accent, its rule colour and the hero screenshot with it. It is
-   a conceit rather than a reading of anybody's body, and the line under the
-   hero says so, because a website implying it knows a visitor's cycle would be
-   both wrong and creepy.
-
-   Everything here is a *tint*: the page stays paper, the ink stays ink, and the
-   phase colour arrives as a thin band, a label and a shadow. A visitor who
-   prefers no motion or a forced colour scheme keeps both. */
+   The calendar date selects a visual sample only; it is not a reading of a
+   visitor's cycle. The phase colour belongs to the band, the selected label,
+   links and the primary action. The page and its cards remain neutral. */
 :root {
   --cycle-accent: var(--follicular);
   --cycle-ink: var(--follicular-ink);
-  --phase-wash: rgba(127, 168, 148, 0.40);
 }
 :root[data-phase="menstrual"] {
   --cycle-accent: var(--menstrual);
   --cycle-ink: var(--menstrual-ink);
-  --phase-wash: rgba(201, 140, 144, 0.42);
 }
 :root[data-phase="follicular"] {
   --cycle-accent: var(--follicular);
   --cycle-ink: var(--follicular-ink);
-  --phase-wash: rgba(127, 168, 148, 0.40);
 }
 :root[data-phase="ovulatory"] {
   --cycle-accent: var(--ovulatory);
   --cycle-ink: var(--ovulatory-ink);
-  --phase-wash: rgba(210, 164, 95, 0.48);
 }
 :root[data-phase="luteal"] {
   --cycle-accent: var(--luteal);
   --cycle-ink: var(--luteal-ink);
-  --phase-wash: rgba(147, 132, 182, 0.40);
 }
 
 .cycle-band {
   height: 4px;
   border-radius: 999px;
   background: var(--cycle-accent);
-  /* The band is the only place the phase colour is allowed to be a block. It
-     fades at both ends so it reads as a highlight rather than a bar. */
+  /* A small, clear marker identifies the sample phase without tinting the
+     surrounding surface. */
   opacity: 0.85;
   margin: 1.1rem auto 0.5rem;
   max-width: 220px;
-  transition: background 400ms ease;
+  transition: background-color 180ms ease;
 }
 .cycle-line {
   font-size: 0.82rem;
@@ -433,7 +440,7 @@ a:focus-visible,
 .faq details p { margin: 0.6rem 0 0; color: var(--muted-strong); }
 
 @media (prefers-reduced-motion: reduce) {
-  .cycle-band, .hero-shot { transition: none; }
+  body, .cycle-band, .hero-shot, .button { transition: none; }
 }
 </style>
 </head>
@@ -451,9 +458,8 @@ a:focus-visible,
 
     <div class="cycle-band" aria-hidden="true"></div>
     <p class="cycle-line" id="cycle-line">
-      The date is <strong>day 8</strong> of a 28-day cycle, so this month the
-      page is dressed in the follicular colours and shows that screenshot.
-      Every colour you see comes from the calendar on the wall.
+      This page shows a visual sample selected by the calendar date. It does not
+      use anyone&rsquo;s cycle data or make a personal prediction.
     </p>
 
     <div class="phases">
@@ -513,6 +519,17 @@ a:focus-visible,
           </svg>
           <span><strong>Suggests something kind.</strong> A few ideas for the day, in
           words, ranked by what she has actually said over what a calendar implies.</span>
+        </li>
+        <li>
+          <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t5">
+            <title id="t5">Included</title>
+            <circle cx="10" cy="10" r="9" fill="none" stroke="#4CA484" stroke-width="1.5"/>
+            <path d="M6 10.5l2.6 2.5L14 7.5" fill="none" stroke="#347960" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><strong>A practical guide for each phase.</strong> It offers choices
+          &mdash; take a chore, make space, or ask what would help &mdash; while keeping
+          general ideas separate from preferences she has shared herself.</span>
         </li>
         <li>
           <svg class="tick" viewBox="0 0 20 20" role="img" aria-labelledby="t3">
@@ -597,15 +614,15 @@ a:focus-visible,
       <div class="shots">
         <figure class="hero-shot">
           <img id="today-shot" src="screenshots/today-follicular.png"
-               alt="The Today screen: the phase dial, a countdown to the next estimated period with its window, and a care suggestion whose source is labelled 'She told you this'.">
+               alt="Today in a fictional sample: the phase hero shows an estimated phase and date window, with a What helps in this phase guide link; the suggestion below says what it is based on.">
           <figcaption id="today-caption">
-            Today: the phase, the next estimate, and one thing worth doing.
+            Today: the estimate window and a one-tap route to general phase guidance; personal preferences stay separately labelled.
           </figcaption>
         </figure>
         <figure>
           <img src="screenshots/today-action.png"
                alt="The guidance section: a suggestion driven by the weather, then the phase prompt with a food idea and the note that it is a suggestion, not a forecast.">
-          <figcaption>Each idea says where it came from &mdash; what she said, what she reported, the weather, or the estimate.</figcaption>
+          <figcaption>Each idea names its source &mdash; her words, what she reported, the weather, or general phase guidance.</figcaption>
         </figure>
         <figure>
           <img src="screenshots/settings.png"
@@ -720,16 +737,10 @@ a:focus-visible,
 </div>
 
 <script>
-/* The page's phase, from the date.
- *
- * The 1st of the month is day 1 of a 28-day cycle, so the phase is a pure
- * function of the day of the month. It is not a reading of anybody's body and
- * the sentence above the fold says so; what it buys is that the site looks
- * different on the 3rd than on the 20th, in the same four colours the app
- * draws, and that the screenshot it shows is the one that matches.
- *
- * The images are static files, so this costs no request beyond the one the page
- * would have made anyway for whichever screenshot it settled on.
+/* The phase shown is a visual sample selected from the local calendar date.
+ * It is not a personal estimate: the page reads no cycle data and makes no
+ * network request. The date only selects one of the app's four palettes and
+ * its matching, locally stored screenshot.
  */
 (function () {
   var PHASES = [
@@ -739,10 +750,10 @@ a:focus-visible,
     { key: "luteal", label: "luteal", from: 17, to: 28 }
   ];
   var CAPTIONS = {
-    menstrual: "Today, on the second day: the phase dial, the countdown and a suggestion drawn from what she has said.",
-    follicular: "Today, in the week after bleeding: the dial, the next estimate, and one thing worth doing.",
-    ovulatory: "Today, mid-cycle: the app still calls this an estimate, because that is all it is.",
-    luteal: "Today, in the days before bleeding: the same screen, quieter, and the advice changes with it."
+    menstrual: "Today, in the menstrual colour sample: the estimate window and phase-guide link share the hero.",
+    follicular: "Today, in the follicular colour sample: the estimate window and phase-guide link share the hero.",
+    ovulatory: "Today, in the ovulatory colour sample: the estimate window and phase-guide link share the hero.",
+    luteal: "Today, in the luteal colour sample: the estimate window and phase-guide link share the hero."
   };
 
   var now = new Date();
@@ -756,10 +767,9 @@ a:focus-visible,
 
   var line = document.getElementById("cycle-line");
   if (line) {
-    line.innerHTML = "The date is <strong>day " + day +
-      "</strong> of a 28-day cycle, so this month the page is dressed in the " +
-      phase.label + " colours and shows that screenshot. Every colour you see " +
-      "comes from the calendar on the wall.";
+    line.innerHTML = "For this visual sample, the calendar date selects the <strong>" +
+      phase.label + "</strong> colour and screenshot. It does not use anyone's " +
+      "cycle data or make a personal prediction.";
   }
 
   var items = document.querySelectorAll(".phase-labels li");
@@ -773,7 +783,7 @@ a:focus-visible,
   if (shot) {
     shot.src = "screenshots/today-" + phase.key + ".png";
     shot.alt = "The Today screen in the " + phase.label +
-      " phase: the phase dial, the countdown to the next estimated period with its window, and a care suggestion labelled with where it came from.";
+      " colour sample: an estimated phase and period window, a link to the practical phase guide, and a care suggestion labelled with its source. The data shown is fictional.";
   }
   var caption = document.getElementById("today-caption");
   if (caption) { caption.textContent = CAPTIONS[phase.key]; }
