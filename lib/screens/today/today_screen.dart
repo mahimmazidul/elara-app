@@ -9,6 +9,7 @@ import '../../providers/preferences_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/symptoms_provider.dart';
 import '../../services/care_recommender.dart';
+import '../care/partner_guide_screen.dart';
 import '../../theme/elara_theme.dart';
 import '../../utils/history_quality.dart';
 import '../../utils/phase_timeline.dart';
@@ -145,6 +146,14 @@ class _NeedsMoreHistory extends StatelessWidget {
             ),
           ),
         ],
+        const SizedBox(height: ElaraSpacing.md),
+        TextButton.icon(
+          onPressed: () => Navigator.of(context).push(
+            PartnerGuideScreen.route(context),
+          ),
+          icon: const Icon(ElaraIcons.care),
+          label: const Text('Read the phase guide'),
+        ),
       ],
     );
   }
@@ -194,8 +203,8 @@ class _TodayContent extends StatelessWidget {
       climate: result.environment,
       today: now,
     );
-    // The general layer, sourced from published guidance: shown underneath
-    // hers, and on its own when there is nothing personal yet.
+    // The general layer is labelled with its source and shown underneath hers,
+    // or on its own when there is nothing personal yet.
     final general = recommender.generalFor(phaseKey);
 
     return ListView(
@@ -227,9 +236,9 @@ class _TodayContent extends StatelessWidget {
         // one for finding. With nothing saturated anywhere the eye has no
         // anchor and the screen reads as a form rather than as a page with a
         // subject. This panel is the anchor: filled with the phase's deep
-        // colour, carrying cream ink, holding the three things the screen is
-        // about, which are where today sits in the cycle, when the next period
-        // is expected, and how sure that is.
+        // colour, carrying cream ink, and holding the phase dial, the period
+        // estimate with its window, and one short doorway to the guide that
+        // explains the phase. The link adds context, not another measurement.
         //
         // The fill is a value down from the decorative phase colour. At the
         // decorative tone a block this size reads as a
@@ -281,6 +290,14 @@ class _TodayContent extends StatelessWidget {
                 unavailableReason: result.unavailableReason,
                 historyNotes: historyNotes,
                 onHero: true,
+              ),
+              const SizedBox(height: ElaraSpacing.md),
+              Container(
+                height: 1,
+                color: tokens.onHero.withValues(alpha: 0.18),
+              ),
+              _PhaseGuideLink(
+                phaseKey: result.phase == null ? null : phaseKey,
               ),
             ],
           ),
@@ -357,13 +374,67 @@ class _TodayContent extends StatelessWidget {
   }
 }
 
+/// One quiet way into the full guide, kept inside the phase panel because that
+/// is where a partner is already looking for context. The four long cards stay
+/// on their own page; the hero gets only this one-tap invitation.
+class _PhaseGuideLink extends StatelessWidget {
+  const _PhaseGuideLink({required this.phaseKey});
+
+  final String? phaseKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final type = context.type;
+    final title = phaseKey == null
+        ? 'What helps through the cycle'
+        : 'What helps in this phase';
+    final accessibilityLabel = title;
+
+    return Material(
+      color: tokens.transparent,
+      child: Semantics(
+        button: true,
+        label: accessibilityLabel,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(ElaraRadii.chip),
+          onTap: () => Navigator.of(context).push(
+            PartnerGuideScreen.route(context, currentPhaseKey: phaseKey),
+          ),
+          child: SizedBox(
+            height: 52,
+            width: double.infinity,
+            child: Row(
+              children: [
+                Icon(ElaraIcons.care, size: 18, color: tokens.onHero),
+                const SizedBox(width: ElaraSpacing.sm),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: type.subtitle(tokens.onHero, size: 14),
+                  ),
+                ),
+                Icon(
+                  ElaraIcons.disclosure,
+                  size: 20,
+                  color: tokens.onHero.withValues(alpha: 0.82),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The next-period estimate, stated rather than displayed.
 ///
 /// This used to be a card with a 60pt numeral, which made an estimate by a
 /// statistical model the loudest thing on a screen about care. The information
-/// is the same — days remaining, the date, the window, the cycle day — but it
-/// now reads as a sentence with the number inline, and the numerals stay
-/// tabular so they line up from day to day.
+/// is the same: days remaining, the date, the window, the cycle day. It now
+/// reads as a sentence with the number inline, and the numerals stay tabular so
+/// they line up from day to day.
 class _Countdown extends StatelessWidget {
   const _Countdown({
     required this.daysUntil,

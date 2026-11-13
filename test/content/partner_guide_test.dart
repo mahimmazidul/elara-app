@@ -80,13 +80,24 @@ void main() {
     }
   });
 
-  test('the guide keeps the sentence the slides got right', () {
-    // The best line in the originals was the one telling a partner not to call
-    // it hormones. It is kept in Bangla, because that is how it would be said.
+  test('the guide rejects using hormones to dismiss what she says', () {
     final menstrual = partnerPhases.first;
     expect(
-      menstrual.skip.any((line) => line.contains('হরমোন')),
+      menstrual.skip.any((line) => line.toLowerCase().contains('hormones')),
       isTrue,
     );
+    expect(
+      menstrual.skip.any(
+        (line) => line.toLowerCase().contains('are you on your period'),
+      ),
+      isTrue,
+    );
+  });
+
+  test('timing labels do not turn a 28-day cycle into a schedule', () {
+    for (final phase in partnerPhases) {
+      expect(phase.timing.toLowerCase(), isNot(contains('days')));
+      expect(phase.timing, isNotEmpty);
+    }
   });
 }

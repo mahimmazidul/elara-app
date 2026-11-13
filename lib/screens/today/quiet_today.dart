@@ -10,6 +10,7 @@ import '../../services/care_recommender.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/icons.dart';
 import '../../widgets/primitives.dart';
+import '../care/partner_guide_screen.dart';
 import 'care_suggestions.dart';
 import 'climate_strip.dart';
 import 'day_notes.dart';
@@ -80,6 +81,14 @@ class QuietToday extends StatelessWidget {
               style: type.caption(tokens.textSecondaryStrong),
             ),
           ],
+        ),
+        const SizedBox(height: ElaraSpacing.xs),
+        TextButton.icon(
+          onPressed: () => Navigator.of(context).push(
+            PartnerGuideScreen.route(context),
+          ),
+          icon: const Icon(ElaraIcons.care),
+          label: const Text('Read the phase guide'),
         ),
 
         const SizedBox(height: ElaraSpacing.lg),

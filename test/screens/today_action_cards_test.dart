@@ -251,8 +251,11 @@ void main() {
 
       expect(tester.takeException(), isNull);
 
-      // The section heading is present.
+      // The section heading is present, and the full phase guide is one tap
+      // away from the phase panel rather than buried in Settings.
       expect(find.text('Ways to help today'), findsOneWidget);
+      final guideLink = find.text('What helps in this phase');
+      expect(guideLink, findsOneWidget);
 
       // Her answer is rendered as the first thing to act on.
       expect(find.textContaining('khichuri'), findsWidgets);
@@ -273,6 +276,13 @@ void main() {
           .toLowerCase();
       expect(text, isNot(contains('romance')));
       expect(text, isNot(contains('conversation score')));
+
+      await tester.ensureVisible(guideLink);
+      await tester.tap(guideLink);
+      await tester.pumpAndSettle();
+      expect(find.text('What helps, by phase'), findsOneWidget);
+      expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

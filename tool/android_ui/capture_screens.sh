@@ -740,35 +740,29 @@ fi
 echo "::endgroup::"
 
 echo "::group::Phase guide"
-# The newest screen in the app, and the only one a partner reads for its own
-# sake: what each phase is like, what to do, what to skip, what to put in front
-# of her. It is one row down in Settings, so it needs no scroll to reach - but
-# the row is looked up by its wording, and the wording is the point of the
-# screen, so a rename that empties this capture is a capture that says so.
+# The full guide is opened from the phase panel on Today, where it belongs. The
+# one-tap label is checked before the capture, so a missing route cannot leave a
+# stale image under the guide's filename.
 found=0
-if to_settings; then
-  for attempt in 1 2 3 4 5 6 7 8; do
-    if tap_row "What helps, by phase" 3; then
-      found=1
-      break
-    fi
-    scroll_down
-    dump_ui || true
-  done
+if goto_tab "Today" 0; then
+  dump_ui || true
+  if tap_label "What helps in this phase" 3; then
+    found=1
+  fi
 fi
 if [ "$found" = 1 ]; then
   dump_ui || true
-  if shows "In the kitchen"; then
+  if shows "From the kitchen, if she wants"; then
     shoot "17-phase-guide"
     check_app_health "the phase guide"
   else
-    echo "  the row was tapped but the guide did not open, so nothing was captured."
+    echo "  the Today link was tapped but the guide did not open, so nothing was captured."
   fi
   adb_run shell input keyevent KEYCODE_BACK
   sleep 1
   ensure_foreground
 else
-  echo "  the phase guide row was not found"
+  echo "  the phase guide link was not found on Today"
 fi
 echo "::endgroup::"
 

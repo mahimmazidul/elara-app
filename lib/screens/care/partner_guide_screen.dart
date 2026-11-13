@@ -5,59 +5,82 @@ import '../../theme/elara_theme.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sub_page.dart';
 
-/// The four phases, and what to do with each one.
+/// The full partner guide, opened from the phase estimate on Today.
 ///
-/// Elara is written for the person standing next to her: the app says "she", the
-/// care suggestions are things someone else can do, and the phase card on Today
-/// is the fact the rest of the advice hangs on. What the app did not have was one
-/// place to read all of it at once - the suggestions are for today, the food
-/// notes are per phase and per screen, and none of it answers "what is this week
-/// going to be like, and what can I do about it".
-///
-/// Every phase is an estimate built from dates she recorded, so the screen says
-/// that at the top and does not repeat the caveat four times.
+/// When a phase is known, the guide begins with that card and then continues
+/// around the cycle. Without a current estimate it keeps the usual cycle order.
 class PartnerGuideScreen extends StatelessWidget {
-  const PartnerGuideScreen({super.key});
+  const PartnerGuideScreen({super.key, this.currentPhaseKey});
 
-  static Route<void> route(BuildContext context) {
-    return MaterialPageRoute<void>(builder: (_) => const PartnerGuideScreen());
+  final String? currentPhaseKey;
+
+  static Route<void> route(
+    BuildContext context, {
+    String? currentPhaseKey,
+  }) {
+    return MaterialPageRoute<void>(
+      builder: (_) => PartnerGuideScreen(currentPhaseKey: currentPhaseKey),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final type = context.type;
+    final phases = _phasesFrom(currentPhaseKey);
+    final hasCurrentPhase = phases.any(
+      (phase) => phase.phaseKey == currentPhaseKey,
+    );
 
     return ElaraSubPage(
       title: 'What helps, by phase',
       children: [
         Text(
-          'The phase comes from the dates she recorded, so treat it as the '
-          'weather forecast and not as a reading. What she says about how she '
-          'feels beats anything on this page.',
+          hasCurrentPhase
+              ? 'The phase Elara estimated for today comes first. Dates can help '
+                    'you think ahead; they cannot tell you how she feels. Ask '
+                    'her, take the answer seriously, and let the calendar stay '
+                    'in its place.'
+              : 'Dates can suggest a phase, not tell you how she feels. These '
+                    'notes describe common body changes and offer ideas, not a '
+                    'script. Ask her, take the answer seriously, and let the '
+                    'calendar stay in its place.',
           style: type.body(tokens.textSecondaryStrong),
         ),
         const SizedBox(height: ElaraSpacing.lg),
-        for (final phase in partnerPhases) ...[
-          _PhaseCard(phase: phase),
+        for (final phase in phases) ...[
+          _PhaseCard(
+            phase: phase,
+            isCurrent: hasCurrentPhase && phase.phaseKey == currentPhaseKey,
+          ),
           const SizedBox(height: ElaraSpacing.lg),
         ],
         Text(
-          'Food here is ordinary food from the local market, and none of it is a '
-          'treatment. For pain that stops her day, bleeding that soaks through, '
-          'or anything that worries either of you, a clinician is the next stop '
-          'rather than this screen.',
+          'The body notes draw on general NHS and ACOG guidance. Practical '
+          'ideas echo recurring themes in posts on r/AskWomen and '
+          'r/AskWomenOver30: warmth, a meal, one less chore, or room to be '
+          'alone. Those are personal accounts, not medical evidence, and they '
+          'disagree. Her answer comes first.',
           style: type.caption(tokens.textSecondaryStrong),
         ),
       ],
     );
   }
+
+  List<PartnerPhase> _phasesFrom(String? phaseKey) {
+    final index = partnerPhases.indexWhere(
+      (phase) => phase.phaseKey == phaseKey,
+    );
+    if (index <= 0) return partnerPhases;
+    return [...partnerPhases.skip(index), ...partnerPhases.take(index)];
+  }
 }
 
 class _PhaseCard extends StatelessWidget {
-  const _PhaseCard({required this.phase});
+  const _PhaseCard({required this.phase, required this.isCurrent});
 
   final PartnerPhase phase;
+  final bool isCurrent;
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +95,8 @@ class _PhaseCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // A dot of the phase's own colour ties the card to the calendar
-              // and the hero panel above it without tinting the whole card.
+              // A dot ties the card to the phase on Today without tinting its
+              // surface or introducing another colour.
               Container(
                 width: 10,
                 height: 10,
@@ -82,19 +105,23 @@ class _PhaseCard extends StatelessWidget {
               const SizedBox(width: ElaraSpacing.sm),
               Expanded(
                 child: Text(
-                  phase.days.toUpperCase(),
+                  phase.timing.toUpperCase(),
                   style: type.label(tokens.textSecondaryStrong),
                 ),
               ),
             ],
           ),
+          if (isCurrent) ...[
+            const SizedBox(height: ElaraSpacing.xs),
+            Text(
+              'ESTIMATED FOR TODAY',
+              style: type.caption(tokens.textSecondaryStrong, size: 11),
+            ),
+          ],
           const SizedBox(height: ElaraSpacing.xs),
           Text(phase.name, style: type.headline(tokens.textPrimary, size: 22)),
           const SizedBox(height: 2),
-          Text(
-            phase.aka,
-            style: type.caption(text),
-          ),
+          Text(phase.aka, style: type.caption(text)),
           const SizedBox(height: ElaraSpacing.sm),
           Text(
             phase.whatHappens,
@@ -118,7 +145,7 @@ class _PhaseCard extends StatelessWidget {
           const Hairline(),
           const SizedBox(height: ElaraSpacing.md),
           Text(
-            'In the kitchen',
+            'From the kitchen, if she wants',
             style: type.label(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.xs),
@@ -147,9 +174,8 @@ class _PhaseCard extends StatelessWidget {
 
 /// A titled list with a marker in the gutter.
 ///
-/// The marker is text rather than an icon: a tick and a dash read at a glance
-/// and neither of them is a red cross, which is the last thing a guide about
-/// someone's body should put next to a line of advice.
+/// The marker is text rather than an icon: a tick and a dot read at a glance,
+/// and neither becomes a red cross beside a line about someone's body.
 class _ListBlock extends StatelessWidget {
   const _ListBlock({
     required this.title,
@@ -181,10 +207,7 @@ class _ListBlock extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 18,
-                  child: Text(
-                    marker,
-                    style: type.body(markerColour),
-                  ),
+                  child: Text(marker, style: type.body(markerColour)),
                 ),
                 Expanded(
                   child: Text(item, style: type.body(tokens.textPrimary)),

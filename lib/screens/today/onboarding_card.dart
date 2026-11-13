@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/date_keys.dart';
 import '../../providers/cycle_provider.dart';
+import '../care/partner_guide_screen.dart';
 import '../../theme/elara_theme.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/icons.dart';
@@ -185,6 +186,14 @@ class _OnboardingCardState extends State<OnboardingCard> {
                     'window is a window, and every estimate carries its margin. '
                     'For contraception, talk to a clinician.',
                     style: type.caption(tokens.textSecondaryStrong),
+                  ),
+                  const SizedBox(height: ElaraSpacing.md),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      PartnerGuideScreen.route(context),
+                    ),
+                    icon: const Icon(ElaraIcons.care),
+                    label: const Text('Read the phase guide'),
                   ),
                 ],
               ),

@@ -116,8 +116,10 @@ void main() {
     expect(find.textContaining('days late'), findsNothing);
     expect(find.textContaining('Estimated'), findsNothing);
     expect(find.textContaining('fertile'), findsNothing);
-    // And it says the thing people actually want to know.
+    // And it says the thing people actually want to know. The generic guide
+    // stays reachable from Today, even without a phase forecast.
     expect(find.textContaining('Everything else still works'), findsOneWidget);
+    expect(find.text('Read the phase guide'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
