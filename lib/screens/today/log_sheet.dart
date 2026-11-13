@@ -70,7 +70,7 @@ class _LogSheet extends StatelessWidget {
             const Hairline(),
             ElaraListRow(
               title: 'A symptom',
-              subtitle: 'Note what you felt, and when.',
+              subtitle: 'Note what she felt, and when.',
               icon: ElaraIcons.symptom,
               onTap: () => Navigator.of(context).pop(_LogChoice.symptom),
             ),

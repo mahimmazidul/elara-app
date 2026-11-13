@@ -107,7 +107,7 @@ void main() {
 
     expect(
       find.text(
-        'The forecast is paused while you are on hormonal contraception',
+        'The forecast is paused while she is on hormonal contraception',
       ),
       findsOneWidget,
     );

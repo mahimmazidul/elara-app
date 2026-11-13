@@ -698,6 +698,67 @@ else
 fi
 echo "::endgroup::"
 
+echo "::group::Phase guide"
+# The newest screen in the app, and the only one a partner reads for its own
+# sake: what each phase is like, what to do, what to skip, what to put in front
+# of her. It is one row down in Settings, so it needs no scroll to reach - but
+# the row is looked up by its wording, and the wording is the point of the
+# screen, so a rename that empties this capture is a capture that says so.
+go_to_settings || true
+found=0
+for attempt in 1 2 3 4 5 6 7 8; do
+  if tap_row "What helps, by phase" 3; then
+    found=1
+    break
+  fi
+  scroll_down
+  dump_ui || true
+done
+if [ "$found" = 1 ]; then
+  dump_ui || true
+  if shows "In the kitchen"; then
+    shoot "17-phase-guide"
+    check_app_health "the phase guide"
+  else
+    echo "  the row was tapped but the guide did not open, so nothing was captured."
+  fi
+  adb_run shell input keyevent KEYCODE_BACK
+  sleep 1
+  ensure_foreground
+else
+  echo "  the phase guide row was not found"
+fi
+echo "::endgroup::"
+
+echo "::group::Location"
+# The district picker. It replaced two typed decimals, so the capture is the
+# proof that a household outside Dhaka can now set a place in two taps.
+go_to_settings || true
+found=0
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
+  if tap_row "Location" 2; then
+    found=1
+    break
+  fi
+  scroll_down
+  dump_ui || true
+done
+if [ "$found" = 1 ]; then
+  dump_ui || true
+  if shows "District"; then
+    shoot "18-location"
+    check_app_health "the location page"
+  else
+    echo "  the Location row was tapped but the page did not open, so nothing was captured."
+  fi
+  adb_run shell input keyevent KEYCODE_BACK
+  sleep 1
+  ensure_foreground
+else
+  echo "  the Location row was not found"
+fi
+echo "::endgroup::"
+
 echo "::group::Privacy"
 go_to_settings || true
 found=0
@@ -818,7 +879,7 @@ check_app_health "the end of the run"
 EXPECTED="00-first-launch 01-today-light 03-calendar-light 04-insights-light
 05-settings-light 06-preferences 07-symptoms 08-reminders 09-medical 10-about
 11-privacy 12-day-detail 13-today-dark 14-calendar-dark 15-insights-dark
-16-settings-dark"
+16-settings-dark 17-phase-guide 18-location"
 missing=""
 for name in $EXPECTED; do
   if [ ! -s "$CAPTURES/$name.png" ]; then
@@ -832,5 +893,5 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
-echo "No crash, no error screen, and all 16 captures were produced."
+echo "No crash, no error screen, and all 18 captures were produced."
 echo "Device captures written to $CAPTURES."
