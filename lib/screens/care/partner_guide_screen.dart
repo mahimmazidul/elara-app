@@ -111,7 +111,7 @@ class _PhaseCard extends StatelessWidget {
           _ListBlock(
             title: 'Skip',
             items: phase.skip,
-            marker: '—',
+            marker: '·',
             markerColour: tokens.textSecondaryStrong,
           ),
           const SizedBox(height: ElaraSpacing.md),

@@ -196,6 +196,8 @@ IconData _resolve(String name) {
     'Icons.cloud_outlined': Icons.cloud_outlined,
     'Icons.menu_book_outlined': Icons.menu_book_outlined,
     'Icons.info_outline_rounded': Icons.info_outline_rounded,
+    'Icons.facebook_rounded': Icons.facebook_rounded,
+    'Icons.send_rounded': Icons.send_rounded,
     'Icons.priority_high_rounded': Icons.priority_high_rounded,
     'Icons.insights_outlined': Icons.insights_outlined,
     'Icons.lock_outline_rounded': Icons.lock_outline_rounded,
