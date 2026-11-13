@@ -107,6 +107,9 @@ class ElaraGlass extends StatelessWidget {
     final tokens = context.elara;
     final r = radius ?? ElaraRadii.glass;
 
+    // The panel's own tone, or the caller's wash.
+    final base = tint ?? tokens.glassBase;
+
     // Dark mode is flat, and this is the whole of that decision.
     //
     // The pane below is built to imitate glass: a vertical sheen, a pale lip of
@@ -137,18 +140,9 @@ class ElaraGlass extends StatelessWidget {
         ),
       );
     }
-    // In light, the page is the darker of the two tones and the panel catches
-    // the light. In dark the relationship inverts: the panel is the lighter
-    // one, and the sheen stays pale so the edge still reads.
-    final base = tint ?? tokens.glassBase;
 
-    // In dark the panel is not "the card tone, lighter": a near-black pane with
-    // a white stroke reads as etched plastic, which is what made the first
-    // version look generated rather than designed. Real glass in a dark room
-    // shows almost nothing at the edge and everything in the falloff, so the
-    // dark panel gets a smaller highlight, a *deeper* fill than the page is
-    // not possible without losing the shape — instead it stays a shade above
-    // the page and buys its separation from a wide, very soft shadow below.
+    // Light only, from here down. The pane is a sheen between a pale lip and a
+    // dark rim, with a wide soft shadow beneath it.
     final top = Color.alphaBlend(
       Colors.white.withValues(alpha: 0.06),
       base,
