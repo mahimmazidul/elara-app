@@ -132,7 +132,7 @@ The moon in the interface is a motif for that rhythm, not a claim about the myth
 
 **Where is my data kept?**
 On this phone, in the app's own storage. Elara makes two kinds of request: a
-weather forecast for the coordinates you type in, and an update check you switch
+weather forecast for the district you pick, and an update check you switch
 on yourself. Auto Backup is off at the manifest level, so the history stays where
 it was written; moving it to another phone is the encrypted export you run.
 
