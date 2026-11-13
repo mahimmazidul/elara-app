@@ -224,13 +224,15 @@ class _LocationPageState extends State<LocationPage> {
         const SizedBox(height: ElaraSpacing.md),
         // Two buttons that both need room for their labels. Equal shares and
         // wrapping keep them on screen at a 2x text scale, where a fixed-width
-        // "Dhaka default" pushed the primary action off the edge by 99 px.
+        // label pushed the primary action off the edge by 99 px. The reset says
+        // where it resets to in one word, because "Dhaka default" wrapped onto
+        // two lines on a 320dp phone and read as two ideas.
         Row(
           children: [
             Expanded(
               child: OutlinedButton(
                 onPressed: _useDhaka,
-                child: const Text('Dhaka default'),
+                child: const Text('Use Dhaka'),
               ),
             ),
             const SizedBox(width: ElaraSpacing.sm),
