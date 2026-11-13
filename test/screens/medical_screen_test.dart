@@ -2,7 +2,7 @@ import 'package:elara_app/data/medical_content.dart';
 import 'package:elara_app/screens/medical/medical_screen.dart';
 import 'package:elara_app/screens/medical/medical_topic_screen.dart';
 import 'package:elara_app/theme/elara_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The health-information section: content rules first, then rendering.

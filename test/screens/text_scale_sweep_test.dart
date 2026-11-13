@@ -12,7 +12,7 @@ import 'package:elara_app/screens/preferences/preferences_screen.dart';
 import 'package:elara_app/screens/reminders/reminders_screen.dart';
 import 'package:elara_app/screens/symptoms/symptoms_screen.dart';
 import 'package:elara_app/theme/elara_theme.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';

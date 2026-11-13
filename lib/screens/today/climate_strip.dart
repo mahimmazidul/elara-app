@@ -1,5 +1,5 @@
 import 'package:elara_core/elara_core.dart' as core;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../data/models/climate_snapshot.dart';
 import '../../theme/elara_theme.dart';

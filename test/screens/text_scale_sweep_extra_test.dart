@@ -10,7 +10,7 @@ import 'package:elara_app/screens/calendar/day_detail_sheet.dart';
 import 'package:elara_app/screens/consent/consent_screen.dart';
 import 'package:elara_app/theme/elara_theme.dart';
 import 'package:elara_core/elara_core.dart' as core;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';

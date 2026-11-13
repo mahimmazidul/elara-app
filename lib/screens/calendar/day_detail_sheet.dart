@@ -1,5 +1,5 @@
 import 'package:elara_core/elara_core.dart' as core;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/date_keys.dart';

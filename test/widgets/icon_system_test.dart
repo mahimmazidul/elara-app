@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:elara_app/widgets/icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Every icon the app draws comes from one vocabulary.
