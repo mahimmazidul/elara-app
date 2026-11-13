@@ -1,5 +1,5 @@
 import 'package:elara_core/elara_core.dart' as core;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/date_keys.dart';
@@ -114,7 +114,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     onPressed: _logPeriodStart,
                     style: FilledButton.styleFrom(
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(44, 44),
+                      // 48, not 44: the smallest comfortable target, and the
+                      // width of the thumb that has to find it.
+                      minimumSize: const Size(48, 48),
                     ),
                     child: const Icon(
                       ElaraIcons.plus,

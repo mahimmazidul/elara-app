@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/elara_theme.dart';
 import 'icons.dart';
@@ -106,6 +106,37 @@ class ElaraGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final r = radius ?? ElaraRadii.glass;
+
+    // Dark mode is flat, and this is the whole of that decision.
+    //
+    // The pane below is built to imitate glass: a vertical sheen, a pale lip of
+    // light along the top, a darker rim underneath, and a wide soft shadow to
+    // fall away into. In light it earns all of it, because the page is the
+    // darker of the two tones and the panel genuinely looks lit. In dark the
+    // panel is *lighter* than the page, so the same treatment has nothing to
+    // refract and reads as a rendered object rather than a surface - the report
+    // was "dark mode looks ai glassy", which is exactly right.
+    //
+    // In a dark room a panel is separated by its edge. So dark gets a flat fill,
+    // one hairline, and no shadow at all.
+    if (tokens.isDark) {
+      final flat = DecoratedBox(
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: BorderRadius.circular(r),
+          border: Border.all(color: tokens.divider),
+        ),
+        child: Padding(padding: padding, child: child),
+      );
+      if (onTap == null) return flat;
+      return ElaraPressable(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(r),
+          child: flat,
+        ),
+      );
+    }
     // In light, the page is the darker of the two tones and the panel catches
     // the light. In dark the relationship inverts: the panel is the lighter
     // one, and the sheen stays pale so the edge still reads.
@@ -119,11 +150,11 @@ class ElaraGlass extends StatelessWidget {
     // not possible without losing the shape — instead it stays a shade above
     // the page and buys its separation from a wide, very soft shadow below.
     final top = Color.alphaBlend(
-      Colors.white.withValues(alpha: tokens.isDark ? 0.035 : 0.06),
+      Colors.white.withValues(alpha: 0.06),
       base,
     );
     final bottom = Color.alphaBlend(
-      Colors.black.withValues(alpha: tokens.isDark ? 0.05 : 0.03),
+      Colors.black.withValues(alpha: 0.03),
       base,
     );
 
@@ -139,7 +170,7 @@ class ElaraGlass extends StatelessWidget {
     final panel = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(r),
-        boxShadow: tokens.isDark ? ElaraShadows.glassDark : ElaraShadows.glass,
+        boxShadow: ElaraShadows.glass,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(r),
