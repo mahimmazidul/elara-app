@@ -549,13 +549,13 @@ class _NavSlot extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        // The hit area is the whole slot, from the card's top edge to its
-        // bottom, not just the icon and its label. A thumb that lands in the
-        // padding above an icon was landing on nothing, which is what "it
-        // barely touches" means.
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
+        // The hit area is the slot, padding included, not just the icon and its
+        // label: a thumb landing above an icon used to find nothing, which is
+        // what "it barely touches" means. It is padding rather than
+        // `height: double.infinity`, which asked the card for the height of the
+        // screen and laid the bar over the whole page.
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: ElaraSpacing.sm),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
