@@ -319,18 +319,18 @@ class _TodayContent extends StatelessWidget {
         // divider, because stacking cards made every suggestion look equally
         // well founded.
         const SizedBox(height: ElaraSpacing.xl),
-        ElaraSection(
-          title: 'Ways to help today',
-          children: [
-            CareSuggestions(suggestions: suggestions, phaseKey: phaseKey),
-            const SizedBox(height: ElaraSpacing.xxl),
-            ActionCards(
-              action: result.action,
-              phaseKey: phaseKey,
-              general: general,
-              unavailableReason: result.unavailableReason,
-            ),
-          ],
+        Text(
+          'Ways to help today',
+          style: type.title(tokens.textPrimary, size: 17),
+        ),
+        const SizedBox(height: ElaraSpacing.md),
+        CareSuggestions(suggestions: suggestions, phaseKey: phaseKey),
+        const SizedBox(height: ElaraSpacing.xxl),
+        ActionCards(
+          action: result.action,
+          phaseKey: phaseKey,
+          general: general,
+          unavailableReason: result.unavailableReason,
         ),
 
         // ---- the rest of the day, one tap away.
