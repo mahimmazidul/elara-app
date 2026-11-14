@@ -251,11 +251,22 @@ void main() {
 
       expect(tester.takeException(), isNull);
 
-      // The section heading is present, and the full phase guide is one tap
-      // away from the phase panel rather than buried in Settings.
+      // Today shows only the guidance suited to the estimated phase, inline.
+      // The multi-phase guide is not a required tap to reach the useful advice.
       expect(find.text('Ways to help today'), findsOneWidget);
-      final guideLink = find.text('What helps in this phase');
-      expect(guideLink, findsOneWidget);
+      expect(find.text('Menstrual'), findsOneWidget);
+      expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
+      expect(
+        find.textContaining('Take dinner, dishes, or the shopping off her list'),
+        findsOneWidget,
+      );
+      expect(find.text('Follicular'), findsNothing);
+      expect(find.text('What helps in this phase'), findsNothing);
+
+      // The date is explicitly presented as an estimate and a plus/minus
+      // window, not as a single certain day.
+      expect(find.textContaining('Estimated '), findsOneWidget);
+      expect(find.textContaining('±'), findsOneWidget);
 
       // Her answer is rendered as the first thing to act on.
       expect(find.textContaining('khichuri'), findsWidgets);
@@ -277,11 +288,6 @@ void main() {
       expect(text, isNot(contains('romance')));
       expect(text, isNot(contains('conversation score')));
 
-      await tester.ensureVisible(guideLink);
-      await tester.tap(guideLink);
-      await tester.pumpAndSettle();
-      expect(find.text('What helps, by phase'), findsOneWidget);
-      expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

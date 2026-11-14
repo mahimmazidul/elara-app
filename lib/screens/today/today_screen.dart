@@ -239,8 +239,9 @@ class _TodayContent extends StatelessWidget {
         // anchor and the screen reads as a form rather than as a page with a
         // subject. This panel is the anchor: filled with the phase's deep
         // colour, carrying cream ink, and holding the phase dial, the period
-        // estimate with its window, and one short doorway to the guide that
-        // explains the phase. The link adds context, not another measurement.
+        // estimate with its window, and the full guidance for today's estimated
+        // phase. The advice is here on Today, not behind a link or mixed with
+        // guidance for phases that are not current.
         //
         // The fill is a value down from the decorative phase colour. At the
         // decorative tone a block this size reads as a

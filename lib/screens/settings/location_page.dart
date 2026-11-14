@@ -85,13 +85,15 @@ class _LocationPageState extends State<LocationPage> {
     final notice = 'Location saved to ${district.name}';
     setState(() {
       _saving = false;
-      _district = ok ? district : _district;
+      if (ok) {
+        _district = district;
+        _latController.text = _trim(district.latitude.toString());
+        _lonController.text = _trim(district.longitude.toString());
+      }
       _error = ok ? null : settings.lastError;
       _statusMessage = ok ? notice : null;
     });
     if (!ok) return;
-    _latController.text = _trim(district.latitude.toString());
-    _lonController.text = _trim(district.longitude.toString());
     _showMinimalNotice(notice);
   }
 
@@ -394,6 +396,7 @@ class _DivisionField extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: DropdownButtonFormField<String>(
+        key: ValueKey(value),
         initialValue: value,
         isExpanded: true,
         style: type.body(tokens.textPrimary, size: 15),
@@ -443,6 +446,7 @@ class _DistrictField extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: DropdownButtonFormField<District>(
+        key: ValueKey('$division:${selected?.name ?? ''}'),
         initialValue: selected,
         isExpanded: true,
         style: type.body(tokens.textPrimary, size: 15),
