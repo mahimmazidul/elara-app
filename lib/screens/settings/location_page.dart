@@ -199,6 +199,8 @@ class _LocationPageState extends State<LocationPage> {
                   : (value) => setState(() {
                         _division = value;
                         _district = null;
+                        _latController.clear();
+                        _lonController.clear();
                         _statusMessage = null;
                       }),
             ),

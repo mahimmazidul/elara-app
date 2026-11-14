@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/partner_phases.dart';
 import '../../models/elara_result.dart';
 import '../../providers/climate_provider.dart';
 import '../../providers/cycle_provider.dart';
@@ -206,6 +207,7 @@ class _TodayContent extends StatelessWidget {
     // The general layer is labelled with its source and shown underneath hers,
     // or on its own when there is nothing personal yet.
     final general = recommender.generalFor(phaseKey);
+    final activePhaseGuide = partnerPhaseFor(phaseKey);
 
     return ListView(
       padding: ElaraSpacing.pageInsets(context),
@@ -292,13 +294,16 @@ class _TodayContent extends StatelessWidget {
                 onHero: true,
               ),
               const SizedBox(height: ElaraSpacing.md),
-              Container(
-                height: 1,
-                color: tokens.onHero.withValues(alpha: 0.18),
-              ),
-              _PhaseGuideLink(
-                phaseKey: result.phase == null ? null : phaseKey,
-              ),
+              if (activePhaseGuide != null) ...[
+                Container(
+                  height: 1,
+                  color: tokens.onHero.withValues(alpha: 0.18),
+                ),
+                PhaseGuideCard(
+                  phase: activePhaseGuide,
+                  isCurrent: true,
+                ),
+              ],
             ],
           ),
         ),
@@ -370,60 +375,6 @@ class _TodayContent extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-}
-
-/// One quiet way into the full guide, kept inside the phase panel because that
-/// is where a partner is already looking for context. The four long cards stay
-/// on their own page; the hero gets only this one-tap invitation.
-class _PhaseGuideLink extends StatelessWidget {
-  const _PhaseGuideLink({required this.phaseKey});
-
-  final String? phaseKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.elara;
-    final type = context.type;
-    final title = phaseKey == null
-        ? 'What helps through the cycle'
-        : 'What helps in this phase';
-    final accessibilityLabel = title;
-
-    return Material(
-      color: tokens.transparent,
-      child: Semantics(
-        button: true,
-        label: accessibilityLabel,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(ElaraRadii.chip),
-          onTap: () => Navigator.of(context).push(
-            PartnerGuideScreen.route(context, currentPhaseKey: phaseKey),
-          ),
-          child: SizedBox(
-            height: 52,
-            width: double.infinity,
-            child: Row(
-              children: [
-                Icon(ElaraIcons.care, size: 18, color: tokens.onHero),
-                const SizedBox(width: ElaraSpacing.sm),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: type.subtitle(tokens.onHero, size: 14),
-                  ),
-                ),
-                Icon(
-                  ElaraIcons.disclosure,
-                  size: 20,
-                  color: tokens.onHero.withValues(alpha: 0.82),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
