@@ -253,8 +253,6 @@ void main() {
 
       // Today shows only the guidance suited to the estimated phase, inline.
       // The multi-phase guide is not a required tap to reach the useful advice.
-      expect(find.text('Ways to help today'), findsOneWidget);
-      expect(find.text('Menstrual'), findsOneWidget);
       expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
       expect(
         find.textContaining('Take dinner, dishes, or the shopping off her list'),
@@ -263,10 +261,17 @@ void main() {
       expect(find.text('Follicular'), findsNothing);
       expect(find.text('What helps in this phase'), findsNothing);
 
-      // The date is explicitly presented as an estimate and a plus/minus
-      // window, not as a single certain day.
-      expect(find.textContaining('Estimated '), findsOneWidget);
+      // The estimate is a date plus its uncertainty window, not a single
+      // certain day.
+      expect(find.text('Estimated phase'), findsOneWidget);
       expect(find.textContaining('±'), findsOneWidget);
+
+      await tester.dragUntilVisible(
+        find.text('Ways to help today'),
+        find.byType(ListView).first,
+        const Offset(0, -500),
+      );
+      await tester.pumpAndSettle();
 
       // Her answer is rendered as the first thing to act on.
       expect(find.textContaining('khichuri'), findsWidgets);

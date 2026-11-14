@@ -232,7 +232,7 @@ void main() {
       await swipe(tester, 300);
       expect(tester.takeException(), isNull);
       expect(selected(tester), 0);
-      expect(find.text('Ways to help today'), findsOneWidget);
+      expect(find.text('Estimated phase'), findsOneWidget);
     });
 
     testWidgets('swiping back and forth returns to the starting tab',
@@ -243,7 +243,7 @@ void main() {
       await swipe(tester, 300);
       expect(tester.takeException(), isNull);
       expect(selected(tester), 0);
-      expect(find.text('Ways to help today'), findsOneWidget);
+      expect(find.text('Estimated phase'), findsOneWidget);
     });
 
     testWidgets('a short drag is not a tab change', (tester) async {
@@ -252,7 +252,7 @@ void main() {
       // 30px on a 390dp screen is a nudge, not a swipe.
       await swipe(tester, -30);
       expect(selected(tester), 0);
-      expect(find.text('Ways to help today'), findsOneWidget);
+      expect(find.text('Estimated phase'), findsOneWidget);
     });
 
     testWidgets('vertical scrolling still scrolls rather than changing tab',
@@ -264,7 +264,6 @@ void main() {
 
       // The list scrolled; the tab has not changed.
       expect(selected(tester), 0);
-      expect(find.text('Ways to help today'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -281,8 +280,8 @@ void main() {
         );
         expect(tester.takeException(),
             isNull, reason: '${width.toInt()}dp');
-        // The first suggestion must be on screen, not clipped away.
-        expect(find.text('Ways to help today'), findsOneWidget);
+        // The date estimate remains available on narrow screens.
+        expect(find.text('Estimated phase'), findsOneWidget);
       });
     }
 
@@ -390,6 +389,12 @@ void main() {
     testWidgets('Today shows prose guidance, never a score out of ten',
         (tester) async {
       await pumpApp(tester, size: const Size(390, 1400), starts: history);
+      await tester.dragUntilVisible(
+        find.byType(FoodChipRow),
+        find.byType(ListView).first,
+        const Offset(0, -500),
+      );
+      await tester.pumpAndSettle();
 
       // When the engine produced an action, the card is present and its copy is
       // prose. It renders only when a phase and severity are both available, so
