@@ -104,9 +104,9 @@ class PreferencesScreen extends StatelessWidget {
             icon: ElaraIcons.observation,
             children: [
               Text(
-                'Your own notes. They are observations you have made; she '
-                'decides whether they are true, and they rank below anything '
-                'she has said.',
+                'Your own notes. They are observations you have made, not as '
+                'facts about her. She decides whether they are true, and they '
+                'rank below anything she has said.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
               const SizedBox(height: ElaraSpacing.md),
