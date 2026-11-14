@@ -168,15 +168,20 @@ nakshatra beside the Gregorian date is normal here rather than exotic. The
 prediction does not change either way.
 
 **Why not the Play Store?**
-A listing would need an account and a data-safety form to say what this page
-says: nothing is collected. The APK is built from the same source, signed, and
-published on the releases page.
+A listing would need a developer account ($25 one-time fee), a review queue
+and a data-safety form to say what this page says: nothing is collected. I'm
+not paying $25 to distribute a free app that collects nothing. The APK is
+built from the same source, signed, and published on the releases page.
 
 ## Credits
 
-Built by [Md. Mazidul Islam Mahim](https://github.com/mahimmazidul). Typeface:
-[Hind Siliguri](https://fonts.google.com/specimen/Hind+Siliguri) (SIL OFL).
+Built by [Md. Mazidul Islam Mahim](https://github.com/mahimmazidul).
+Typeface: [Hind Siliguri](https://fonts.google.com/specimen/Hind+Siliguri) (SIL OFL).
 Ideas and prior art: OpenCiclo (Apache-2.0), Flowlytics (AGPL-3.0), DRIP.
+
+The algorithm was not tested with a partner — I don't have a wife or girlfriend right now,
+so the suggestions are written from reading, not from shared nights. If you use it with
+someone, tell me what the screen got right and what it missed.
 The prediction engine is `elara-core`, Elara's own ensemble, developed from
 OpenCiclo and Flowlytics as upstream sources.
 Licensed [AGPL-3.0](LICENSE).

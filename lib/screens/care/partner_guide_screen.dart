@@ -136,14 +136,14 @@ class PhaseGuideCard extends StatelessWidget {
           _ListBlock(
             title: 'Do',
             items: phase.doThis,
-            marker: '✓',
+            marker: ElaraIcons.confirmed,
             markerColour: tokens.successText,
           ),
           const SizedBox(height: ElaraSpacing.md),
           _ListBlock(
             title: 'Skip',
             items: phase.skip,
-            marker: '·',
+            marker: ElaraIcons.unselected,
             markerColour: tokens.textSecondaryStrong,
           ),
           const SizedBox(height: ElaraSpacing.md),
@@ -186,7 +186,7 @@ class _ListBlock extends StatelessWidget {
 
   final String title;
   final List<String> items;
-  final String marker;
+  final IconData marker;
   final Color markerColour;
 
   @override
@@ -207,7 +207,11 @@ class _ListBlock extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 18,
-                  child: Text(marker, style: type.body(markerColour)),
+                  child: Icon(
+                    marker,
+                    size: 16,
+                    color: markerColour,
+                  ),
                 ),
                 Expanded(
                   child: Text(item, style: type.body(tokens.textPrimary)),
