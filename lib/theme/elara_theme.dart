@@ -222,8 +222,8 @@ class ElaraPalette {
   /// is now the light end of the same warm neutral (#CFC8BC), which puts the
   /// label at 9.9:1 and still looks like paper rather than like a colour.
   static const ElaraPalette dark = ElaraPalette(
-    bgPrimary: Color(0xFF14100F),
-    bgCard: Color(0xFF1E1917),
+    bgPrimary: Color(0xFF0B0B0D),
+    bgCard: Color(0xFF141417),
     textPrimary: Color(0xFFF3EDE8),
     textSecondary: Color(0xFFA89C94),
     textSecondaryStrong: Color(0xFFCDBFB5),
@@ -243,10 +243,10 @@ class ElaraPalette {
     warningText: Color(0xFFE7B78D),
     danger: Color(0xFFD86F79),
     dangerText: Color(0xFFF0AAB0),
-    moonGlow: Color(0xFF241E1B),
-    onPhase: Color(0xFF241E1B),
-    divider: Color(0xFF322E2B),
-    track: Color(0xFF2A2622),
+    moonGlow: Color(0xFF18181C),
+    onPhase: Color(0xFF0B0B0D),
+    divider: Color(0xFF26262B),
+    track: Color(0xFF222227),
     unknownPhase: Color(0xFF8C857F),
     unknownPhaseText: Color(0xFFB3AAA3),
     heroMenstrual: Color(0xFFB34759),
@@ -326,8 +326,13 @@ class ElaraSpacing {
   /// Horizontal page padding.
   static const EdgeInsets page = EdgeInsets.symmetric(horizontal: lg);
 
-  /// Standard card interior.
-  static const EdgeInsets card = EdgeInsets.all(lg);
+  /// Standard card interior: 18px horizontal, 14px vertical (~1.28:1 ratio)
+  /// so containers frame text lines with balanced optical margins rather than
+  /// excess vertical space.
+  static const EdgeInsets card = EdgeInsets.symmetric(
+    horizontal: 18,
+    vertical: 14,
+  );
 
   /// Widest comfortable measure for body copy, in logical pixels.
   ///
@@ -602,9 +607,9 @@ class ElaraTypography {
 
   TextStyle bodyStrong(Color color, {double size = 15}) => _style(
     TextStyle(color: color),
-    weight: FontWeight.w700,
+    weight: FontWeight.w600,
     size: size,
-    height: 1.45,
+    height: 1.4,
   );
 
   /// Secondary copy: weight 400, per the type scale.
@@ -691,7 +696,7 @@ class ElaraTokens extends ThemeExtension<ElaraTokens> {
   /// card is #1E1917, and a panel at the card tone with a white outline sits so
   /// close to the page that the outline does all the work. A half-step above the
   /// card leaves the fill and the shadow able to do it instead.
-  Color get glassBase => isDark ? const Color(0xFF221C1A) : palette.bgCard;
+  Color get glassBase => isDark ? const Color(0xFF16161A) : palette.bgCard;
 
   /// Absence of colour, exposed as a token so call sites never reach for
   /// `Colors.transparent` themselves.
@@ -1051,7 +1056,9 @@ class ElaraTheme {
       textTheme: TextTheme(
         displayLarge: tokens.typography.displayNumber(palette.textPrimary),
         headlineMedium: tokens.typography.headline(palette.textPrimary),
-        titleMedium: tokens.typography.title(palette.textPrimary),
+        titleLarge: tokens.typography.title(palette.textPrimary),
+        titleMedium: tokens.typography.body(palette.textPrimary),
+        bodyLarge: tokens.typography.body(palette.textPrimary),
         bodyMedium: tokens.typography.body(palette.textPrimary),
         bodySmall: tokens.typography.caption(palette.textSecondaryStrong),
         labelLarge: tokens.typography.label(palette.textPrimary),
@@ -1125,9 +1132,21 @@ class ElaraTheme {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: palette.textPrimary,
-        contentTextStyle: tokens.typography.body(palette.bgCard),
+        backgroundColor: palette.bgCard,
+        elevation: 0,
+        contentTextStyle: tokens.typography.caption(
+          palette.textSecondaryStrong,
+        ),
+        actionTextColor: palette.accentText,
         behavior: SnackBarBehavior.floating,
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: ElaraSpacing.lg,
+          vertical: ElaraSpacing.sm,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ElaraRadii.card),
+          side: BorderSide(color: palette.divider, width: 1),
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(

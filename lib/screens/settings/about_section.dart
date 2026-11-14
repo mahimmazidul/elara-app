@@ -64,6 +64,11 @@ class AboutSection extends StatelessWidget {
         const _AboutRow(label: 'Developer', value: 'Md. Mazidul Islam Mahim'),
         const SizedBox(height: ElaraSpacing.sm),
         const _AboutRow(label: 'Prediction engine', value: 'elara-core'),
+        const SizedBox(height: ElaraSpacing.xs),
+        Text(
+          'Elara\\u2019s own ensemble, developed from OpenCiclo and Flowlytics.',
+          style: type.caption(tokens.textSecondaryStrong, size: 12),
+        ),
         const SizedBox(height: ElaraSpacing.md),
         // Social links are offered as recognisable icons with accessible
         // labels, never as raw URLs.

@@ -59,8 +59,7 @@ class CalendarsPage extends StatelessWidget {
                 body:
                     'The tabular Islamic calendar, computed arithmetically. '
                     'Official dates in Bangladesh are set by moon sighting and '
-                    'can differ by a day, which is why this is labelled as '
-                    'computed rather than as the date.',
+                    'can differ by a day, so this shows the computed date.',
               ),
               const SizedBox(height: ElaraSpacing.md),
               const _Entry(
@@ -69,7 +68,7 @@ class CalendarsPage extends StatelessWidget {
                 body:
                     'The lunar mansion of the Vedic calendar, from the same '
                     'ephemeris. Shown because a good part of the app\'s '
-                    'audience reads it, not because it affects the estimate.',
+                    'audience reads it, even though it does not change the estimate.',
               ),
             ],
           ),
@@ -77,8 +76,8 @@ class CalendarsPage extends StatelessWidget {
         const SizedBox(height: ElaraSpacing.lg),
         Text(
           'Nothing on this page changes what Today says about the cycle. It is '
-          'calendar arithmetic, shown for information, and it is computed from '
-          'the date rather than looked up.',
+          'calendar arithmetic, shown for information, worked out from the '
+          'date itself.',
           style: type.caption(tokens.textSecondaryStrong),
         ),
       ],

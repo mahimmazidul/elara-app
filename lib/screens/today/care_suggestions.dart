@@ -54,18 +54,15 @@ class CareSuggestions extends StatelessWidget {
     // belong together", the dividers say they are separate, and the padding
     // gives each one somewhere to breathe.
     return ElaraGlass(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ElaraSpacing.lg,
-        vertical: ElaraSpacing.lg,
-      ),
+      padding: ElaraSpacing.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _Primary(suggestion: primary, phaseKey: phaseKey),
           for (final suggestion in rest) ...[
-            const SizedBox(height: ElaraSpacing.lg),
+            const SizedBox(height: ElaraSpacing.md),
             Divider(height: 1, thickness: 1, color: tokens.divider),
-            const SizedBox(height: ElaraSpacing.lg),
+            const SizedBox(height: ElaraSpacing.md),
             _Secondary(suggestion: suggestion),
           ],
         ],
@@ -122,10 +119,13 @@ class _Primary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(suggestion.title, style: type.title(tokens.textPrimary, size: 19)),
-        const SizedBox(height: ElaraSpacing.sm),
+        Text(
+          suggestion.title,
+          style: type.bodyStrong(tokens.textPrimary, size: 16),
+        ),
+        const SizedBox(height: ElaraSpacing.xs),
         Text(suggestion.body, style: type.body(tokens.textSecondaryStrong)),
-        const SizedBox(height: ElaraSpacing.md),
+        const SizedBox(height: ElaraSpacing.sm),
         BasisLine(basis: suggestion.basis, phaseKey: phaseKey),
       ],
     );

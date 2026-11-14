@@ -72,8 +72,8 @@ class _HeatCyclePageState extends State<HeatCyclePage> {
     return ElaraSubPage(
       title: 'Heat and the cycle',
       subtitle:
-          'Recorded on this phone each time the app checked the forecast. The '
-          'phase bands are estimates from recorded history, not measurements.',
+          'Recorded on this phone each time the app checked the forecast, '
+          'with phase bands estimated from your recorded cycle history.',
       children: [
         if (_loading)
           const ElaraGlass(

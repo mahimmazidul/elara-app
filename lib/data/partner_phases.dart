@@ -2,16 +2,19 @@
 ///
 /// The body notes follow general NHS and ACOG guidance. The practical ideas
 /// reflect recurring themes in women's own accounts: warmth, a meal, one less
-/// chore, being treated normally, and being left alone when that is what she
-/// wants. Those accounts disagree on the details, so the app asks the partner
-/// to listen rather than treating a phase as a script.
-///
-/// The phase is estimated from dates, not measured. Nothing here is a medical
-/// instruction, a promise about how she feels, or a substitute for her answer.
+/// chore, being treated normally, and room to rest when she wants it.
 library;
 
-/// What may be happening, and how a partner can make the day easier without
-/// turning an estimate into an expectation.
+/// Returns the [PartnerPhase] matching [phaseKey], or `null` if unknown.
+PartnerPhase? partnerPhaseFor(String? phaseKey) {
+  if (phaseKey == null) return null;
+  for (final phase in partnerPhases) {
+    if (phase.phaseKey == phaseKey) return phase;
+  }
+  return null;
+}
+
+/// What may be happening, and how a partner can make the day easier.
 class PartnerPhase {
   const PartnerPhase({
     required this.phaseKey,
@@ -28,10 +31,10 @@ class PartnerPhase {
   final String phaseKey;
   final String name;
 
-  /// A broad point in the cycle, not a day count or a schedule.
+  /// A broad point in the cycle.
   final String timing;
 
-  /// A human reminder of what the phase label cannot tell the partner.
+  /// A human reminder of what matters most in this phase.
   final String aka;
   final String whatHappens;
   final List<String> doThis;
@@ -39,7 +42,7 @@ class PartnerPhase {
   final List<PartnerFood> foods;
 }
 
-/// A familiar thing to offer, and the non-medical reason it belongs here.
+/// A familiar dish or snack to offer from the kitchen.
 class PartnerFood {
   const PartnerFood(this.name, this.why);
 
@@ -52,40 +55,37 @@ const List<PartnerPhase> partnerPhases = [
     phaseKey: 'menstrual',
     name: 'Menstrual',
     timing: 'During bleeding',
-    aka: 'Pain and pace are hers to describe.',
+    aka: 'Pain and pace vary from day to day, so let her set the rhythm.',
     whatHappens:
         'The uterine lining is shedding. Prostaglandins make the uterus '
         'contract, which can cause cramps that reach the back or thighs. Pain '
         'and energy vary from person to person, and from one cycle to the next.',
     doThis: [
       'Take dinner, dishes, or the shopping off her list before she has to ask. '
-          'A hot water bag helps less if she still has to get up and fill it.',
+          'A hot water bag helps much more when you fill and bring it to her.',
       'Offer a warm, wrapped hot water bag and ask whether her belly or lower '
           'back feels better.',
       'Ask once: "Would you like quiet, company, or something from the kitchen?" '
-          'Then let her answer be enough.',
+          'Then let her answer guide the rest of the evening.',
     ],
     skip: [
       'Saying "it is just hormones" or asking "are you on your period?" in '
-          'the middle of a disagreement. Neither answers what she said.',
-      'Assuming she wants to be fussed over. Some people want closeness; some '
-          'want a normal day and a little space.',
+          'the middle of a disagreement. Listen to what she is actually saying.',
+      'Assuming she wants a big fuss made over her. Some women want closeness, '
+          'while others prefer an ordinary day and a little quiet space.',
     ],
     foods: [
       PartnerFood(
         'Chhola bhuna',
-        'A filling, familiar snack if she fancies it. Offer it as food, not a '
-            'cramp remedy.',
+        'A filling, familiar snack when she wants something warm and savoury.',
       ),
       PartnerFood(
         'Palong shak with masoor dal',
-        'An ordinary home meal with greens and dal. Comfort is enough; the '
-            'meal need not do anything to her cycle.',
+        'A comforting everyday home meal with greens, dal, and warm rice.',
       ),
       PartnerFood(
         'Khejur or gur with tea',
-        'A little sweetness if that is what she feels like; her appetite gets '
-            'the final say.',
+        'A small sweet pairing with afternoon tea when she feels like having it.',
       ),
     ],
   ),
@@ -93,35 +93,33 @@ const List<PartnerPhase> partnerPhases = [
     phaseKey: 'follicular',
     name: 'Follicular',
     timing: 'After bleeding, before ovulation',
-    aka: 'A transition, not a promise of extra energy.',
+    aka: 'Energy often steadies as the days after a period settle in.',
     whatHappens:
         'Follicles develop and oestrogen rises as the uterine lining begins to '
-        'build again. Those are body changes, not a forecast of her mood, '
-        'energy, or appetite; she may notice a shift or none at all.',
+        'build again. Some women notice lighter energy or appetite shifts '
+        'during these days, while others feel much the same as usual.',
     doThis: [
-      'If she has something she wants to do, help make room for it: arrange '
-          'the fuchka run, the riverside walk, or a film at home without '
-          'leaving her to plan every detail.',
+      'If she mentions wanting to go out or do something together, handle the '
+          'details for the fuchka run, riverside walk, or film night at home.',
       'When things are calm, ask what would make the harder days easier next '
-          'time. Remember her answer, and check again later; it may change.',
+          'time. Remember her answer and check in again next month.',
     ],
     skip: [
-      'Treating a guessed high-energy week as a promise that she will want an '
-          'outing, extra work, or affection. The estimate cannot make that call.',
+      'Assuming that post-period days automatically mean high energy or plans '
+          'every evening. Follow how she actually feels on the day.',
     ],
     foods: [
       PartnerFood(
         'Doi and chira',
-        'A quick, familiar breakfast when she wants it. No special phase recipe '
-            'is required.',
+        'A quick, cool breakfast or light afternoon bowl whenever she wants it.',
       ),
       PartnerFood(
         'An egg, boiled or bhuna',
-        'An easy addition to a meal she already likes.',
+        'An easy, nourishing addition to a meal she already likes.',
       ),
       PartnerFood(
         'Peyara or mango in season',
-        'A simple seasonal snack. Let her choose what sounds good.',
+        'Fresh seasonal fruit cut and ready when she wants a snack.',
       ),
     ],
   ),
@@ -129,37 +127,36 @@ const List<PartnerPhase> partnerPhases = [
     phaseKey: 'ovulatory',
     name: 'Ovulatory',
     timing: 'Around ovulation',
-    aka: 'An estimate, never a green light.',
+    aka: 'Mid-cycle days estimated from her recorded history.',
     whatHappens:
         'A rise in luteinising hormone prompts an ovary to release an egg. The '
-        'timing can shift, and a cycle estimate cannot confirm ovulation. Some '
-        'people notice a brief one-sided ache; many notice nothing.',
+        'exact timing can shift from cycle to cycle. Some women notice a brief '
+        'one-sided ache, while many feel no different at all.',
     doThis: [
-      'Make the plan she actually wants: a walk, a night in, or no plan at all. '
-          'Share the thinking rather than choosing for her.',
-      'Offer affection, then let her decide. The date on a screen cannot stand '
-          'in for a conversation or consent.',
+      'Plan the kind of evening she actually enjoys, whether that is a walk '
+          'outside, a quiet night in, or an unscheduled evening together.',
+      'Be warm and attentive while letting her set the pace for closeness and '
+          'plans.',
     ],
     skip: [
-      'Treating "ovulatory" as proof of a fertile day or as an invitation to '
-          'sex. Elara measures neither hormone levels nor consent.',
-      'Asking her to cancel something she is looking forward to because a '
-          'quieter evening suits you better.',
+      'Treating an estimated mid-cycle window as a certainty about fertility '
+          'or mood. Always talk openly with each other instead of relying on '
+          'the calendar.',
+      'Asking her to cancel something she has been looking forward to just '
+          'because a quieter evening suits you better.',
     ],
     foods: [
       PartnerFood(
         'Ilish, when it is in season',
-        'Cook it the way she likes it, when it fits the meal. It is dinner, not '
-            'a fertility food.',
+        'Cook it the way she enjoys it when it fits the family meal.',
       ),
       PartnerFood(
         'Tishi, if she already enjoys it',
-        'Add it to a familiar dish if she likes the taste. Nothing on the plate '
-            'needs to promise anything about her cycle.',
+        'Add it to a familiar home dish when she likes the flavour.',
       ),
       PartnerFood(
         'Doi or seasonal fruit',
-        'An ordinary side or snack, offered because she likes it.',
+        'A simple side or snack offered because she enjoys it.',
       ),
     ],
   ),
@@ -167,40 +164,37 @@ const List<PartnerPhase> partnerPhases = [
     phaseKey: 'luteal',
     name: 'Luteal',
     timing: 'After ovulation',
-    aka: 'Some notice a pattern; no one is a calendar.',
+    aka: 'Some notice a pattern; every cycle has its own pace.',
     whatHappens:
-        'After ovulation, progesterone rises and later falls if pregnancy does '
-        'not occur. Some people notice premenstrual symptoms such as bloating, '
-        'breast tenderness, headache, appetite changes, or low mood. Others '
-        'notice few or none.',
+        'After ovulation, progesterone rises and later falls before the next '
+        'period begins. Some women notice bloating, breast tenderness, '
+        'headache, appetite changes, or lower energy, while others feel '
+        'completely normal.',
     doThis: [
-      'On a day she says is hard, take one task all the way off her hands: '
-          'make the tea, clear dinner, or wash the dishes. Do not leave a second '
-          'list for tomorrow.',
-      'Ask when things are calm what helps before her period. Remember it, '
-          'then check again next time; what she wants can change.',
+      'On a day she says is tiring, take one task all the way off her hands: '
+          'make the tea, clear dinner, or finish the dishes so nothing waits '
+          'for her tomorrow.',
+      'Ask when things are calm what helps most in the days before her period, '
+          'and keep those small comforts ready.',
     ],
     skip: [
-      'Using "it is PMS" to end a disagreement, or calling a feeling '
-          'irrational because of the date. A symptom does not cancel what she '
-          'said.',
-      'A lecture about salt, sugar, cravings, or self-control. Offer options, '
-          'not rules.',
+      'Bringing up PMS during a disagreement or brushing off a concern because '
+          'of the date on the calendar.',
+      'Commenting on salt, sugar, or cravings. Keep her favourite snacks '
+          'around the house so she can have what she feels like.',
     ],
     foods: [
       PartnerFood(
         'Lal shak or pui shak',
-        'A familiar meal if she wants it. Let it be food, not a promise about '
-            'her symptoms.',
+        'A comforting home-cooked side with warm rice when she wants a full meal.',
       ),
       PartnerFood(
         'Tok doi',
-        'Serve it because she enjoys it, not because a cycle app prescribed it.',
+        'Serve it chilled or alongside lunch whenever she enjoys the taste.',
       ),
       PartnerFood(
         'Whatever she asks for',
-        'Fuchka, mango, mishti, or something else entirely. There is no perfect '
-            'period snack; the useful part is that she named it.',
+        'Fuchka, mango, mishti, or anything else she mentions wanting that day.',
       ),
     ],
   ),

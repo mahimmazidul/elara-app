@@ -151,7 +151,7 @@ class ActionCards extends StatelessWidget {
             FoodChipRow(foods: result.foodSuggestions, phaseKey: phaseKey),
             const SizedBox(height: ElaraSpacing.sm),
             Text(
-              'Ideas to offer, not instructions for anyone\u2019s appetite.',
+              'Everyday food ideas to offer when she feels like having them.',
               style: type.caption(tokens.textSecondaryStrong),
             ),
           ],
@@ -171,8 +171,8 @@ class ActionCards extends StatelessWidget {
               const SizedBox(width: ElaraSpacing.xs),
               Expanded(
                 child: Text(
-                  'A suggestion, not a forecast. What she says matters more '
-                  'than what the calendar says.',
+                  'A suggestion, not a forecast. Her own words always matter '
+                  'more than the calendar.',
                   style: type.caption(tokens.textSecondaryStrong),
                 ),
               ),

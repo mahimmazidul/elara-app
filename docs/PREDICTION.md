@@ -12,7 +12,10 @@ weakness that pass recorded, then fixed it in `elara-core` (`9d35ae7`).
 ## 1. What the app claims, and where the numbers come from
 
 The app shows a predicted next-period date, a window in days around it, and a
-phase for each day. The claims the interface is allowed to make are:
+phase for each day. The engine is `elara-core` — Elara's own ensemble, developed
+from OpenCiclo and Flowlytics as upstream sources, pinned to a commit in
+`pubspec.yaml` so the estimates a release ships are reproducible from this
+repository. The claims the interface is allowed to make are:
 
 - the date is an **estimate** derived from recorded history;
 - the window is an **uncertainty radius**, not a confidence interval with a

@@ -90,17 +90,18 @@ class GenericGuidanceTable {
       GenericGuidance(
         title: 'The lining begins to build again',
         body:
-            'After bleeding, follicles develop and oestrogen rises. That '
-            'describes a broad body process, not a forecast of her energy, mood, '
-            'or plans.',
+            'After bleeding, follicles develop and oestrogen rises as the '
+            'body prepares for the next part of the cycle. Energy and '
+            'appetite can feel steadier, or feel much the same as any other '
+            'week.',
         source: 'Cleveland Clinic',
         citation: 'Cleveland Clinic · Menstrual cycle',
       ),
       GenericGuidance(
-        title: 'Make plans with her, not from the phase',
+        title: 'Plan the week around what she feels like doing',
         body:
-            'A calendar cannot tell you what she has energy for. Ask what she '
-            'wants, and let her answer matter more than the phase label.',
+            'Every week has its own pace. Ask what she feels up for and plan '
+            'around her answer.',
         source: 'Reddit',
         citation:
             'Reddit · r/AskWomenOver30 · “What do you wish your partner would '
@@ -111,9 +112,9 @@ class GenericGuidanceTable {
       GenericGuidance(
         title: 'A calendar cannot confirm ovulation',
         body:
-            'This phase is estimated from recorded dates, not a hormone test. '
-            'Do not use a calendar estimate for contraception or as a cue about '
-            'sex.',
+            'This phase is estimated from recorded dates on the calendar. '
+            'Rely on medical methods for contraception and talk openly with '
+            'each other about how she feels.',
         source: 'Elara',
         citation: 'Elara · Forecast limits',
       ),

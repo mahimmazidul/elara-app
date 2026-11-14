@@ -5,10 +5,12 @@ import '../../theme/elara_theme.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sub_page.dart';
 
-/// The full partner guide, opened from the phase estimate on Today.
+/// The partner phase guide.
 ///
-/// When a phase is known, the guide begins with that card and then continues
-/// around the cycle. Without a current estimate it keeps the usual cycle order.
+/// On the Today tab, the suitable [PhaseGuideCard] for the active phase is
+/// rendered directly inline after the hero estimate. When opened as a sub-page
+/// (for example before any cycle is recorded), it lets the reader view one
+/// phase at a time or browse the cycle with natural, conversational notes.
 class PartnerGuideScreen extends StatelessWidget {
   const PartnerGuideScreen({super.key, this.currentPhaseKey});
 
@@ -38,29 +40,25 @@ class PartnerGuideScreen extends StatelessWidget {
         Text(
           hasCurrentPhase
               ? 'The phase Elara estimated for today comes first. Dates can help '
-                    'you think ahead; they cannot tell you how she feels. Ask '
-                    'her, take the answer seriously, and let the calendar stay '
-                    'in its place.'
-              : 'Dates can suggest a phase, not tell you how she feels. These '
-                    'notes describe common body changes and offer ideas, not a '
-                    'script. Ask her, take the answer seriously, and let the '
-                    'calendar stay in its place.',
+                    'you plan ahead, while her own words always tell you how '
+                    'she actually feels.'
+              : 'Dates can suggest a phase of the cycle, while her own words '
+                    'tell you how she feels. Use these notes for practical '
+                    'household and kitchen ideas.',
           style: type.body(tokens.textSecondaryStrong),
         ),
         const SizedBox(height: ElaraSpacing.lg),
         for (final phase in phases) ...[
-          _PhaseCard(
+          PhaseGuideCard(
             phase: phase,
             isCurrent: hasCurrentPhase && phase.phaseKey == currentPhaseKey,
           ),
           const SizedBox(height: ElaraSpacing.lg),
         ],
         Text(
-          'The body notes draw on general NHS and ACOG guidance. Practical '
-          'ideas echo recurring themes in posts on r/AskWomen and '
-          'r/AskWomenOver30: warmth, a meal, one less chore, or room to be '
-          'alone. Those are personal accounts, not medical evidence, and they '
-          'disagree. Her answer comes first.',
+          'Body notes draw on general NHS and ACOG guidance alongside '
+          'everyday household and Bangladeshi kitchen ideas. Every person '
+          'experiences her cycle differently, so her answer always comes first.',
           style: type.caption(tokens.textSecondaryStrong),
         ),
       ],
@@ -76,8 +74,17 @@ class PartnerGuideScreen extends StatelessWidget {
   }
 }
 
-class _PhaseCard extends StatelessWidget {
-  const _PhaseCard({required this.phase, required this.isCurrent});
+/// Renders the practical partner guide for a single [PartnerPhase].
+///
+/// Shown directly on the Today tab for the currently active phase so the user
+/// sees the relevant phase guidance right below the period estimate instead of
+/// opening a separate multi-phase page.
+class PhaseGuideCard extends StatelessWidget {
+  const PhaseGuideCard({
+    super.key,
+    required this.phase,
+    this.isCurrent = false,
+  });
 
   final PartnerPhase phase;
   final bool isCurrent;
@@ -95,8 +102,6 @@ class _PhaseCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // A dot ties the card to the phase on Today without tinting its
-              // surface or introducing another colour.
               Container(
                 width: 10,
                 height: 10,
@@ -119,7 +124,7 @@ class _PhaseCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: ElaraSpacing.xs),
-          Text(phase.name, style: type.headline(tokens.textPrimary, size: 22)),
+          Text(phase.name, style: type.title(tokens.textPrimary, size: 19)),
           const SizedBox(height: 2),
           Text(phase.aka, style: type.caption(text)),
           const SizedBox(height: ElaraSpacing.sm),
@@ -142,8 +147,7 @@ class _PhaseCard extends StatelessWidget {
             markerColour: tokens.textSecondaryStrong,
           ),
           const SizedBox(height: ElaraSpacing.md),
-          const Hairline(),
-          const SizedBox(height: ElaraSpacing.md),
+          const Hairline(margin: ElaraSpacing.md),
           Text(
             'From the kitchen, if she wants',
             style: type.label(tokens.textSecondaryStrong),
@@ -172,10 +176,6 @@ class _PhaseCard extends StatelessWidget {
   }
 }
 
-/// A titled list with a marker in the gutter.
-///
-/// The marker is text rather than an icon: a tick and a dot read at a glance,
-/// and neither becomes a red cross beside a line about someone's body.
 class _ListBlock extends StatelessWidget {
   const _ListBlock({
     required this.title,

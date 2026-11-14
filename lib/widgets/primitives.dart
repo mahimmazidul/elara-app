@@ -283,11 +283,9 @@ class ElaraHeroCard extends StatelessWidget {
     super.key,
     required this.phaseKey,
     required this.child,
-    this.padding = const EdgeInsets.fromLTRB(
-      ElaraSpacing.lg,
-      ElaraSpacing.lg,
-      ElaraSpacing.lg,
-      ElaraSpacing.lg,
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: 20,
+      vertical: 18,
     ),
   });
 

@@ -104,8 +104,9 @@ class PreferencesScreen extends StatelessWidget {
             icon: ElaraIcons.observation,
             children: [
               Text(
-                'Your own notes. They are treated as observations, not as '
-                'facts about her, and they rank below anything she has said.',
+                'Your own notes. They are observations you have made; she '
+                'decides whether they are true, and they rank below anything '
+                'she has said.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
               const SizedBox(height: ElaraSpacing.md),
@@ -388,8 +389,8 @@ class _PreferenceEditorState extends State<_PreferenceEditor> {
                 _isHerAnswer
                     ? 'Only write what she actually said. You can mark it '
                           'private if she does not want it used.'
-                    : 'Phrase it as something you observed, not as a fact about '
-                          'her.',
+                    : 'Phrase it as something you observed. Whether it is true '
+                          'is for her to say.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
               const SizedBox(height: ElaraSpacing.lg),
@@ -481,11 +482,11 @@ class _PreferenceEditorState extends State<_PreferenceEditor> {
       case PreferenceCategory.comfort:
         return 'Hot water bottle, the grey blanket';
       case PreferenceCategory.gesture:
-        return 'Notes rather than texts';
+        return 'A note left on the table';
       case PreferenceCategory.avoid:
         return 'Being asked to decide when tired';
       case PreferenceCategory.dateIdea:
-        return 'Small cafés, not big dinners';
+        return 'Small cafés instead of big dinners';
       case PreferenceCategory.note:
         return 'Anything else worth remembering';
     }

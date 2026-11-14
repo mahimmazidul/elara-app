@@ -230,7 +230,7 @@ class _PrivacyDataSectionState extends State<PrivacyDataSection> {
         'You confirmed on $when that she knows about Elara.',
       ConsentAction.acknowledgedLegacy =>
         'On $when you confirmed you had spoken with her about Elara. This is '
-            'your acknowledgement, not a record of her agreeing.',
+            'your acknowledgement that you had the conversation; whether she agreed is between the two of you.',
       ConsentAction.revoked =>
         'Consent was withdrawn on $when and the data was deleted.',
     };

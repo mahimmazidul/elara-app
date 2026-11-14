@@ -16,7 +16,7 @@ void main() {
     expect(find.text('What helps, by phase'), findsOneWidget);
     expect(find.text('Luteal'), findsOneWidget);
     expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
-    expect(find.text('Some notice a pattern; no one is a calendar.'),
+    expect(find.text('Some notice a pattern; every cycle has its own pace.'),
         findsOneWidget);
     expect(tester.takeException(), isNull);
   });

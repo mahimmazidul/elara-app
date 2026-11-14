@@ -7,7 +7,7 @@
 <meta name="description" content="Elara is an offline-first Android app that helps you remember, notice, prepare and care, around your partner's cycle.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#F6F6F4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14100F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta property="og:title" content="Elara">
@@ -56,12 +56,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14100F;
-    --card: #1E1917;
+    --bg: #0B0B0D;
+    --card: #141417;
     --text: #F3EDE8;
     --muted: #A89C94;
     --muted-strong: #CDBFB5;
-    --rule: #322E2B;
+    --rule: #26262B;
 
     /* The phase fills stay the same in dark mode; only their text inks move. */
     --menstrual-ink: #F2A6B3;
@@ -614,7 +614,7 @@ a:focus-visible,
       <div class="shots">
         <figure class="hero-shot">
           <img id="today-shot" src="screenshots/today-follicular.png"
-               alt="Today in a fictional sample: the phase hero shows an estimated phase and date window, with a What helps in this phase guide link; the suggestion below says what it is based on.">
+               alt="Today in a fictional sample: the phase hero shows an estimated phase and date window, with the phase guide rendered below the hero; the suggestion below says what it is based on.">
           <figcaption id="today-caption">
             Today: the estimate window and a one-tap route to general phase guidance; personal preferences stay separately labelled.
           </figcaption>
@@ -661,7 +661,7 @@ a:focus-visible,
           recorded period starts and the app shows the window they agree on: a
           steady history gives a window of a day or two, an irregular one gives a
           week, and if the history is too short to say anything the app says that
-          instead of inventing a date. It is arithmetic on the dates you log, and
+          instead of inventing a date. It is arithmetic on the dates you log, from the elara-core ensemble - Elara's own ensemble developed from OpenCiclo and Flowlytics as upstream sources, and
           where contraception is the question it points you to a clinician.</p>
         </details>
         <details>
@@ -750,10 +750,10 @@ a:focus-visible,
     { key: "luteal", label: "luteal", from: 17, to: 28 }
   ];
   var CAPTIONS = {
-    menstrual: "Today, in the menstrual colour sample: the estimate window and phase-guide link share the hero.",
-    follicular: "Today, in the follicular colour sample: the estimate window and phase-guide link share the hero.",
-    ovulatory: "Today, in the ovulatory colour sample: the estimate window and phase-guide link share the hero.",
-    luteal: "Today, in the luteal colour sample: the estimate window and phase-guide link share the hero."
+    menstrual: "Today, in the menstrual colour sample: the estimate window and the phase guide rendered below it.",
+    follicular: "Today, in the follicular colour sample: the estimate window and the phase guide rendered below it.",
+    ovulatory: "Today, in the ovulatory colour sample: the estimate window and the phase guide rendered below it.",
+    luteal: "Today, in the luteal colour sample: the estimate window and the phase guide rendered below it."
   };
 
   var now = new Date();
