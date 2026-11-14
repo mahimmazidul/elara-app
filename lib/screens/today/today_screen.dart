@@ -366,7 +366,6 @@ class _Countdown extends StatelessWidget {
     required this.phaseKey,
     required this.unavailableReason,
     this.historyNotes = const [],
-    this.onHero = false,
   });
 
   final int daysUntil;
@@ -377,22 +376,13 @@ class _Countdown extends StatelessWidget {
   final String? unavailableReason;
   final List<HistoryNote> historyNotes;
 
-  /// Whether the countdown is drawn inside the hero panel.
-  final bool onHero;
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
     final type = context.type;
-
-    // On the panel the ink is the panel's ink: the phase's own text colour is
-    // tuned for a paper background and would either vanish or clash here.
-    final muted = onHero
-        ? tokens.onHero.withValues(alpha: 0.78)
-        : tokens.textSecondaryStrong;
-    final numberColour = onHero
-        ? tokens.onHero
-        : (isLate ? tokens.warningText : tokens.phaseText(phaseKey));
+    final muted = tokens.textSecondaryStrong;
+    final numberColour =
+        isLate ? tokens.warningText : tokens.phaseText(phaseKey);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,9 +440,7 @@ class _Countdown extends StatelessWidget {
           Container(
             height: 1,
             width: 40,
-            color: onHero
-                ? tokens.onHero.withValues(alpha: 0.18)
-                : tokens.divider,
+            color: tokens.divider,
           ),
           const SizedBox(height: ElaraSpacing.sm),
           for (final note in historyNotes) ...[
