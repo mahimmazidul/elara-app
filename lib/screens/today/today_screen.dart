@@ -90,12 +90,30 @@ class _Loading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
-    return Center(
-      child: SizedBox(
-        height: 22,
-        width: 22,
-        child: CircularProgressIndicator(strokeWidth: 2, color: tokens.accent),
-      ),
+    final type = context.type;
+    return ListView(
+      padding: ElaraSpacing.pageInsets(context),
+      children: [
+        Text('Today', style: type.headline(tokens.textPrimary, size: 28)),
+        const SizedBox(height: ElaraSpacing.xxs),
+        Text(
+          _formatLongDate(DateTime.now()),
+          style: type.caption(tokens.textSecondaryStrong),
+        ),
+        const SizedBox(height: ElaraSpacing.xl),
+        Center(
+          child: SizedBox(
+            height: 22,
+            width: 22,
+            child: CircularProgressIndicator(strokeWidth: 2, color: tokens.accent),
+          ),
+        ),
+        const SizedBox(height: ElaraSpacing.xl),
+        Text(
+          'Ways to help today',
+          style: type.title(tokens.textPrimary, size: 17),
+        ),
+      ],
     );
   }
 }
