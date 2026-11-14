@@ -148,12 +148,17 @@ class _NeedsMoreHistory extends StatelessWidget {
           ),
         ],
         const SizedBox(height: ElaraSpacing.md),
-        TextButton.icon(
-          onPressed: () => Navigator.of(context).push(
-            PartnerGuideScreen.route(context),
-          ),
-          icon: const Icon(ElaraIcons.care),
-          label: const Text('Read the phase guide'),
+        ElaraSection(
+          title: 'Ways to help today',
+          children: [
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                PartnerGuideScreen.route(context),
+              ),
+              icon: const Icon(ElaraIcons.care),
+              label: const Text('Read the phase guide'),
+            ),
+          ],
         ),
       ],
     );
