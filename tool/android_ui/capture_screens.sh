@@ -740,13 +740,13 @@ fi
 echo "::endgroup::"
 
 echo "::group::Phase guide"
-# The full guide is opened from the phase panel on Today, where it belongs. The
-# one-tap label is checked before the capture, so a missing route cannot leave a
-# stale image under the guide's filename.
+# The phase guide is rendered inline on Today below the hero estimate, so
+# Today itself is the capture: the active phase card shows with nothing to
+# open and nothing to back out of.
 found=0
 if goto_tab "Today" 0; then
   dump_ui || true
-  if tap_label "What helps in this phase" 3; then
+  if shows "ESTIMATED FOR TODAY"; then
     found=1
   fi
 fi
@@ -756,13 +756,10 @@ if [ "$found" = 1 ]; then
     shoot "17-phase-guide"
     check_app_health "the phase guide"
   else
-    echo "  the Today link was tapped but the guide did not open, so nothing was captured."
+    echo "  Today is open but the active phase guide did not render; nothing was captured."
   fi
-  adb_run shell input keyevent KEYCODE_BACK
-  sleep 1
-  ensure_foreground
 else
-  echo "  the phase guide link was not found on Today"
+  echo "  the phase guide did not render on Today"
 fi
 echo "::endgroup::"
 

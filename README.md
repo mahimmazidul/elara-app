@@ -177,4 +177,6 @@ published on the releases page.
 Built by [Md. Mazidul Islam Mahim](https://github.com/mahimmazidul). Typeface:
 [Hind Siliguri](https://fonts.google.com/specimen/Hind+Siliguri) (SIL OFL).
 Ideas and prior art: OpenCiclo (Apache-2.0), Flowlytics (AGPL-3.0), DRIP.
+The prediction engine is `elara-core`, Elara's own ensemble, developed from
+OpenCiclo and Flowlytics as upstream sources.
 Licensed [AGPL-3.0](LICENSE).

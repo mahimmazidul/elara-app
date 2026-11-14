@@ -5,20 +5,13 @@ import 'package:provider/provider.dart';
 import '../../data/bangladesh_districts.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/elara_theme.dart';
+import '../../widgets/primitives.dart';
 import '../../widgets/sub_page.dart';
 
 /// Location: a division and a district, or coordinates typed by hand.
 ///
-/// The device's location is never read, and neither is the phone's IP. Two
-/// numbers are enough for a heat index and an air-quality reading, and asking
-/// for a location permission - or handing a household's address to a
-/// geolocation service - to draw a weather strip would be a poor trade for a
-/// cycle app with no account.
-///
-/// The picker came later than it should have. The first version asked for a
-/// latitude and a longitude and defaulted to Dhaka, which is fine if you live in
-/// Dhaka and a research task otherwise. The district list is offline, sixty-four
-/// entries long, and costs nothing to ship.
+/// Stored locally on the phone for heat index, air quality, and the
+/// Bangladesh season calculation.
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
 
@@ -36,6 +29,7 @@ class _LocationPageState extends State<LocationPage> {
   late String _division;
   District? _district;
   String? _error;
+  String? _statusMessage;
   bool _saving = false;
 
   @override
@@ -49,19 +43,11 @@ class _LocationPageState extends State<LocationPage> {
       text: _trim(settings.longitude.toString()),
     );
 
-    // Preselect the district the stored coordinate came from, so the page opens
-    // showing where the app thinks it is rather than two empty pickers.
     final stored = _matchDistrict(settings.latitude, settings.longitude);
     _district = stored;
     _division = stored?.division ?? bangladeshDivisions.first;
   }
 
-  /// The district whose coordinates are the stored ones, to two decimals.
-  ///
-  /// An exact match on the rounded value, not a nearest-neighbour search: the
-  /// table is written at two decimals, so anything the picker saved matches
-  /// exactly, and a coordinate typed by hand for somewhere else correctly finds
-  /// nothing.
   static District? _matchDistrict(double latitude, double longitude) {
     for (final district in bangladeshDistricts) {
       if ((district.latitude - latitude).abs() < 0.005 &&
@@ -72,10 +58,22 @@ class _LocationPageState extends State<LocationPage> {
     return null;
   }
 
+  void _showMinimalNotice(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 2),
+        content: Text(message),
+      ),
+    );
+  }
+
   Future<void> _chooseDistrict(District district) async {
     setState(() {
       _saving = true;
       _error = null;
+      _statusMessage = null;
     });
     final settings = context.read<SettingsProvider>();
     final ok = await settings.setLocation(
@@ -84,17 +82,17 @@ class _LocationPageState extends State<LocationPage> {
       label: district.label,
     );
     if (!mounted) return;
+    final notice = 'Location saved to ${district.name}';
     setState(() {
       _saving = false;
       _district = ok ? district : _district;
       _error = ok ? null : settings.lastError;
+      _statusMessage = ok ? notice : null;
     });
     if (!ok) return;
     _latController.text = _trim(district.latitude.toString());
     _lonController.text = _trim(district.longitude.toString());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Set to ${district.name}.')),
-    );
+    _showMinimalNotice(notice);
   }
 
   @override
@@ -105,7 +103,6 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   static String _trim(String value) {
-    // 23.8103 rather than 23.810300000000001.
     return value.length > 9 ? value.substring(0, 9) : value;
   }
 
@@ -114,31 +111,45 @@ class _LocationPageState extends State<LocationPage> {
     final lon = double.tryParse(_lonController.text.trim());
 
     if (lat == null || lon == null) {
-      setState(() => _error = 'Enter both coordinates as numbers.');
+      setState(() {
+        _error = 'Enter both coordinates as numbers.';
+        _statusMessage = null;
+      });
       return;
     }
 
     setState(() {
       _saving = true;
       _error = null;
+      _statusMessage = null;
     });
 
     final settings = context.read<SettingsProvider>();
-    // No label: a typed coordinate is not a district, and the row should stop
-    // claiming it is.
-    final ok = await settings.setLocation(latitude: lat, longitude: lon);
+    final matched = _matchDistrict(lat, lon);
+    final ok = await settings.setLocation(
+      latitude: lat,
+      longitude: lon,
+      label: matched?.label,
+    );
 
     if (!mounted) return;
+    final notice = matched != null
+        ? 'Location saved to ${matched.name}'
+        : 'Location saved';
     setState(() {
       _saving = false;
+      _district = ok ? matched : _district;
+      if (ok && matched != null) {
+        _division = matched.division;
+      }
       _error = ok ? null : settings.lastError;
+      _statusMessage = ok ? notice : null;
     });
 
     if (ok) {
       _latController.text = _trim(lat.toString());
       _lonController.text = _trim(lon.toString());
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Location saved.')));
+      _showMinimalNotice(notice);
     }
   }
 
@@ -158,9 +169,9 @@ class _LocationPageState extends State<LocationPage> {
         _error = null;
         _district = d;
         _division = d.division;
+        _statusMessage = 'Location saved to Dhaka';
       });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Set to Dhaka.')));
+      _showMinimalNotice('Location saved to Dhaka');
     } else {
       setState(() => _error = settings.lastError);
     }
@@ -168,95 +179,131 @@ class _LocationPageState extends State<LocationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final type = context.type;
+
     return ElaraSubPage(
       title: 'Location',
       subtitle:
-          'Used for heat index, air quality and the Bangladesh season. Stored '
-          'on this phone; the device\'s own location is never read.',
+          'Used for the local heat index, air quality, and the Bangladesh '
+          'season. Saved locally on this phone.',
       children: [
-        _DivisionField(
-          value: _division,
-          onChanged: _saving
-              ? null
-              : (value) => setState(() {
-                    _division = value;
-                    _district = null;
-                  }),
+        const ElaraOverline('BANGLADESH DISTRICT'),
+        const SizedBox(height: ElaraSpacing.sm),
+        ElaraGlassGroup(
+          children: [
+            _DivisionField(
+              value: _division,
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() {
+                        _division = value;
+                        _district = null;
+                        _statusMessage = null;
+                      }),
+            ),
+            _DistrictField(
+              division: _division,
+              value: _district,
+              enabled: !_saving,
+              onChanged: _chooseDistrict,
+            ),
+          ],
         ),
         const SizedBox(height: ElaraSpacing.sm),
-        _DistrictField(
-          division: _division,
-          value: _district,
-          enabled: !_saving,
-          onChanged: _chooseDistrict,
+        if (_statusMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: ElaraSpacing.xs),
+            child: Text(
+              _statusMessage!,
+              style: type.caption(tokens.textSecondaryStrong),
+            ),
+          ),
+        Text(
+          'Selecting a district saves its town centre right away.',
+          style: type.caption(tokens.textSecondaryStrong),
+        ),
+        const SizedBox(height: ElaraSpacing.xl),
+        const ElaraOverline('COORDINATES'),
+        const SizedBox(height: ElaraSpacing.sm),
+        ElaraGlass(
+          padding: ElaraSpacing.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _CoordinateField(
+                      label: 'Latitude',
+                      controller: _latController,
+                      hint: '23.8103',
+                    ),
+                  ),
+                  const SizedBox(width: ElaraSpacing.md),
+                  Expanded(
+                    child: _CoordinateField(
+                      label: 'Longitude',
+                      controller: _lonController,
+                      hint: '90.4125',
+                    ),
+                  ),
+                ],
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: ElaraSpacing.sm),
+                Text(_error!, style: type.caption(tokens.dangerText)),
+              ],
+              const SizedBox(height: ElaraSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        textStyle: type.label(tokens.textSecondaryStrong),
+                        foregroundColor: tokens.textSecondaryStrong,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: ElaraSpacing.md,
+                          vertical: 11,
+                        ),
+                      ),
+                      onPressed: _useDhaka,
+                      child: const Text('Use Dhaka'),
+                    ),
+                  ),
+                  const SizedBox(width: ElaraSpacing.sm),
+                  Expanded(
+                    flex: 3,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        textStyle: type.bodyStrong(tokens.onPhase, size: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: ElaraSpacing.lg,
+                          vertical: 11,
+                        ),
+                      ),
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Save location'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: ElaraSpacing.md),
         Text(
-          'Choosing a district saves it straight away. The two boxes below are '
-          'for anywhere outside Bangladesh, and typing there clears the '
-          'district name.',
-          style: context.type.caption(context.elara.textSecondaryStrong),
-        ),
-        const SizedBox(height: ElaraSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: _CoordinateField(
-                label: 'Latitude',
-                controller: _latController,
-                hint: '23.8103',
-              ),
-            ),
-            const SizedBox(width: ElaraSpacing.md),
-            Expanded(
-              child: _CoordinateField(
-                label: 'Longitude',
-                controller: _lonController,
-                hint: '90.4125',
-              ),
-            ),
-          ],
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: ElaraSpacing.sm),
-          Text(_error!, style: context.type.caption(context.elara.dangerText)),
-        ],
-        const SizedBox(height: ElaraSpacing.md),
-        // Two buttons that both need room for their labels. Equal shares and
-        // wrapping keep them on screen at a 2x text scale, where a fixed-width
-        // label pushed the primary action off the edge by 99 px. The reset says
-        // where it resets to in one word, because "Dhaka default" wrapped onto
-        // two lines on a 320dp phone and read as two ideas.
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _useDhaka,
-                child: const Text('Use Dhaka'),
-              ),
-            ),
-            const SizedBox(width: ElaraSpacing.sm),
-            Expanded(
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Save location'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: ElaraSpacing.lg),
-        Text(
-          'Coordinates are stored as numbers, so a wrong one gives a wrong heat '
-          'index rather than an error. The district list holds the '
-          'sixty-four district towns at two decimals, which is about a '
-          'kilometre - far finer than a heat index needs.',
-          style: context.type.caption(context.elara.textSecondaryStrong),
+          'The sixty-four districts are stored at two decimal places, about a '
+          'kilometre across, which is plenty of precision for regional weather '
+          'and air quality.',
+          style: type.caption(tokens.textSecondaryStrong),
         ),
       ],
     );
@@ -277,43 +324,60 @@ class _CoordinateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
-    return TextField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(
-        decimal: true,
-        signed: true,
-      ),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]'))],
-      style: context.type.number(tokens.textPrimary, size: 15),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        labelStyle: context.type.label(tokens.textSecondaryStrong),
-        hintStyle: context.type.number(tokens.textSecondary, size: 15),
-        filled: true,
-        fillColor: tokens.bgPrimary,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ElaraSpacing.md,
-          vertical: ElaraSpacing.md,
+    final type = context.type;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: type.caption(tokens.textSecondaryStrong)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
+          ],
+          style: type.number(
+            tokens.textPrimary,
+            size: 15,
+            weight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            isDense: true,
+            hintStyle: type.number(
+              tokens.textSecondary,
+              size: 15,
+              weight: FontWeight.w400,
+            ),
+            filled: true,
+            fillColor: tokens.bgPrimary,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: ElaraSpacing.md,
+              vertical: 10,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ElaraRadii.chip),
+              borderSide: BorderSide(color: tokens.divider),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ElaraRadii.chip),
+              borderSide: BorderSide(color: tokens.divider),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(ElaraRadii.chip),
+              borderSide: BorderSide(color: tokens.accent),
+            ),
+          ),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ElaraRadii.chip),
-          borderSide: BorderSide(color: tokens.divider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ElaraRadii.chip),
-          borderSide: BorderSide(color: tokens.divider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ElaraRadii.chip),
-          borderSide: BorderSide(color: tokens.accent),
-        ),
-      ),
+      ],
     );
   }
 }
 
-/// The eight divisions.
+/// The eight divisions, presented as a clean row inside [ElaraGlassGroup].
 class _DivisionField extends StatelessWidget {
   const _DivisionField({required this.value, required this.onChanged});
 
@@ -322,19 +386,33 @@ class _DivisionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      isExpanded: true,
-      decoration: _fieldDecoration(context, 'Division'),
-      items: [
-        for (final division in bangladeshDivisions)
-          DropdownMenuItem(value: division, child: Text(division)),
-      ],
-      onChanged: onChanged == null
-          ? null
-          : (selected) {
-              if (selected != null) onChanged!(selected);
-            },
+    final tokens = context.elara;
+    final type = context.type;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: DropdownButtonFormField<String>(
+        initialValue: value,
+        isExpanded: true,
+        style: type.body(tokens.textPrimary, size: 15),
+        dropdownColor: tokens.bgCard,
+        decoration: _fieldDecoration(context, 'Division'),
+        items: [
+          for (final division in bangladeshDivisions)
+            DropdownMenuItem(
+              value: division,
+              child: Text(
+                division,
+                style: type.body(tokens.textPrimary, size: 15),
+              ),
+            ),
+        ],
+        onChanged: onChanged == null
+            ? null
+            : (selected) {
+                if (selected != null) onChanged!(selected);
+              },
+      ),
     );
   }
 }
@@ -355,23 +433,39 @@ class _DistrictField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final type = context.type;
     final districts = districtsOf(division);
     final selected = districts.any((d) => d.name == value?.name) ? value : null;
 
-    return DropdownButtonFormField<District>(
-      initialValue: selected,
-      isExpanded: true,
-      decoration: _fieldDecoration(context, 'District'),
-      hint: const Text('Choose a district'),
-      items: [
-        for (final district in districts)
-          DropdownMenuItem(value: district, child: Text(district.name)),
-      ],
-      onChanged: enabled
-          ? (district) {
-              if (district != null) onChanged(district);
-            }
-          : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: DropdownButtonFormField<District>(
+        initialValue: selected,
+        isExpanded: true,
+        style: type.body(tokens.textPrimary, size: 15),
+        dropdownColor: tokens.bgCard,
+        decoration: _fieldDecoration(context, 'District'),
+        hint: Text(
+          'Choose a district',
+          style: type.label(tokens.textSecondaryStrong),
+        ),
+        items: [
+          for (final district in districts)
+            DropdownMenuItem(
+              value: district,
+              child: Text(
+                district.name,
+                style: type.body(tokens.textPrimary, size: 15),
+              ),
+            ),
+        ],
+        onChanged: enabled
+            ? (district) {
+                if (district != null) onChanged(district);
+              }
+            : null,
+      ),
     );
   }
 }
@@ -380,20 +474,15 @@ InputDecoration _fieldDecoration(BuildContext context, String label) {
   final tokens = context.elara;
   return InputDecoration(
     labelText: label,
-    labelStyle: context.type.label(tokens.textSecondaryStrong),
-    filled: true,
-    fillColor: tokens.bgPrimary,
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: ElaraSpacing.md,
-      vertical: ElaraSpacing.md,
+    labelStyle: context.type.caption(tokens.textSecondaryStrong, size: 13),
+    floatingLabelStyle: context.type.caption(
+      tokens.textSecondaryStrong,
+      size: 12,
     ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(ElaraRadii.chip),
-      borderSide: BorderSide(color: tokens.divider),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(ElaraRadii.chip),
-      borderSide: BorderSide(color: tokens.divider),
-    ),
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
   );
 }

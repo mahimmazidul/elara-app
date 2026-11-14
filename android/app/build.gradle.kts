@@ -97,6 +97,13 @@ android {
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
+                // Play Protect verifies the signature scheme an APK carries.
+                // Ship all three so a sideloaded install verifies on every
+                // device that can install it: V1 for older installers, V2 for
+                // Nougat+, V3 for P+.
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }
@@ -117,12 +124,31 @@ android {
             isShrinkResources = false
         }
     }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
+}
+
+// This release ships no baseline profile, so nothing produces an ART profile
+// to compile: disable those tasks by name before any plugin adds them, so a
+// later AGP version cannot silently reintroduce them.
+tasks.configureEach {
+  if (name.startsWith("compile") && name.endsWith("ArtProfile")) enabled = false
+}
+
+configurations.configureEach {
+  // AndroidX pulls ProfileInstaller in only to install baseline profiles at
+  // startup. None are shipped, so exclude it everywhere Play Protect would
+  // otherwise enumerate it.
+  exclude(group = "androidx.profileinstaller", module = "profileinstaller")
 }
 
 dependencies {

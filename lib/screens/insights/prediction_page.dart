@@ -126,8 +126,8 @@ class _Summary extends StatelessWidget {
           ),
           const SizedBox(height: ElaraSpacing.sm),
           Text(
-            'Ensemble score, not a probability. '
-            '${result.contributingEngines.join(', ')}',
+            'Produced by Elara\u2019s own ensemble engine (elara-core), '
+            'reflecting how closely your recorded cycles agree.',
             style: type.caption(tokens.textSecondaryStrong),
           ),
           if (isLow) ...[
@@ -206,11 +206,12 @@ class _Method extends StatelessWidget {
           Text('How it was made', style: type.subtitle(tokens.textPrimary)),
           const SizedBox(height: ElaraSpacing.xs),
           Text(
-            'Three estimators read the same recorded history. One takes a '
-            'plain average. One leans on the newer cycles. One widens when the '
-            'cycles disagree with each other. Their answers are combined, and '
-            'the score is how closely the three agreed with one another. It '
-            'says nothing about the chance of a period on any given day.',
+            'Elara uses its own ensemble engine (elara-core), developed from '
+            'foundational work in OpenCiclo and Flowlytics. It combines '
+            'long-term cycle averages, recency-weighted trends, and cycle '
+            'variability from your recorded dates on this phone. The '
+            'confidence score reflects how closely those signals agree with '
+            'one another.',
             style: type.body(tokens.textSecondaryStrong),
           ),
           const SizedBox(height: ElaraSpacing.md),

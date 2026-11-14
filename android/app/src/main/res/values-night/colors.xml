@@ -2,5 +2,5 @@
 <resources>
     <!-- The page colour behind the app in dark mode, matching the Flutter
          scaffold's background so the launch and the app agree. -->
-    <color name="elara_page_background">#14100F</color>
+    <color name="elara_page_background">#0B0B0D</color>
 </resources>

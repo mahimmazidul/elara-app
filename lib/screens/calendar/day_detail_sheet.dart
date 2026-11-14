@@ -135,7 +135,8 @@ class DayDetailSheet extends StatelessWidget {
                 FoodChipRow(foods: result.foodSuggestions, phaseKey: phaseKey),
                 const SizedBox(height: ElaraSpacing.md),
                 Text(
-                  'An invitation to ask, not a prediction about anyone\u2019s mood.',
+                  'Something to offer when she feels like eating. How she '
+                  'feels is something only she can say.',
                   style: type.caption(tokens.textSecondaryStrong),
                 ),
               ],

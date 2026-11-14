@@ -79,8 +79,8 @@ const Map<String, FoodNote> _notes = {
   'a light and fun meal': FoodNote(
     nutrient: 'Something to look forward to',
     examples:
-        'Fuchka, a shared plate of biryani, fruit and yoghurt. The point '
-        'is the company, not the nutrient.',
+        'Fuchka, a shared plate of biryani, or fruit and yoghurt enjoyed '
+        'together.',
   ),
 };
 

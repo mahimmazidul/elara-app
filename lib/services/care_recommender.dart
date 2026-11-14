@@ -261,8 +261,8 @@ class CareRecommender {
       case PreferenceCategory.gesture:
         return CareSuggestion(
           title: _sentenceCase(preference.value),
-          body: 'A gesture she has responded well to. Repeat it because it '
-              'worked, not because the calendar called for it.',
+          body: 'A thoughtful gesture she has appreciated before and may '
+              'welcome again today.',
           basis: preference.isHerOwn
               ? CareBasis.herPreference
               : CareBasis.yourObservation,

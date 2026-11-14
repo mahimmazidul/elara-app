@@ -166,8 +166,9 @@ class _SymptomEditorState extends State<SymptomEditor> {
               ),
               const SizedBox(height: ElaraSpacing.xs),
               Text(
-                'Optional. This is a note of what she reported, not an '
-                'assessment, and Elara will not guess at a cause.',
+                'Optional. A note of what she reported, kept as what was '
+                'said rather than as an assessment; Elara will not guess at a '
+                'cause.',
                 style: type.caption(tokens.textSecondaryStrong),
               ),
               const SizedBox(height: ElaraSpacing.lg),
