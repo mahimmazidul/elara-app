@@ -1,5 +1,6 @@
 import 'package:elara_app/screens/care/partner_guide_screen.dart';
 import 'package:elara_app/theme/elara_theme.dart';
+import 'package:elara_app/widgets/icons.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -18,6 +19,28 @@ void main() {
     expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
     expect(find.text('Some notice a pattern; every cycle has its own pace.'),
         findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the list marker is inset, spaced, and aligned to the text',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ElaraTheme.light(),
+        home: const PartnerGuideScreen(currentPhaseKey: 'menstrual'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final marker = find.byIcon(ElaraIcons.confirmed).first;
+    final item = find.textContaining(
+      'Take dinner, dishes, or the shopping off her list',
+    );
+    final markerRect = tester.getRect(marker);
+    final itemRect = tester.getRect(item);
+
+    expect(markerRect.top - itemRect.top, inInclusiveRange(0, 7));
+    expect(itemRect.left - markerRect.right, greaterThanOrEqualTo(8));
     expect(tester.takeException(), isNull);
   });
 

@@ -207,13 +207,21 @@ class _ListBlock extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: 18,
-                  child: Icon(
-                    marker,
-                    size: 16,
-                    color: markerColour,
+                  width: 20,
+                  height: 24,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Icon(
+                        marker,
+                        size: 16,
+                        color: markerColour,
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(width: ElaraSpacing.sm),
                 Expanded(
                   child: Text(item, style: type.body(tokens.textPrimary)),
                 ),

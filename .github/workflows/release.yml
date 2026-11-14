@@ -144,6 +144,18 @@ jobs:
       - name: Test
         run: flutter test --reporter expanded
 
+      # This secret is passed as a Dart define and is therefore extractable from
+      # the distributed app. Use a dedicated, restricted key and rotate it if it
+      # is ever exposed.
+      - name: Verify OpenAQ release key is configured
+        env:
+          OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+        run: |
+          if [ -z "$OPENAQ_API_KEY" ]; then
+            echo "::error::OPENAQ_API_KEY secret is not set."
+            exit 1
+          fi
+
       # The keystore exists only inside this job: decoded from a secret into a
       # gitignored path, used to sign, and never uploaded.
       - name: Decode the keystore
@@ -188,17 +200,21 @@ jobs:
           echo "Release signing config is wired"
 
       - name: Build app bundle (release)
-        run: flutter build appbundle --release
+        env:
+          OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+        run: flutter build appbundle --release --dart-define="OPENAQ_API_KEY=$OPENAQ_API_KEY"
 
       # One universal APK, which installs on any device, and one APK per CPU
       # architecture, which is what most people should download: a split build
       # carries only its own native libraries, so it is a fraction of the size.
       - name: Build APKs (release)
+        env:
+          OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
         run: |
           set -euo pipefail
-          flutter build apk --release
+          flutter build apk --release --dart-define="OPENAQ_API_KEY=$OPENAQ_API_KEY"
           cp build/app/outputs/flutter-apk/app-release.apk build/universal.apk
-          flutter build apk --release --split-per-abi
+          flutter build apk --release --split-per-abi --dart-define="OPENAQ_API_KEY=$OPENAQ_API_KEY"
 
       # Assets are named elara-<version>-<abi>.apk so a download is identifiable
       # once it is sitting in someone's Downloads folder, rather than arriving as

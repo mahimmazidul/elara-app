@@ -25,17 +25,21 @@ class ClimateService {
     http.Client? httpClient,
     Duration? timeout,
     DateTime Function()? clock,
+    String? openAqApiKey,
   })  : _database = database ?? DatabaseHelper.instance,
         _http = httpClient ?? http.Client(),
         _ownsClient = httpClient == null,
         _timeout = timeout ?? const Duration(seconds: 10),
-        _clock = clock ?? DateTime.now;
+        _clock = clock ?? DateTime.now,
+        _openAqApiKey = openAqApiKey ??
+            const String.fromEnvironment('OPENAQ_API_KEY');
 
   final DatabaseHelper _database;
   final http.Client _http;
   final bool _ownsClient;
   final Duration _timeout;
   final DateTime Function() _clock;
+  final String _openAqApiKey;
 
   static const String _openMeteoHost = 'api.open-meteo.com';
   static const String _openAqHost = 'api.openaq.org';
@@ -213,7 +217,12 @@ class ClimateService {
     });
 
     try {
-      final response = await _http.get(uri).timeout(_timeout);
+      final response = await _http.get(
+        uri,
+        headers: _openAqApiKey.isEmpty
+            ? null
+            : {'X-API-Key': _openAqApiKey},
+      ).timeout(_timeout);
       if (response.statusCode != 200) return null;
 
       final body = jsonDecode(response.body);
