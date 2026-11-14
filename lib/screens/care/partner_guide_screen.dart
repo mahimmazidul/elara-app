@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../data/partner_phases.dart';
 import '../../theme/elara_theme.dart';
+import '../../widgets/icons.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sub_page.dart';
 
