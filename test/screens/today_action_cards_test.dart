@@ -263,7 +263,7 @@ void main() {
 
       // The estimate is a date plus its uncertainty window, not a single
       // certain day.
-      expect(find.text('Estimated phase'), findsOneWidget);
+      expect(find.text('ESTIMATED PHASE'), findsOneWidget);
       expect(find.textContaining('±'), findsOneWidget);
 
       await tester.dragUntilVisible(

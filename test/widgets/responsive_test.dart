@@ -232,7 +232,7 @@ void main() {
       await swipe(tester, 300);
       expect(tester.takeException(), isNull);
       expect(selected(tester), 0);
-      expect(find.text('Estimated phase'), findsOneWidget);
+      expect(find.text('ESTIMATED PHASE'), findsOneWidget);
     });
 
     testWidgets('swiping back and forth returns to the starting tab',
@@ -243,7 +243,7 @@ void main() {
       await swipe(tester, 300);
       expect(tester.takeException(), isNull);
       expect(selected(tester), 0);
-      expect(find.text('Estimated phase'), findsOneWidget);
+      expect(find.text('ESTIMATED PHASE'), findsOneWidget);
     });
 
     testWidgets('a short drag is not a tab change', (tester) async {
@@ -252,7 +252,7 @@ void main() {
       // 30px on a 390dp screen is a nudge, not a swipe.
       await swipe(tester, -30);
       expect(selected(tester), 0);
-      expect(find.text('Estimated phase'), findsOneWidget);
+      expect(find.text('ESTIMATED PHASE'), findsOneWidget);
     });
 
     testWidgets('vertical scrolling still scrolls rather than changing tab',
@@ -281,7 +281,7 @@ void main() {
         expect(tester.takeException(),
             isNull, reason: '${width.toInt()}dp');
         // The date estimate remains available on narrow screens.
-        expect(find.text('Estimated phase'), findsOneWidget);
+        expect(find.text('ESTIMATED PHASE'), findsOneWidget);
       });
     }
 
