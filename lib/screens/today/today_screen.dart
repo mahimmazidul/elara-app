@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/partner_phases.dart';
 import '../../models/elara_result.dart';
 import '../../providers/climate_provider.dart';
 import '../../providers/cycle_provider.dart';
@@ -90,30 +89,12 @@ class _Loading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.elara;
-    final type = context.type;
-    return ListView(
-      padding: ElaraSpacing.pageInsets(context),
-      children: [
-        Text('Today', style: type.headline(tokens.textPrimary, size: 28)),
-        const SizedBox(height: ElaraSpacing.xxs),
-        Text(
-          _formatLongDate(DateTime.now()),
-          style: type.caption(tokens.textSecondaryStrong),
-        ),
-        const SizedBox(height: ElaraSpacing.xl),
-        Center(
-          child: SizedBox(
-            height: 22,
-            width: 22,
-            child: CircularProgressIndicator(strokeWidth: 2, color: tokens.accent),
-          ),
-        ),
-        const SizedBox(height: ElaraSpacing.xl),
-        Text(
-          'Ways to help today',
-          style: type.title(tokens.textPrimary, size: 17),
-        ),
-      ],
+    return Center(
+      child: SizedBox(
+        height: 22,
+        width: 22,
+        child: CircularProgressIndicator(strokeWidth: 2, color: tokens.accent),
+      ),
     );
   }
 }
@@ -166,17 +147,12 @@ class _NeedsMoreHistory extends StatelessWidget {
           ),
         ],
         const SizedBox(height: ElaraSpacing.md),
-        ElaraSection(
-          title: 'Ways to help today',
-          children: [
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                PartnerGuideScreen.route(context),
-              ),
-              icon: const Icon(ElaraIcons.care),
-              label: const Text('Read the phase guide'),
-            ),
-          ],
+        TextButton.icon(
+          onPressed: () => Navigator.of(context).push(
+            PartnerGuideScreen.route(context),
+          ),
+          icon: const Icon(ElaraIcons.care),
+          label: const Text('Read the phase guide'),
         ),
       ],
     );
@@ -230,7 +206,6 @@ class _TodayContent extends StatelessWidget {
     // The general layer is labelled with its source and shown underneath hers,
     // or on its own when there is nothing personal yet.
     final general = recommender.generalFor(phaseKey);
-    final activePhaseGuide = partnerPhaseFor(phaseKey);
 
     return ListView(
       padding: ElaraSpacing.pageInsets(context),
@@ -262,8 +237,8 @@ class _TodayContent extends StatelessWidget {
         // anchor and the screen reads as a form rather than as a page with a
         // subject. This panel is the anchor: filled with the phase's deep
         // colour, carrying cream ink, and holding the phase dial, the period
-        // estimate with its window. The guide for this phase is rendered
-        // directly below the panel, so nothing here opens another screen.
+        // estimate with its window, and one short doorway to the guide that
+        // explains the phase. The link adds context, not another measurement.
         //
         // The fill is a value down from the decorative phase colour. At the
         // decorative tone a block this size reads as a
@@ -316,17 +291,17 @@ class _TodayContent extends StatelessWidget {
                 historyNotes: historyNotes,
                 onHero: true,
               ),
+              const SizedBox(height: ElaraSpacing.md),
+              Container(
+                height: 1,
+                color: tokens.onHero.withValues(alpha: 0.18),
+              ),
+              _PhaseGuideLink(
+                phaseKey: result.phase == null ? null : phaseKey,
+              ),
             ],
           ),
         ),
-
-        if (activePhaseGuide != null) ...[
-          const SizedBox(height: ElaraSpacing.xl),
-          PhaseGuideCard(
-            phase: activePhaseGuide,
-            isCurrent: true,
-          ),
-        ],
 
         // ---- care: the point of the screen, given the most room.
         //
@@ -337,18 +312,18 @@ class _TodayContent extends StatelessWidget {
         // divider, because stacking cards made every suggestion look equally
         // well founded.
         const SizedBox(height: ElaraSpacing.xl),
-        Text(
-          'Ways to help today',
-          style: type.title(tokens.textPrimary, size: 17),
-        ),
-        const SizedBox(height: ElaraSpacing.md),
-        CareSuggestions(suggestions: suggestions, phaseKey: phaseKey),
-        const SizedBox(height: ElaraSpacing.xxl),
-        ActionCards(
-          action: result.action,
-          phaseKey: phaseKey,
-          general: general,
-          unavailableReason: result.unavailableReason,
+        ElaraSection(
+          title: 'Ways to help today',
+          children: [
+            CareSuggestions(suggestions: suggestions, phaseKey: phaseKey),
+            const SizedBox(height: ElaraSpacing.xxl),
+            ActionCards(
+              action: result.action,
+              phaseKey: phaseKey,
+              general: general,
+              unavailableReason: result.unavailableReason,
+            ),
+          ],
         ),
 
         // ---- the rest of the day, one tap away.
@@ -388,13 +363,67 @@ class _TodayContent extends StatelessWidget {
 
         // ---- the standing caveat, last and quiet
         Text(
-          'Elara estimates from recorded history, not a medical measurement. '
-          'Phase and period dates are for everyday planning and general '
-          'context; traditional calendars are shown for information.',
+          'Phase and period dates are estimates from recorded history, not a '
+          'medical measurement. Traditional calendars are shown for '
+          'information.',
           style: type.caption(tokens.textSecondaryStrong),
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+}
+
+/// One quiet way into the full guide, kept inside the phase panel because that
+/// is where a partner is already looking for context. The four long cards stay
+/// on their own page; the hero gets only this one-tap invitation.
+class _PhaseGuideLink extends StatelessWidget {
+  const _PhaseGuideLink({required this.phaseKey});
+
+  final String? phaseKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.elara;
+    final type = context.type;
+    final title = phaseKey == null
+        ? 'What helps through the cycle'
+        : 'What helps in this phase';
+    final accessibilityLabel = title;
+
+    return Material(
+      color: tokens.transparent,
+      child: Semantics(
+        button: true,
+        label: accessibilityLabel,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(ElaraRadii.chip),
+          onTap: () => Navigator.of(context).push(
+            PartnerGuideScreen.route(context, currentPhaseKey: phaseKey),
+          ),
+          child: SizedBox(
+            height: 52,
+            width: double.infinity,
+            child: Row(
+              children: [
+                Icon(ElaraIcons.care, size: 18, color: tokens.onHero),
+                const SizedBox(width: ElaraSpacing.sm),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: type.subtitle(tokens.onHero, size: 14),
+                  ),
+                ),
+                Icon(
+                  ElaraIcons.disclosure,
+                  size: 20,
+                  color: tokens.onHero.withValues(alpha: 0.82),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
