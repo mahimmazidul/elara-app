@@ -42,6 +42,7 @@ String openAqBody({double pm25 = 47.5, String countryCode = 'BD'}) => jsonEncode
 /// Builds a client that answers by host, and records what was requested.
 MockClient mockNetwork({
   List<Uri>? calls,
+  Map<String, String>? openAqHeaders,
   String? meteoBody,
   String? aqBody,
   int meteoStatus = 200,
@@ -54,6 +55,7 @@ MockClient mockNetwork({
       return http.Response(meteoBody ?? openMeteoBody(), 200);
     }
     if (request.url.host == 'api.openaq.org') {
+      openAqHeaders?.addAll(request.headers);
       if (aqStatus != 200) return http.Response('error', aqStatus);
       return http.Response(aqBody ?? openAqBody(), 200);
     }
@@ -85,12 +87,14 @@ void main() {
   ClimateService serviceWith(
     http.Client client, {
     DateTime? now,
+    String? openAqApiKey,
   }) =>
       ClimateService(
         database: db,
         httpClient: client,
         clock: () => now ?? fixedNow,
         timeout: const Duration(seconds: 2),
+        openAqApiKey: openAqApiKey,
       );
 
   group('live fetch', () {
@@ -111,6 +115,18 @@ void main() {
       expect(cached, isNotNull);
       expect(cached!.temperature, 33.4);
       expect(dateKey(cached.date), '2026-06-15');
+    });
+
+    test('sends the OpenAQ key in the authentication header', () async {
+      final headers = <String, String>{};
+      final service = serviceWith(
+        mockNetwork(openAqHeaders: headers),
+        openAqApiKey: 'test-key-not-a-real-secret',
+      );
+
+      await service.getTodayClimate();
+
+      expect(headers['X-API-Key'], 'test-key-not-a-real-secret');
     });
 
     test('computes a heat index above the air temperature', () async {
