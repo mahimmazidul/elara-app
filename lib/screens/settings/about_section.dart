@@ -66,7 +66,7 @@ class AboutSection extends StatelessWidget {
         const _AboutRow(label: 'Prediction engine', value: 'elara-core'),
         const SizedBox(height: ElaraSpacing.xs),
         Text(
-          'Elara\\u2019s own ensemble, developed from OpenCiclo and Flowlytics.',
+          'Elara’s own ensemble, developed from OpenCiclo and Flowlytics.',
           style: type.caption(tokens.textSecondaryStrong, size: 12),
         ),
         const SizedBox(height: ElaraSpacing.md),

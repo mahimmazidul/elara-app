@@ -126,7 +126,7 @@ class _Summary extends StatelessWidget {
           ),
           const SizedBox(height: ElaraSpacing.sm),
           Text(
-            'Produced by Elara\u2019s own ensemble engine (elara-core), '
+            'Produced by Elara’s own ensemble engine (elara-core), '
             'reflecting how closely your recorded cycles agree.',
             style: type.caption(tokens.textSecondaryStrong),
           ),

@@ -231,83 +231,53 @@ class _TodayContent extends StatelessWidget {
           ),
         ),
 
-        // ---- hero: one saturated panel, holding the whole answer.
-        //
-        // Everything above this line is the same paper colour, and everything
-        // below it is too, which is the right system for reading and the wrong
-        // one for finding. With nothing saturated anywhere the eye has no
-        // anchor and the screen reads as a form rather than as a page with a
-        // subject. This panel is the anchor: filled with the phase's deep
-        // colour, carrying cream ink, and holding the phase dial, the period
-        // estimate with its window, and the full guidance for today's estimated
-        // phase. The advice is here on Today, not behind a link or mixed with
-        // guidance for phases that are not current.
-        //
-        // The fill is a value down from the decorative phase colour. At the
-        // decorative tone a block this size reads as a
-        // wash instead of a colour, and white text on it goes grey.
+        // ---- phase and estimate, kept on the page rather than inside a
+        // saturated panel. The dial still uses the phase accent, while the
+        // estimate and guidance share the same readable paper surface.
         const SizedBox(height: ElaraSpacing.lg),
-        ElaraHeroCard(
-          phaseKey: phaseKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ElaraOverline(
-                'Estimated phase',
-                color: tokens.onHero.withValues(alpha: 0.72),
-              ),
-              const SizedBox(height: ElaraSpacing.xxs),
-              Text(
-                'From the dates you have recorded',
-                style: type.caption(
-                  tokens.onHero.withValues(alpha: 0.72),
-                  size: 12,
-                ),
-              ),
-              const SizedBox(height: ElaraSpacing.md),
-              // Where today sits in the cycle, as a ring of one tick per day:
-              // the elapsed ticks carry the ink, the dot is today, and the moon
-              // inside is the cycle's moon rather than the sky's.
-              Center(
-                child: PhaseDial(
-                  label: phaseLabel,
-                  phaseKey: phaseKey,
-                  cycleDay: result.phase?.cycleDay,
-                  cycleLength: result.cycleLength,
-                  fill: tokens.phaseFill(phaseKey),
-                  onHero: true,
-                ),
-              ),
-              const SizedBox(height: ElaraSpacing.lg),
-              Container(
-                height: 1,
-                color: tokens.onHero.withValues(alpha: 0.18),
-              ),
-              const SizedBox(height: ElaraSpacing.lg),
-              _Countdown(
-                daysUntil: daysUntil,
-                isLate: isLate,
-                nextPeriodDate: result.nextPeriodDate,
-                windowDays: result.windowDays,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ElaraOverline('Estimated phase'),
+            const SizedBox(height: ElaraSpacing.xxs),
+            Text(
+              'From the dates you have recorded',
+              style: type.caption(tokens.textSecondaryStrong, size: 12),
+            ),
+            const SizedBox(height: ElaraSpacing.md),
+            // Where today sits in the cycle, as a ring of one tick per day:
+            // the elapsed ticks carry the ink, the dot is today, and the moon
+            // inside is the cycle's moon rather than the sky's.
+            Center(
+              child: PhaseDial(
+                label: phaseLabel,
                 phaseKey: phaseKey,
-                unavailableReason: result.unavailableReason,
-                historyNotes: historyNotes,
-                onHero: true,
+                cycleDay: result.phase?.cycleDay,
+                cycleLength: result.cycleLength,
+                fill: tokens.phaseFill(phaseKey),
               ),
-              const SizedBox(height: ElaraSpacing.md),
-              if (activePhaseGuide != null) ...[
-                Container(
-                  height: 1,
-                  color: tokens.onHero.withValues(alpha: 0.18),
-                ),
-                PhaseGuideCard(
-                  phase: activePhaseGuide,
-                  isCurrent: true,
-                ),
-              ],
-            ],
-          ),
+            ),
+            const SizedBox(height: ElaraSpacing.lg),
+            const Hairline(margin: 0),
+            const SizedBox(height: ElaraSpacing.lg),
+            _Countdown(
+              daysUntil: daysUntil,
+              isLate: isLate,
+              nextPeriodDate: result.nextPeriodDate,
+              windowDays: result.windowDays,
+              phaseKey: phaseKey,
+              unavailableReason: result.unavailableReason,
+              historyNotes: historyNotes,
+            ),
+          ],
         ),
+        if (activePhaseGuide != null) ...[
+          const SizedBox(height: ElaraSpacing.lg),
+          PhaseGuideCard(
+            phase: activePhaseGuide,
+            isCurrent: true,
+          ),
+        ],
 
         // ---- care: the point of the screen, given the most room.
         //

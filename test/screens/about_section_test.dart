@@ -154,6 +154,13 @@ void main() {
     // of this panel can act on. It is stated as a fact beside the licence.
     expect(find.text('elara-core'), findsOneWidget);
     expect(find.text('Prediction engine'), findsOneWidget);
+    expect(
+      find.text(
+        'Elara’s own ensemble, developed from OpenCiclo and Flowlytics.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining(r'\u2019'), findsNothing);
   });
 
   testWidgets('the limitations panel carries the medical and privacy claims', (

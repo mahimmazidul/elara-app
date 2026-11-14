@@ -265,52 +265,6 @@ class ElaraOverline extends StatelessWidget {
   }
 }
 
-/// The one saturated panel on a screen.
-///
-/// Every other surface in Elara is paper: a page, a card a shade off it, rows
-/// separated by hairlines. That is a good system for reading and a bad one for
-/// finding, because with nothing saturated on the page the eye has no anchor and
-/// the screen reads as a form. This is the anchor: one panel per screen, filled
-/// with the phase's deep colour, carrying cream ink and the one thing the screen
-/// is about.
-///
-/// It is deliberately not a card with a tinted background. The fill comes from
-/// [ElaraTokens.heroFill], which is a value down from the decorative phase
-/// colour, because a panel this size in the decorative tone reads as a wash and
-/// cannot hold white text without it going grey.
-class ElaraHeroCard extends StatelessWidget {
-  const ElaraHeroCard({
-    super.key,
-    required this.phaseKey,
-    required this.child,
-    this.padding = const EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 18,
-    ),
-  });
-
-  /// Which phase's colour to fill with. An unclassified day falls back to ink,
-  /// which keeps the panel honest: there is no colour for a day nobody knows.
-  final String phaseKey;
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.elara;
-    return Container(
-      width: double.infinity,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: tokens.heroFill(phaseKey),
-        borderRadius: BorderRadius.circular(ElaraRadii.hero),
-      ),
-      child: child,
-    );
-  }
-}
-
 /// Section heading on a page.
 class SectionTitle extends StatelessWidget {
   const SectionTitle(this.text, {super.key, this.trailing});

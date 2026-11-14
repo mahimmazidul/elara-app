@@ -14,6 +14,7 @@ import 'package:elara_app/screens/today/today_screen.dart';
 import 'package:elara_app/services/climate_service.dart';
 import 'package:elara_app/services/prediction_service.dart';
 import 'package:elara_app/theme/elara_theme.dart';
+import 'package:elara_app/widgets/phase_dial.dart';
 import 'package:elara_core/elara_core.dart' as core;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -254,6 +255,7 @@ void main() {
       // Today shows only the guidance suited to the estimated phase, inline.
       // The multi-phase guide is not a required tap to reach the useful advice.
       expect(find.text('ESTIMATED FOR TODAY'), findsOneWidget);
+      expect(tester.widget<PhaseDial>(find.byType(PhaseDial)).onHero, isFalse);
       expect(
         find.textContaining('Take dinner, dishes, or the shopping off her list'),
         findsOneWidget,
